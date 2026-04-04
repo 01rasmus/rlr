@@ -5,29 +5,6 @@
 #include "../error.h"
 #include "shader.h"
 
-const char shader_fragment_font_mtsdf[] = RLR_SHADER_INLINE(
-    in vec2 fragTexCoord;
-    out vec4 finalColor;
-
-    uniform sampler2D tex;
-    uniform vec4 textColor;
-
-    float median(float r, float g, float b) {
-        return max(min(r,g), min(max(r,g),b));
-    }
-
-    void main() {
-        float pxRange = -1.0;
-        vec3 sample = texture(tex, fragTexCoord).rgb;
-        float sd = median(sample.r, sample.g, sample.b);
-        float smoothing = 1.0 / fwidth(sd);
-        float screenPxRange  = max(0.5f * dot(pxRange, smoothing), 1.0);
-        float screenPxDistance = screenPxRange * (sd - 0.5f); 
-        float alpha = clamp(screenPxDistance + 0.5f, 0.0f, 1.0f);
-        finalColor = vec4(textColor.rgb, textColor.a * alpha);
-    }
-);
-
 const char shader_vertex_default[] = RLR_SHADER_INLINE(
     layout (location = 0) in vec3 a_pos;
 
@@ -43,7 +20,7 @@ const char shader_fragment_default[] = RLR_SHADER_INLINE(
     void main()
     {
         frag_color = vec4(1.0, 0.5, 0.2, 1.0);
-    } 
+    }
 );
 
 rlr_shader_t* rlr_shader_load(const char* vertex_string, const char* fragment_string) {

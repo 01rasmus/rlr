@@ -47,6 +47,6 @@ void _rlr_error_default_callback(rlr_error_t code, const char* file, size_t line
     printf(format, file, line, rlr_error_string(code));
 
     if(extended) {
-        printf("\t%s\n", extended);
+        printf("\t﹂ %s\n", extended);
     }
 }
