@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "../../lib/stb_ds.h"
+#include <stb_ds.h>
 #include "../io/csv.h"
 #include "../io/file.h"
 #include "../error.h"

@@ -1,6 +1,6 @@
 #define RGFW_OPENGL
-#include "../lib/RGFW.h"
-#include "../lib/glad.h"
+#include <RGFW.h>
+#include <glad.h>
 #include "error.h"
 #include "rlr.h"
 

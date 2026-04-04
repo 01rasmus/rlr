@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "../../lib/glad.h"
+#include <glad.h>
 #include "../error.h"
 #include "sampler.h"
 

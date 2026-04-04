@@ -1,6 +1,6 @@
 #include <stdint.h>
-#include "../../lib/glad.h"
-#include "../../lib/stb_image.h"
+#include <glad.h>
+#include <stb_image.h>
 #include "../error.h"
 #include "texture.h"
 

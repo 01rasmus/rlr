@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "../../lib/glad.h"
+#include <glad.h>
 #include "../error.h"
 #include "shader.h"
 
