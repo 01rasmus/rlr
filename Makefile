@@ -6,7 +6,7 @@ OBJ_DIR  	  := $(OUT_DIR)/obj
 
 LIB_INCLUDE	  := $(LIB_DIR)/
 
-SRC	           := $(shell find $(SRC_DIR) -name '*.c')
+SRC	           := $(shell find $(SRC_DIR) -name '*.c') $(LIB_DIR)/lib.c main.c
 
 # compiler arguments
 FLAGS    	   := -Wall -O3 -MMD -MP
@@ -23,7 +23,7 @@ DEPS  	 	   := $(patsubst %.c,$(OBJ_DIR)/%.d,$(SRC))
 $(BINARY): $(OBJECTS)
 	@echo Building Executable
 	@mkdir -p $(OUT_DIR)
-	@$(CC) -o $@ $^ $(LIBS) $(LINK_FLAS) main.c -I$(INCLUDES)
+	@$(CC) -o $@ $^ $(LIBS) $(LINK_FLAS) -I$(INCLUDES)
 
 $(OBJ_DIR)/%.o: %.c
 	@echo Compiling $<
