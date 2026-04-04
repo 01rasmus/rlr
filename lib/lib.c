@@ -1,20 +1,20 @@
 #define RGFW_IMPLEMENTATION
 #define RGFW_OPENGL
-#include <RGFW.h>
+#include "RGFW.h"
 #undef RGFW_IMPLEMENTATION
 
 #define CGLTF_IMPLEMENTATION
-#include <cgltf.h>
+#include "cgltf.h"
 #undef CGLTF_IMPLEMENTATION
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include "stb_image.h"
 #undef STB_IMAGE_IMPLEMENTATION
 
 #define STB_DS_IMPLEMENTATION
-#include <stb_ds.h>
+#include "stb_ds.h"
 #undef STB_DS_IMPLEMENTATION
 
 #define GLAD_IMPLEMENTATION
-#include <glad.h>
+#include "glad.h"
 #undef GLAD_IMPLEMENTATION
