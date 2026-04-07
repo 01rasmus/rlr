@@ -19,7 +19,7 @@ For a computer to run the renderer an OpenGL 3.3 compatible graphics card is req
 The following flags are needed to compile the library.
 | Operating System | Linker flags                                                                 |
 | ---------------- | ---------------------------------------------------------------------------- |
-| Linux            | ``-lX11 -lGL -lXrandr -lm``                                                  |
+| Linux            | ``-lm -lGL -lX11 -lXrandr``                                                  |
 | Windows          | ``-lopengl32 -lgdi32``                                                       |
 | macOS            | ``-framework Cocoa -framework CoreVideo -framework OpenGL -framework IOKit`` |
 
