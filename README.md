@@ -1,5 +1,5 @@
-## rl_render
-A graphics renderer written in C.
+<h1 style="text-align:center;">RL Render 👾</h1>
+<p style="text-align:center;">A simplistic graphics renderer written in C</p>
 
 ## Features
 - **SDF Fonts**<br>
