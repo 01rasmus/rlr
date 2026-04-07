@@ -1,3 +1,12 @@
+___HOST_OS    := $(shell uname)
+ifeq ($(findstring Windows,$(___HOST_OS)),Windows)
+	LIBS      := -lopengl32 -lgdi32
+else ifeq ($(findstring Linux,$(___HOST_OS)),Linux)
+	LIBS      := -lm -lX11 -lGL -lXrandr
+else ifeq ($(findstring Darwin,$(___HOST_OS)),Darwin)
+	LIBS      := -framework Cocoa -framework CoreVideo -framework OpenGL -framework IOKit
+endif
+
 # directories
 SRC_DIR  	  := ./src
 LIB_DIR		  := ./lib
@@ -12,7 +21,6 @@ SRC	           := $(shell find $(SRC_DIR) -name '*.c') $(LIB_DIR)/lib.c main.c
 FLAGS    	   := -Wall -O3 -MMD -MP
 LINK_FLAS      := 
 INCLUDES 	   := -I$(SRC_DIR) -I$(LIB_INCLUDE)
-LIBS     	   := -lm -lX11 -lGL -lXrandr
 
 BINARY   	   := $(OUT_DIR)/rl_render
 OBJECTS  	   := $(patsubst %.c,$(OBJ_DIR)/%.o,$(SRC))
