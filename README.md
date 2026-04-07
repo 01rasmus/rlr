@@ -1,5 +1,5 @@
-<h1 style="text-align:center;">RL Render 👾</h1>
-<p style="text-align:center;">A simplistic graphics renderer written in C</p>
+<h1 align="center">RL Render 👾</h1>
+<p align="center">A simplistic graphics renderer written in C</p>
 
 ## Features
 - **SDF Fonts**<br>
