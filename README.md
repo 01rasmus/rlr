@@ -1,13 +1,6 @@
 ## rl_render
 A graphics renderer written in C.
 
-## Philosophy
-- Performance
-- Portability
-- Slightly older and lower spec hardware
-- Single header libraries only (This hopefully makes it easily integratable)
-- Simplicity (This is why only the gltf model format is supported)
-
 ## How to build
 The library can mainly be built in two ways. Either with cmake or make.
 It can also be built without any build system at all though. All the source files inside the ___lib___ and ___src___ folder can be built along side another project and it will compile fine as long as the system dependencies like X11 for Linux are linked.
