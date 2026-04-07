@@ -39,7 +39,7 @@ int32_t main() {
         return -1;
     }
 
-    rlr_shader_load(NULL, shader_fragment_font_mtsdf);
+    rlr_shader_load(NULL, NULL);
 
     printf("glyph count: %d\n", rlr_font_glyph_count(fnt));
 

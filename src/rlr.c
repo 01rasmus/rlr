@@ -15,6 +15,11 @@ bool rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         goto err;
     }
 
+    RGFW_glHints* hints = RGFW_getGlobalHints_OpenGL();
+    hints->major = 3;
+    hints->minor = 3;
+    RGFW_setGlobalHints_OpenGL(hints);
+
     rlr->window = RGFW_createWindow(title, window_width, window_height, window_width, window_height, RGFW_windowAllowDND | RGFW_windowCenter | RGFW_windowScaleToMonitor | RGFW_windowOpenGL);
     if(!rlr->window) {
         rlr_error_set(RLR_ERR_WINDOW_CREATION);
@@ -26,6 +31,16 @@ bool rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
 
     if(!gladLoadGLLoader((GLADloadproc)RGFW_getProcAddress_OpenGL)) {
         rlr_error_set(RLR_ERR_CONTEXT_CREATION);
+        goto err;
+    }
+
+    int32_t major = 0;
+    int32_t minor = 0;
+    glGetIntegerv(GL_MAJOR_VERSION, &major); 
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+    bool is_compatible_version = (major == 3 && minor >= 3) || major == 4;
+    if(!is_compatible_version) {
+        rlr_error_setf(RLR_ERR_OPENGL_INCOMPATIBLE_VERSION, "expected atleast OpenGL 3.3, but got OpenGL %d.%d", major, minor);
         goto err;
     }
 
@@ -41,6 +56,7 @@ void rlr_deinit() {
     }
     free(rlr);
     rlr = NULL;
+    RGFW_deinit();
 }
 
 bool rlr_render() {

@@ -1,5 +1,6 @@
 #pragma once
 #include <stddef.h>
+#include <stdio.h>
 
 #define RLR_ERRORS(X) \
     X(RLR_OK) \
@@ -16,6 +17,7 @@
     X(RLR_ERR_OPENGL_VERTEX_SHADER_COMPILATION) \
     X(RLR_ERR_OPENGL_FRAGMENT_SHADER_COMPILATION) \
     X(RLR_ERR_OPENGL_PROGRAM_LINKING) \
+    X(RLR_ERR_OPENGL_INCOMPATIBLE_VERSION) \
 
 typedef enum rlr_error_t {
     #define X(ERROR) ERROR,

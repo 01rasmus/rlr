@@ -7,8 +7,8 @@
 bool csv_parse_row(csv_row_callback_t callback, uint32_t row_index, char* row, const size_t column_count, const char* delimiter, void* user);
 
 bool csv_parse(csv_row_callback_t callback, const char* csv_string, const size_t column_count, const char* delimiter, void* user) {
-    size_t csv_length = strlen(csv_string);
-    char* copied = malloc(csv_length + 1);
+    size_t csv_length = strlen(csv_string) + 1;
+    char* copied = malloc(csv_length);
     if(!copied) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
@@ -49,7 +49,7 @@ bool csv_parse_row(csv_row_callback_t callback, uint32_t row_index, char* row, c
     }
 
     if(count != column_count) {
-        rlr_error_setf(RLR_ERR_CSV_COLUMN_COUNT_MISMATCH, "expected %ld columns but got %d", column_count, count);
+        rlr_error_setf(RLR_ERR_CSV_COLUMN_COUNT_MISMATCH, "at row %u, expected %ld columns but got %d", row_index, column_count, count);
         return false;
     }
 
