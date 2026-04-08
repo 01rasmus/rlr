@@ -2,13 +2,15 @@
 <p align="center">A simplistic graphics renderer written in C</p>
 
 ## Features
+- **Multiple Backends**<br>
+The renderer chooses either ___OpenGL 3.3___ or ___OpenGL ES 3.0___ at runtime depending on which of these two are supported by the system. This is fully dynamic and it prefers OpenGL 3.3 if both are supported.
 - **SDF Fonts**<br>
 It is used together with texture atlases generated from [Chlumsky's atlas gen](https://github.com/Chlumsky/msdf-atlas-gen). The engine loads in the .csv file with the glyph data, and then the texture atlas image. It uses [stb image](https://github.com/nothings/stb/blob/master/stb_image.h) to load the image. Currently only the ___MTSDF___ variant is implemented.
 
 ## Libraries used
 Defined below are the libraries used in the renderer. It only depends on other single header libraries to try to minimize the complexity at compile time.
 - [cgltf](https://github.com/jkuhlmann/cgltf)
-- [glad](https://glad.dav1d.de/)
+- [glad](https://gen.glad.sh/)
 - [RGFW](https://github.com/ColleagueRiley/RGFW)
 - [stb_ds.h](https://github.com/nothings/stb/blob/master/stb_ds.h)
 - [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h)
