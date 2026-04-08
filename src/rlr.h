@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "resources/font.h"
+#include "backends/backend.h"
 
 typedef struct RGFW_window RGFW_window;
 
@@ -13,11 +14,12 @@ typedef struct rlr_pipeline_t {
 
 typedef struct rlr_t {
     RGFW_window* window;
+    rlr_backend_t* backend;
 
     //pipelines
     rlr_pipeline_t pipeline_text;
 } rlr_t;
 
-bool rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags);
-bool rlr_render();
-void rlr_deinit();
+rlr_t* rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags);
+bool rlr_render(rlr_t* rlr);
+void rlr_free(rlr_t* rlr);

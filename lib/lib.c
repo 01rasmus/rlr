@@ -14,7 +14,3 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 #undef STB_DS_IMPLEMENTATION
-
-#define GLAD_IMPLEMENTATION
-#include "glad.h"
-#undef GLAD_IMPLEMENTATION

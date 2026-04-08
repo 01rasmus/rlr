@@ -2,11 +2,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef struct rlr_t rlr_t;
+
 typedef struct rlr_texture_t {
-    uint32_t texture;
+    uint64_t texture;
     float width;
     float height;
 } rlr_texture_t;
 
-rlr_texture_t* rlr_texture_load(const char* texture_path, bool generate_mipmaps);
-void rlr_texture_free(rlr_texture_t* texture);
+rlr_texture_t* rlr_texture_load(rlr_t* rlr, const char* texture_path, bool generate_mipmaps);
+void rlr_texture_free(rlr_t* rlr, rlr_texture_t* texture);

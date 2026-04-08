@@ -30,24 +30,25 @@ const char shader_fragment_font_mtsdf[] = RLR_SHADER_INLINE(
 
 int32_t main() {
 
-    if(!rlr_init("rl render", 1024, 576, 0)) {
+    rlr_t* rlr = rlr_init("rl render", 1024, 576, 0);
+    if(!rlr) {
         return 1;
     }
 
-    rlr_font_t* fnt = rlr_font_load("assets/texture_atlas_noto_sans.csv", "assets/texture_atlas_noto_sans.png", RLR_FONT_TYPE_MTSDF);
+    rlr_font_t* fnt = rlr_font_load(rlr, "assets/texture_atlas_noto_sans.csv", "assets/texture_atlas_noto_sans.png", RLR_FONT_TYPE_MTSDF);
     if(!fnt) {
         return -1;
     }
 
-    rlr_shader_load(NULL, NULL);
+    rlr_shader_load(rlr, NULL, NULL);
 
     printf("glyph count: %d\n", rlr_font_glyph_count(fnt));
 
-    while(rlr_render()) {
+    while(rlr_render(rlr)) {
         
     }
 
-    rlr_font_free(fnt);
-    rlr_deinit();
+    rlr_font_free(rlr, fnt);
+    rlr_free(rlr);
     return 0;
 }

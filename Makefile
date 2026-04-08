@@ -18,7 +18,7 @@ LIB_INCLUDE	  := $(LIB_DIR)/
 SRC	           := $(shell find $(SRC_DIR) -name '*.c') $(LIB_DIR)/lib.c main.c
 
 # compiler arguments
-FLAGS    	   := -Wall -O3 -MMD -MP
+FLAGS    	   := -O3 -MMD -MP
 LINK_FLAS      := 
 INCLUDES 	   := -I$(SRC_DIR) -I$(LIB_INCLUDE)
 

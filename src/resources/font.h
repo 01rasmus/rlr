@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
 #include "texture.h"
+#include "rlr.h"
+
 /*
     the fonts used in rlr_render
     are the ones that can be 
@@ -33,7 +35,7 @@ typedef struct rlr_font_t {
     float average_glyph_size;
 } rlr_font_t;
 
-rlr_font_t* rlr_font_load(const char* csv_path, const char* texture_atlas_path, rlr_font_type_t type);
+rlr_font_t* rlr_font_load(rlr_t* rlr, const char* csv_path, const char* texture_atlas_path, rlr_font_type_t type);
 bool rlr_font_generate_vertices(rlr_font_t* font, float x, float y, float size, const char* text);
 int32_t rlr_font_glyph_count(rlr_font_t* font);
-void rlr_font_free(rlr_font_t* font);
+void rlr_font_free(rlr_t* rlr, rlr_font_t* font);

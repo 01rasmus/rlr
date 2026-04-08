@@ -1,10 +1,10 @@
 #include <stdint.h>
-#include <glad.h>
 #include <stb_image.h>
 #include "../error.h"
 #include "texture.h"
+#include "rlr.h"
 
-rlr_texture_t* rlr_texture_load(const char* texture_path, bool generate_mipmaps) {
+rlr_texture_t* rlr_texture_load(rlr_t* rlr, const char* texture_path, bool generate_mipmaps) {
     rlr_texture_t* texture = malloc(sizeof(rlr_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -26,27 +26,23 @@ rlr_texture_t* rlr_texture_load(const char* texture_path, bool generate_mipmaps)
     texture->width = w;
     texture->height = h;
 
-    glGenTextures(1, &texture->texture);
+    texture->texture = rlr->backend->create_texture(data, w, h, generate_mipmaps);
     if(texture->texture == 0) {
-        rlr_error_setf(RLR_ERR_OPENGL_NULL_HANDLE, "file \"%s\"", texture_path);
+        rlr_error_setf(RLR_ERR_BACKEND_NULL_HANDLE, "file \"%s\"", texture_path);
         goto err;
-    }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    if(generate_mipmaps) {
-        glGenerateMipmap(GL_TEXTURE_2D);
     }
 
     stbi_image_free(data);
     return texture;
 err:
     stbi_image_free(data);
-    rlr_texture_free(texture);
+    rlr_texture_free(rlr, texture);
     return NULL;
 }
 
-void rlr_texture_free(rlr_texture_t* texture) {
+void rlr_texture_free(rlr_t* rlr, rlr_texture_t* texture) {
     if(texture) {
-        glDeleteTextures(1, &texture->texture);
+        rlr->backend->free_texture(texture->texture);
     }
     free(texture);
 }
