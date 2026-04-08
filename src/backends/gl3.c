@@ -3,10 +3,10 @@
 #include "backend.h"
 
 static GladGLContext* gl = NULL;
-static uint64_t current_shader = 0;
+static uint32_t current_shader = 0;
 
-uint64_t gl_create_texture(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
-    uint64_t texture = 0;
+uint32_t gl_create_texture(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
+    uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
         return 0;
@@ -18,11 +18,11 @@ uint64_t gl_create_texture(uint8_t* rgba, uint32_t width, uint32_t height, bool 
     return texture;
 }
 
-void gl_free_texture(uint64_t handle) {
+void gl_free_texture(uint32_t handle) {
     gl->DeleteTextures(1, &handle);
 }
 
-bool _rlr_shader_compilation_error(uint64_t shader_id, char* error_str, size_t error_str_size) {
+bool _rlr_shader_compilation_error(uint32_t shader_id, char* error_str, size_t error_str_size) {
     int32_t status = 0;
     gl->GetShaderiv(shader_id, GL_COMPILE_STATUS, &status);
     if(status == GL_TRUE) {
@@ -37,7 +37,7 @@ bool _rlr_shader_compilation_error(uint64_t shader_id, char* error_str, size_t e
     return true;
 }
 
-bool _rlr_shader_program_link_error(uint64_t program_id, char* error_str, size_t error_str_size) {
+bool _rlr_shader_program_link_error(uint32_t program_id, char* error_str, size_t error_str_size) {
     int32_t status = 0;
     gl->GetProgramiv(program_id, GL_LINK_STATUS, &status);
     if(status == GL_TRUE) {
@@ -52,9 +52,9 @@ bool _rlr_shader_program_link_error(uint64_t program_id, char* error_str, size_t
     return true;
 }
 
-uint64_t gl_compile_shader(const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size) {
-    uint64_t vid = 0;
-    uint64_t fid = 0;
+uint32_t gl_compile_shader(const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size) {
+    uint32_t vid = 0;
+    uint32_t fid = 0;
 
     int32_t vertex_length[1] = { strlen(vertex_shader) };
     int32_t fragment_length[1] = { strlen(fragment_shader) };
@@ -78,7 +78,7 @@ uint64_t gl_compile_shader(const char* vertex_shader, const char* fragment_shade
     }
 
     //linking to the program
-    uint64_t program = gl->CreateProgram();
+    uint32_t program = gl->CreateProgram();
     gl->AttachShader(program, vid);
     gl->AttachShader(program, fid);
     gl->LinkProgram(program);
@@ -99,23 +99,23 @@ err:
     return 0;
 }
 
-void gl_free_shader(uint64_t shader) {
+void gl_free_shader(uint32_t shader) {
     gl->DeleteProgram(shader);
 }
 
-void gl_use_shader(uint64_t shader) {
+void gl_use_shader(uint32_t shader) {
     if(shader != current_shader) {
         current_shader = shader;
         gl->UseProgram(shader);
     }
 }
 
-uint64_t gl_shader_uniform_location(uint64_t shader, const char* name) {
+uint32_t gl_shader_uniform_location(uint32_t shader, const char* name) {
     gl_use_shader(shader);
     return gl->GetUniformLocation(shader, name);
 }
 
-void gl_shader_uniform_set(uint64_t shader, uint64_t location, void* value, rlr_shader_uniform_type type) {
+void gl_shader_uniform_set(uint32_t shader, uint32_t location, void* value, rlr_shader_uniform_type type) {
     gl_use_shader(shader);
     switch(type) {
         case RLR_SHADER_UNIFORM_BOOL: {
