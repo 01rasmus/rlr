@@ -53,7 +53,7 @@ err:
 
 void rlr_free(rlr_t* rlr) {
     if(rlr) {
-        rlr->backend->free();
+        rlr->backend->backend_free();
         free(rlr->backend);
     }
     free(rlr);
