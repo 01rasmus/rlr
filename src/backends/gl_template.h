@@ -2,18 +2,18 @@
     Since OpenGL 3.3 and OpenGL ES 3.0
     are very similar, this file is meant
     to act as a template for the respective
-    implementation.
+    implementations.
 
-    To implement OpenGL, define
+    To implement desktop OpenGL, define
     #define GL_IMPLEMENTATION_TEMPLATE_GL
 
     and to use the OpenGL ES, define
     #define GL_IMPLEMENTATION_TEMPLATE_GLES
 
-    After this functions to get the backend
+    After this, functions to get the backend
     context will be implemented.
 
-    The implementation can only be used inside
+    Each implementation can only be used inside
     one C file, similar to a single header library.
 
     All the functions inside will be prefixed 
@@ -214,6 +214,7 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     rlr_backend_t* backend = NULL;
     gl = malloc(sizeof(glad_context_t));
     if(!gl) {
+        rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
     }
     if(GL_LOADER_FUNCTION(gl, proc_loader) == 0) {
@@ -222,6 +223,7 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
 
     backend = malloc(sizeof(rlr_backend_t));
     if(!backend) {
+        rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
     }
     memset(backend, 0, sizeof(rlr_backend_t));
