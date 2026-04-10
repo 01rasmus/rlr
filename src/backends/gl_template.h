@@ -205,6 +205,14 @@ void GL_TEMPLATE_PREFIX(shader_uniform_set)(uint32_t shader, uint32_t location, 
     }
 }
 
+void GL_TEMPLATE_PREFIX(clear)(uint64_t mask) {
+    gl->Clear(mask);
+}
+
+void GL_TEMPLATE_PREFIX(clear_color)(float r, float g, float b, float a) {
+    gl->ClearColor(r, g, b, a);
+}
+
 void GL_TEMPLATE_PREFIX(backend_free)() {
     free(gl);
     gl = NULL;

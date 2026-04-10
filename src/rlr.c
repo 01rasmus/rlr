@@ -68,8 +68,8 @@ bool rlr_render(rlr_t* rlr) {
         }
     }
 
-    //glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    //glClear(GL_COLOR_BUFFER_BIT);
+    rlr->backend->clear_color(0.2, 0.3, 0.3, 1.0);
+    rlr->backend->clear(RLR_BACKEND_CLEAR_BIT_COLOR);
 
     RGFW_window_swapBuffers_OpenGL(rlr->window);
     return true;

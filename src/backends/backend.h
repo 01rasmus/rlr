@@ -6,6 +6,10 @@
 typedef void (*rlr_backend_proc_t)(void);
 typedef rlr_backend_proc_t (*rlr_backend_loader_t)(const char*);
 
+#define RLR_BACKEND_CLEAR_BIT_COLOR         0x00004000
+#define RLR_BACKEND_CLEAR_BIT_DEPTH         0x00000100
+#define RLR_BACKEND_CLEAR_BIT_STENCIL       0x00000400
+
 #define RLR_BACKEND_FUNCTIONS(X) \
     X(uint32_t, create_texture,             (uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps)) \
     X(void,     free_texture,               (uint32_t handle)) \
@@ -14,6 +18,8 @@ typedef rlr_backend_proc_t (*rlr_backend_loader_t)(const char*);
     X(void,     use_shader,                 (uint32_t shader)) \
     X(uint32_t, shader_uniform_location,    (uint32_t shader, const char* name)) \
     X(void,     shader_uniform_set,         (uint32_t shader, uint32_t location, void* data, rlr_shader_uniform_type type)) \
+    X(void,     clear,                      (uint64_t mask)) \
+    X(void,     clear_color,                (float r, float g, float b, float a)) \
     X(void,     backend_free,               ())
 
 typedef struct rlr_backend_t {
