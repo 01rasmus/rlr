@@ -1,8 +1,3 @@
-#define RGFW_IMPLEMENTATION
-#define RGFW_OPENGL
-#include "RGFW.h"
-#undef RGFW_IMPLEMENTATION
-
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 #undef CGLTF_IMPLEMENTATION

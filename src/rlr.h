@@ -4,7 +4,7 @@
 #include "resources/font.h"
 #include "backends/backend.h"
 
-typedef struct RGFW_window RGFW_window;
+typedef struct GLFWwindow GLFWwindow;
 
 typedef struct rlr_pipeline_t {
     int32_t vao;
@@ -13,7 +13,7 @@ typedef struct rlr_pipeline_t {
 } rlr_pipeline_t;
 
 typedef struct rlr_t {
-    RGFW_window* window;
+    GLFWwindow* window;
     rlr_backend_t* backend;
 
     //pipelines

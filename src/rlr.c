@@ -1,5 +1,6 @@
-#define RGFW_OPENGL
-#include <RGFW.h>
+#include <stdlib.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 #include "backends/backend.h"
 #include "error.h"
 #include "rlr.h"
@@ -13,24 +14,31 @@ rlr_t* rlr_init(const char* title, uint32_t window_width, uint32_t window_height
         goto err;
     }
 
-    RGFW_glHints* hints = RGFW_getGlobalHints_OpenGL();
-    hints->major = 3;
-    hints->minor = 3;
-    RGFW_setGlobalHints_OpenGL(hints);
+    rlr->backend = NULL;
+    rlr->window = NULL;
 
-    rlr->window = RGFW_createWindow(title, window_width, window_height, window_width, window_height, RGFW_windowAllowDND | RGFW_windowCenter | RGFW_windowScaleToMonitor | RGFW_windowOpenGL);
+    if(!glfwInit()) {
+        rlr_error_set(RLR_ERR_WINDOW_CREATION);
+        goto err;
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    rlr->window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
     if(!rlr->window) {
         rlr_error_set(RLR_ERR_WINDOW_CREATION);
         goto err;
     }
-    RGFW_window_swapInterval_OpenGL(rlr->window, 0);
-    RGFW_window_setExitKey(rlr->window, RGFW_escape);
-    RGFW_window_makeCurrentContext_OpenGL(rlr->window);
+    glfwSwapInterval(1);
+    //RGFW_window_setExitKey(rlr->window, RGFW_escape);
+    glfwMakeContextCurrent(rlr->window);
 
-    rlr_backend_t* backend = rlr_backend_gl3((rlr_backend_loader_t)RGFW_getProcAddress_OpenGL);
+    rlr_backend_t* backend = rlr_backend_gl3((rlr_backend_loader_t)glfwGetProcAddress);
     rlr->backend = backend;
 
-    // if(!gladLoadGLLoader((GLADloadproc)RGFW_getProcAddress_OpenGL)) {
+    // if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     //     rlr_error_set(RLR_ERR_CONTEXT_CREATION);
     //     goto err;
     // }
@@ -53,24 +61,28 @@ err:
 
 void rlr_free(rlr_t* rlr) {
     if(rlr) {
-        rlr->backend->backend_free();
-        free(rlr->backend);
+        if(rlr->backend) {
+            rlr->backend->backend_free();
+            free(rlr->backend);
+        }
+        if(rlr->window) {
+            glfwDestroyWindow(rlr->window);
+        }
     }
     free(rlr);
-    RGFW_deinit();
+    glfwTerminate();
 }
 
 bool rlr_render(rlr_t* rlr) {
-    RGFW_event event;
-    if(!RGFW_window_checkEvent(rlr->window, &event)) {
-        if (event.type == RGFW_quit) {
-            return false;
-        }
+    glfwPollEvents();
+
+    if(!glfwWindowShouldClose(rlr->window)) {
+        return false;
     }
 
     rlr->backend->clear_color(0.2, 0.3, 0.3, 1.0);
     rlr->backend->clear(RLR_BACKEND_CLEAR_BIT_COLOR);
 
-    RGFW_window_swapBuffers_OpenGL(rlr->window);
+    glfwSwapBuffers(rlr->window);
     return true;
 }
