@@ -76,7 +76,7 @@ void rlr_free(rlr_t* rlr) {
 bool rlr_render(rlr_t* rlr) {
     glfwPollEvents();
 
-    if(!glfwWindowShouldClose(rlr->window)) {
+    if(glfwWindowShouldClose(rlr->window)) {
         return false;
     }
 
