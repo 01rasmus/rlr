@@ -4,7 +4,7 @@
 #include "texture.h"
 #include "rlr.h"
 
-rlr_texture_t* rlr_texture_load(rlr_t* rlr, const char* texture_path, bool generate_mipmaps) {
+rlr_texture_t* rlr_texture_create(rlr_t* rlr, const char* texture_path, bool generate_mipmaps) {
     rlr_texture_t* texture = malloc(sizeof(rlr_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);

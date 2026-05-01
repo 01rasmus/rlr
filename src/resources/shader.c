@@ -23,7 +23,7 @@ const char shader_fragment_default[] = RLR_SHADER_INLINE(
     }
 );
 
-rlr_shader_t* rlr_shader_load(rlr_t* rlr, const char* vertex_string, const char* fragment_string) {
+rlr_shader_t* rlr_shader_create(rlr_t* rlr, const char* vertex_string, const char* fragment_string) {
     rlr_shader_t* shader = malloc(sizeof(rlr_shader_t));
     if(!shader) {
         rlr_error_set(RLR_ERR_NO_MEMORY);

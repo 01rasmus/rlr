@@ -1,5 +1,5 @@
 <h1 align="center">RL Render 👾</h1>
-<p align="center">A simplistic graphics renderer written in C</p>
+<p align="center">A simplistic graphics renderer written for simplistic games</p>
 
 ## Features
 - **Multiple Backends**<br>

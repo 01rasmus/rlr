@@ -65,7 +65,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
     hmputs(font->glyphs, glyph);
 }
 
-rlr_font_t* rlr_font_load(rlr_t* rlr, const char* csv_path, const char* texture_atlas_path, rlr_font_type_t type) {
+rlr_font_t* rlr_font_create(rlr_t* rlr, const char* csv_path, const char* texture_atlas_path, rlr_font_type_t type) {
     rlr_font_t* font = malloc(sizeof(rlr_font_t));
     if(!font) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
