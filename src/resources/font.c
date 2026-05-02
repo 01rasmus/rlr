@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stb_ds.h>
 #include "../io/csv.h"
-#include "../io/file.h"
+#include "../io/str.h"
 #include "../error.h"
 #include "font.h"
 
@@ -72,7 +72,7 @@ rlr_font_t* rlr_font_create(rlr_t* rlr, const char* csv_path, const char* textur
         goto err;
     }
 
-    char* csv = file_to_string(csv_path);
+    char* csv = str_from_file(csv_path);
     if(!csv) {
         goto err;
     }
@@ -82,7 +82,7 @@ rlr_font_t* rlr_font_create(rlr_t* rlr, const char* csv_path, const char* textur
     font->glyphs = NULL;
     font->average_glyph_size = 0;
 
-    font->texture = rlr_texture_load(rlr, texture_atlas_path, false);
+    font->texture = rlr_texture_create(rlr, texture_atlas_path, false);
     if(!font->texture) {
         goto err;
     }

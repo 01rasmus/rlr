@@ -37,12 +37,12 @@ int32_t main() {
         goto end;
     }
 
-    font = rlr_font_load(rlr, "assets/texture_atlas_noto_sans.csv", "assets/texture_atlas_noto_sans.png", RLR_FONT_TYPE_MTSDF);
+    font = rlr_font_create(rlr, "assets/texture_atlas_noto_sans.csv", "assets/texture_atlas_noto_sans.png", RLR_FONT_TYPE_MTSDF);
     if(!font) {
         goto end;
     }
 
-    shader = rlr_shader_load(rlr, NULL, NULL);
+    shader = rlr_shader_create(rlr, NULL, NULL);
     if(!shader) {
         goto end;
     }
