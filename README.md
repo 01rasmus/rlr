@@ -5,7 +5,7 @@
 - **Multiple Backends**<br>
 The renderer chooses either ___OpenGL 3.3___ or ___OpenGL ES 3.0___ at runtime depending on which of these two are supported by the system. This is fully dynamic and it prefers OpenGL 3.3 if both are supported.
 - **Custom Shader Language**<br>
-Since there are multiple backends a custom shader language makes sure a single shader can be used for any backend. It is very similar to [glsl](https://wikis.khronos.org/opengl/OpenGL_Shading_Language) so it should feel familiar.
+[RLSL](https://github.com/rasu01/rlsl) is a shading language specifically written for RL Render. Since there are multiple backends a custom shader language makes sure a single shader can be used for any backend. It is very similar to [glsl](https://wikis.khronos.org/opengl/OpenGL_Shading_Language) so it should feel familiar.
 - **SDF Fonts**<br>
 It is used together with texture atlases generated from [Chlumsky's atlas gen](https://github.com/Chlumsky/msdf-atlas-gen). The engine loads in the .csv file with the glyph data, and then the texture atlas image. It uses [stb image](https://github.com/nothings/stb/blob/master/stb_image.h) to load the image. Currently only the ___MTSDF___ variant is implemented.
 
