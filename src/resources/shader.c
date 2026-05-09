@@ -45,14 +45,6 @@ err:
     return NULL;
 }
 
-uint64_t rlr_shader_get_uniform_location(rlr_t* rlr, rlr_shader_t* shader, const char* name) {
-    return rlr->backend->shader_uniform_location(shader->shader, name);
-}
-
-void rlr_shader_set_uniform(rlr_t* rlr, rlr_shader_t* shader, uint64_t location, void* value, rlr_shader_uniform_type type) {
-    rlr->backend->shader_uniform_set(shader->shader, location, value, type);
-}
-
 void rlr_shader_free(rlr_t* rlr, rlr_shader_t* shader) {
     if(shader) {
         rlr->backend->free_shader(shader->shader);

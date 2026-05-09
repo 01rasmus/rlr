@@ -16,8 +16,11 @@ typedef rlr_backend_proc_t (*rlr_backend_loader_t)(const char*);
     X(uint32_t, compile_shader,             (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
     X(void,     free_shader,                (uint32_t shader)) \
     X(void,     use_shader,                 (uint32_t shader)) \
-    X(uint32_t, shader_uniform_location,    (uint32_t shader, const char* name)) \
-    X(void,     shader_uniform_set,         (uint32_t shader, uint32_t location, void* data, rlr_shader_uniform_type type)) \
+    X(void,     shader_bind_uniform_block,  (uint32_t shader, const char* uniform_block_name, uint32_t slot)) \
+    X(uint32_t, create_uniform_buffer,      (uint64_t size, void* init_data)) \
+    X(void,     update_uniform_buffer,      (uint32_t buffer, uint64_t offset, uint64_t size, void* data)) \
+    X(void,     bind_uniform_buffer,        (uint32_t buffer, uint32_t slot)) \
+    X(void,     free_uniform_buffer,        (uint32_t buffer)) \
     X(void,     clear,                      (uint64_t mask)) \
     X(void,     clear_color,                (float r, float g, float b, float a)) \
     X(void,     backend_free,               ())

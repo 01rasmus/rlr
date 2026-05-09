@@ -167,42 +167,38 @@ void GL_TEMPLATE_PREFIX(use_shader)(uint32_t shader) {
     }
 }
 
-uint32_t GL_TEMPLATE_PREFIX(shader_uniform_location)(uint32_t shader, const char* name) {
+void GL_TEMPLATE_PREFIX(shader_bind_uniform_block)(uint32_t shader, const char* uniform_block_name, uint32_t slot) {
     GL_TEMPLATE_PREFIX(use_shader)(shader);
-    return gl->GetUniformLocation(shader, name);
+    uint32_t block_index = gl->GetUniformBlockIndex(shader, uniform_block_name);
+    if(block_index == GL_INVALID_INDEX) {
+        //ERROR
+        return;
+    }
+    gl->UniformBlockBinding(shader, block_index, slot);
 }
 
-void GL_TEMPLATE_PREFIX(shader_uniform_set)(uint32_t shader, uint32_t location, void* value, rlr_shader_uniform_type type) {
-    GL_TEMPLATE_PREFIX(use_shader)(shader);
-    switch(type) {
-        case RLR_SHADER_UNIFORM_BOOL: {
-            gl->Uniform1i(location, *(int32_t*)value);
-            break;
-        }
-        case RLR_SHADER_UNIFORM_INT: {
-            gl->Uniform1i(location, *(int32_t*)value);
-            break;
-        }
-        case RLR_SHADER_UNIFORM_FLOAT: {
-            gl->Uniform1f(location, *(float*)value);
-            break;
-        }
-        case RLR_SHADER_UNIFORM_VEC3: {
-            float* vec3 = (float*)value;
-            gl->Uniform3f(location, vec3[0], vec3[1], vec3[2]);
-            break;
-        }
-        case RLR_SHADER_UNIFORM_VEC2: {
-            float* vec2 = (float*)value;
-            gl->Uniform2f(location, vec2[0], vec2[1]);
-            break;
-        }
-        case RLR_SHADER_UNIFORM_MAT4X4: {
-            float* mat4x4 = (float*)value;
-            gl->UniformMatrix4fv(location, 1, GL_FALSE, mat4x4);
-            break;
-        }
-    }
+uint32_t GL_TEMPLATE_PREFIX(create_uniform_buffer)(uint64_t size, void* init_data) {
+    uint32_t buffer = 0;
+    gl->GenBuffers(1, &buffer);
+    gl->BindBuffer(GL_UNIFORM_BUFFER, buffer);
+    gl->BufferData(GL_UNIFORM_BUFFER, size, init_data, GL_DYNAMIC_DRAW);
+    gl->BindBuffer(GL_UNIFORM_BUFFER, 0);
+    return buffer;
+}
+
+void GL_TEMPLATE_PREFIX(update_uniform_buffer)(uint32_t buffer, uint64_t offset, uint64_t size, void* data) {
+    gl->BindBuffer(GL_UNIFORM_BUFFER, buffer);
+    gl->BufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+    gl->BindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void GL_TEMPLATE_PREFIX(bind_uniform_buffer)(uint32_t buffer, uint32_t slot) {
+    gl->BindBufferBase(GL_UNIFORM_BUFFER, slot, buffer);
+}
+
+void GL_TEMPLATE_PREFIX(free_uniform_buffer)(uint32_t buffer) {
+    uint32_t handle = buffer;
+    gl->DeleteBuffers(1, &handle);
 }
 
 void GL_TEMPLATE_PREFIX(clear)(uint64_t mask) {
