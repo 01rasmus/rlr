@@ -33,3 +33,4 @@ typedef struct rlr_backend_t {
 
 rlr_backend_t* rlr_backend_gl3(rlr_backend_loader_t proc_loader);
 rlr_backend_t* rlr_backend_gles3(rlr_backend_loader_t proc_loader);
+rlr_backend_t* rlr_backend_d3d10(rlr_backend_loader_t proc_loader);
