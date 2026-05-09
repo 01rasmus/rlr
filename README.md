@@ -3,7 +3,7 @@
 
 ## Features
 - **Multiple Backends**<br>
-The renderer chooses either ___OpenGL 3.3___ or ___OpenGL ES 3.0___ at runtime depending on which of these two are supported by the system. This is fully dynamic and it prefers OpenGL 3.3 if both are supported.
+The renderer chooses either ___OpenGL 3.3___, ___OpenGL ES 3.0___ or ___DirectX 10___ at runtime depending on which of these three are supported by the system. This is fully dynamic.
 - **Custom Shader Language**<br>
 [RLSL](https://github.com/rasu01/rlsl) is a shading language specifically written for RL Render. Since there are multiple backends a custom shader language makes sure a single shader can be used for any backend. It is very similar to [glsl](https://wikis.khronos.org/opengl/OpenGL_Shading_Language) so it should feel familiar.
 - **SDF Fonts**<br>
@@ -18,7 +18,7 @@ Defined below are the libraries used in the renderer. It mostly depends on other
 - [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h)
 
 ## Dependencies
-For a computer to run the renderer an OpenGL 3.3 or OpenGL ES 3.0 compatible graphics card is required.
+For a computer to run the renderer an OpenGL 3.3, OpenGL ES 3.0 or DirectX 10 compatible graphics card is required.
 
 On linux you need to install some dependencies to build. On debian this command will download all the required packages:<br>
 ``sudo apt install libx11-dev libgl1-mesa-dev libxrandr-dev build-essential``
