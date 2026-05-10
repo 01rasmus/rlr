@@ -40,7 +40,7 @@ err:
 bool csv_parse_row(csv_row_callback_t callback, uint32_t row_index, char* row, const size_t column_count, const char* delimiter, void* user) {
     char* save_ptr = NULL;
     char* column = strtok_r(row, delimiter, &save_ptr);
-    char* columns = malloc(column_count * sizeof(char));
+    char** columns = malloc(column_count * sizeof(char*));
 
     int32_t count = 0;
     while(column != NULL) {
