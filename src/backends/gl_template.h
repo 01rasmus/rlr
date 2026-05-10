@@ -59,9 +59,9 @@ typedef GladGLES2Context glad_context_t;
 #include "backend.h"
 
 static glad_context_t* gl = NULL;
-static uint32_t current_shader = 0;
+static rlr_handle_t current_shader = 0;
 
-uint32_t GL_TEMPLATE_PREFIX(create_texture)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
+rlr_handle_t GL_TEMPLATE_PREFIX(create_texture)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
@@ -72,11 +72,12 @@ uint32_t GL_TEMPLATE_PREFIX(create_texture)(uint8_t* rgba, uint32_t width, uint3
     if(generate_mipmaps) {
         gl->GenerateMipmap(GL_TEXTURE_2D);
     }
-    return texture;
+    return (rlr_handle_t)texture;
 }
 
-void GL_TEMPLATE_PREFIX(free_texture)(uint32_t handle) {
-    gl->DeleteTextures(1, &handle);
+void GL_TEMPLATE_PREFIX(free_texture)(rlr_handle_t handle) {
+    uint32_t tex = (uint32_t)handle;
+    gl->DeleteTextures(1, &tex);
 }
 
 static bool _rlr_shader_compilation_error(uint32_t shader_id, char* error_str, size_t error_str_size) {
@@ -109,7 +110,7 @@ static bool _rlr_shader_program_link_error(uint32_t program_id, char* error_str,
     return true;
 }
 
-uint32_t GL_TEMPLATE_PREFIX(compile_shader)(const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size) {
+rlr_handle_t GL_TEMPLATE_PREFIX(compile_shader)(const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size) {
     uint32_t vid = 0;
     uint32_t fid = 0;
 
@@ -149,55 +150,55 @@ uint32_t GL_TEMPLATE_PREFIX(compile_shader)(const char* vertex_shader, const cha
     }
     gl->DeleteShader(vid);
     gl->DeleteShader(fid);
-    return program;
+    return (rlr_handle_t)program;
 err:
     gl->DeleteShader(vid);
     gl->DeleteShader(fid);
     return 0;
 }
 
-void GL_TEMPLATE_PREFIX(free_shader)(uint32_t shader) {
-    gl->DeleteProgram(shader);
+void GL_TEMPLATE_PREFIX(free_shader)(rlr_handle_t shader) {
+    gl->DeleteProgram((rlr_handle_t)shader);
 }
 
-void GL_TEMPLATE_PREFIX(use_shader)(uint32_t shader) {
+void GL_TEMPLATE_PREFIX(use_shader)(rlr_handle_t shader) {
     if(shader != current_shader) {
         current_shader = shader;
-        gl->UseProgram(shader);
+        gl->UseProgram((uint32_t)shader);
     }
 }
 
-void GL_TEMPLATE_PREFIX(shader_bind_uniform_block)(uint32_t shader, const char* uniform_block_name, uint32_t slot) {
+void GL_TEMPLATE_PREFIX(shader_bind_uniform_block)(rlr_handle_t shader, const char* uniform_block_name, uint32_t slot) {
     GL_TEMPLATE_PREFIX(use_shader)(shader);
-    uint32_t block_index = gl->GetUniformBlockIndex(shader, uniform_block_name);
+    uint32_t block_index = gl->GetUniformBlockIndex((uint32_t)shader, uniform_block_name);
     if(block_index == GL_INVALID_INDEX) {
         //ERROR
         return;
     }
-    gl->UniformBlockBinding(shader, block_index, slot);
+    gl->UniformBlockBinding((uint32_t)shader, block_index, slot);
 }
 
-uint32_t GL_TEMPLATE_PREFIX(create_uniform_buffer)(uint64_t size, void* init_data) {
+rlr_handle_t GL_TEMPLATE_PREFIX(create_uniform_buffer)(uint64_t size, void* init_data) {
     uint32_t buffer = 0;
     gl->GenBuffers(1, &buffer);
     gl->BindBuffer(GL_UNIFORM_BUFFER, buffer);
     gl->BufferData(GL_UNIFORM_BUFFER, size, init_data, GL_DYNAMIC_DRAW);
     gl->BindBuffer(GL_UNIFORM_BUFFER, 0);
-    return buffer;
+    return (rlr_handle_t)buffer;
 }
 
-void GL_TEMPLATE_PREFIX(update_uniform_buffer)(uint32_t buffer, uint64_t offset, uint64_t size, void* data) {
-    gl->BindBuffer(GL_UNIFORM_BUFFER, buffer);
+void GL_TEMPLATE_PREFIX(update_uniform_buffer)(rlr_handle_t buffer, uint64_t offset, uint64_t size, void* data) {
+    gl->BindBuffer(GL_UNIFORM_BUFFER, (uint32_t)buffer);
     gl->BufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
     gl->BindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void GL_TEMPLATE_PREFIX(bind_uniform_buffer)(uint32_t buffer, uint32_t slot) {
-    gl->BindBufferBase(GL_UNIFORM_BUFFER, slot, buffer);
+void GL_TEMPLATE_PREFIX(bind_uniform_buffer)(rlr_handle_t buffer, uint32_t slot) {
+    gl->BindBufferBase(GL_UNIFORM_BUFFER, slot, (uint32_t)buffer);
 }
 
-void GL_TEMPLATE_PREFIX(free_uniform_buffer)(uint32_t buffer) {
-    uint32_t handle = buffer;
+void GL_TEMPLATE_PREFIX(free_uniform_buffer)(rlr_handle_t buffer) {
+    uint32_t handle = (uint32_t)buffer;
     gl->DeleteBuffers(1, &handle);
 }
 
