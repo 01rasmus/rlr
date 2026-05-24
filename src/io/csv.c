@@ -54,11 +54,13 @@ bool csv_parse_row(csv_row_callback_t callback, uint32_t row_index, char* row, c
 
     if(count != column_count) {
         rlr_error_setf(RLR_ERR_CSV_COLUMN_COUNT_MISMATCH, "at row %u, expected %ld columns but got %zd", row_index, column_count, count);
-        free(columns);
-        return false;
+        goto err;
     }
 
     callback(row_index, columns, column_count, user);
     free(columns);
     return true;
+err:
+    free(columns);
+    return false;
 }
