@@ -58,7 +58,7 @@ bool csv_parse_row(csv_row_callback_t callback, uint32_t row_index, char* row, c
         return false;
     }
 
-    callback(row_index, columns, column_count, user);
+    callback(row_index, (const char**)columns, column_count, user);
     free(columns);
     return true;
 }
