@@ -21,4 +21,5 @@ typedef struct rlr_shader_t {
 } rlr_shader_t;
 
 rlr_shader_t* rlr_shader_create(rlr_t* rlr, const char* vertex, const char* fragment);
+void rlr_shader_use(rlr_t* rlr, rlr_shader_t* shader);
 void rlr_shader_free(rlr_t* rlr, rlr_shader_t* shader);

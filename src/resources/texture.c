@@ -26,7 +26,7 @@ rlr_texture_t* rlr_texture_create(rlr_t* rlr, const char* texture_path, bool gen
     texture->width = w;
     texture->height = h;
 
-    texture->texture = rlr->backend->create_texture(data, w, h, generate_mipmaps);
+    texture->texture = rlr->backend->texture_create(data, w, h, generate_mipmaps);
     if(texture->texture == 0) {
         rlr_error_setf(RLR_ERR_BACKEND_NULL_HANDLE, "file \"%s\"", texture_path);
         goto err;
@@ -40,9 +40,13 @@ err:
     return NULL;
 }
 
+void rlr_texture_use(rlr_t* rlr, rlr_texture_t* texture) {
+    rlr->backend->texture_use(texture->texture);
+}
+
 void rlr_texture_free(rlr_t* rlr, rlr_texture_t* texture) {
     if(texture) {
-        rlr->backend->free_texture(texture->texture);
+        rlr->backend->texture_free(texture->texture);
     }
     free(texture);
 }

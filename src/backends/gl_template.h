@@ -61,13 +61,19 @@ typedef GladGLES2Context glad_context_t;
 static glad_context_t* gl = NULL;
 static rlr_handle_t current_shader = 0;
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_texture)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
         return 0;
     }
     gl->BindTexture(GL_TEXTURE_2D, texture);
+
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
     if(generate_mipmaps) {
         gl->GenerateMipmap(GL_TEXTURE_2D);
@@ -75,7 +81,12 @@ rlr_handle_t GL_TEMPLATE_PREFIX(create_texture)(uint8_t* rgba, uint32_t width, u
     return (rlr_handle_t)texture;
 }
 
-void GL_TEMPLATE_PREFIX(free_texture)(rlr_handle_t handle) {
+void GL_TEMPLATE_PREFIX(texture_use)(rlr_handle_t handle) {
+    gl->ActiveTexture(GL_TEXTURE0);
+    gl->BindTexture(GL_TEXTURE_2D, handle);
+}
+
+void GL_TEMPLATE_PREFIX(texture_free)(rlr_handle_t handle) {
     uint32_t tex = (uint32_t)handle;
     gl->DeleteTextures(1, &tex);
 }
@@ -110,7 +121,7 @@ static bool _rlr_shader_program_link_error(uint32_t program_id, char* error_str,
     return true;
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(compile_shader)(const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size) {
+rlr_handle_t GL_TEMPLATE_PREFIX(shader_create)(const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size) {
     uint32_t vid = 0;
     uint32_t fid = 0;
 
@@ -157,19 +168,20 @@ err:
     return 0;
 }
 
-void GL_TEMPLATE_PREFIX(free_shader)(rlr_handle_t shader) {
+void GL_TEMPLATE_PREFIX(shader_free)(rlr_handle_t shader) {
     gl->DeleteProgram((rlr_handle_t)shader);
 }
 
-void GL_TEMPLATE_PREFIX(use_shader)(rlr_handle_t shader) {
+void GL_TEMPLATE_PREFIX(shader_use)(rlr_handle_t shader) {
     if(shader != current_shader) {
         current_shader = shader;
         gl->UseProgram((uint32_t)shader);
+        //gl->Uniform1i(gl->GetUniformLocation(shader, "tex"), 0);
     }
 }
 
 void GL_TEMPLATE_PREFIX(shader_bind_uniform_block)(rlr_handle_t shader, const char* uniform_block_name, uint32_t slot) {
-    GL_TEMPLATE_PREFIX(use_shader)(shader);
+    GL_TEMPLATE_PREFIX(shader_use)(shader);
     uint32_t block_index = gl->GetUniformBlockIndex((uint32_t)shader, uniform_block_name);
     if(block_index == GL_INVALID_INDEX) {
         //ERROR
@@ -178,7 +190,7 @@ void GL_TEMPLATE_PREFIX(shader_bind_uniform_block)(rlr_handle_t shader, const ch
     gl->UniformBlockBinding((uint32_t)shader, block_index, slot);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_uniform_buffer)(uint64_t size, void* init_data) {
+rlr_handle_t GL_TEMPLATE_PREFIX(uniform_buffer_create)(uint64_t size, void* init_data) {
     uint32_t buffer = 0;
     gl->GenBuffers(1, &buffer);
     gl->BindBuffer(GL_UNIFORM_BUFFER, buffer);
@@ -187,17 +199,17 @@ rlr_handle_t GL_TEMPLATE_PREFIX(create_uniform_buffer)(uint64_t size, void* init
     return (rlr_handle_t)buffer;
 }
 
-void GL_TEMPLATE_PREFIX(update_uniform_buffer)(rlr_handle_t buffer, uint64_t offset, uint64_t size, void* data) {
+void GL_TEMPLATE_PREFIX(uniform_buffer_update)(rlr_handle_t buffer, uint64_t offset, uint64_t size, void* data) {
     gl->BindBuffer(GL_UNIFORM_BUFFER, (uint32_t)buffer);
     gl->BufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
     gl->BindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void GL_TEMPLATE_PREFIX(bind_uniform_buffer)(rlr_handle_t buffer, uint32_t slot) {
+void GL_TEMPLATE_PREFIX(uniform_buffer_bind)(rlr_handle_t buffer, uint32_t slot) {
     gl->BindBufferBase(GL_UNIFORM_BUFFER, slot, (uint32_t)buffer);
 }
 
-void GL_TEMPLATE_PREFIX(free_uniform_buffer)(rlr_handle_t buffer) {
+void GL_TEMPLATE_PREFIX(uniform_buffer_free)(rlr_handle_t buffer) {
     uint32_t handle = (uint32_t)buffer;
     gl->DeleteBuffers(1, &handle);
 }
@@ -208,6 +220,53 @@ void GL_TEMPLATE_PREFIX(clear)(uint64_t mask) {
 
 void GL_TEMPLATE_PREFIX(clear_color)(float r, float g, float b, float a) {
     gl->ClearColor(r, g, b, a);
+}
+
+rlr_handle_t GL_TEMPLATE_PREFIX(vertex_array_create)() {
+    rlr_handle_t handle = 0;
+    gl->GenVertexArrays(1, (uint32_t*)&handle);
+    return handle;
+}
+
+void GL_TEMPLATE_PREFIX(vertex_array_bind)(rlr_handle_t handle) {
+    gl->BindVertexArray((uint32_t)handle);
+}
+
+void GL_TEMPLATE_PREFIX(vertex_array_attrib_pointer)(rlr_handle_t handle, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset) {
+    gl->BindVertexArray(handle);
+    gl->VertexAttribPointer(index, count, type, normalized, stride, (void*)vertex_offset);
+    gl->EnableVertexAttribArray(index);
+}
+
+void GL_TEMPLATE_PREFIX(vertex_array_free)(rlr_handle_t handle) {
+    rlr_handle_t handles[] = { handle };
+    gl->DeleteVertexArrays(1, (uint32_t*)handles);
+}
+
+rlr_handle_t GL_TEMPLATE_PREFIX(buffer_create)() {
+    rlr_handle_t handle = 0;
+    gl->GenBuffers(1, (uint32_t*)&handle);
+    return handle;
+}
+
+void GL_TEMPLATE_PREFIX(buffer_bind)(rlr_handle_t handle, rlr_backend_buffer_target_t target) {
+    gl->BindBuffer(target, handle);
+}
+
+void GL_TEMPLATE_PREFIX(buffer_update)(rlr_handle_t handle, rlr_backend_buffer_target_t target, uint64_t size, void* data, rlr_backend_buffer_usage_t update_type) {
+    gl->BindBuffer(target, handle);
+    gl->BufferData(target, size, data, update_type);
+}
+
+void GL_TEMPLATE_PREFIX(buffer_free)(rlr_handle_t handle) {
+    rlr_handle_t handles[1] = { handle };
+    gl->DeleteBuffers(1, (uint32_t*)handles);
+}
+
+void GL_TEMPLATE_PREFIX(draw_array)(uint64_t offset, uint32_t vertex_count) {
+    gl->Enable(GL_BLEND);
+    gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl->DrawArrays(GL_TRIANGLES, offset, vertex_count);
 }
 
 void GL_TEMPLATE_PREFIX(backend_free)() {

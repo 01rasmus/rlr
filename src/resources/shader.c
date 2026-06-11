@@ -34,7 +34,7 @@ rlr_shader_t* rlr_shader_create(rlr_t* rlr, const char* vertex_string, const cha
     const char* fragment = (fragment_string == NULL) ? shader_fragment_default : fragment_string;
 
     char error_str[RLR_SHADER_ERROR_LENGTH];
-    shader->shader = rlr->backend->compile_shader(vertex, fragment, error_str, RLR_SHADER_ERROR_LENGTH);
+    shader->shader = rlr->backend->shader_create(vertex, fragment, error_str, RLR_SHADER_ERROR_LENGTH);
     if(!shader->shader) {
         rlr_error_setf(RLR_ERR_BACKEND_SHADER_COMPILATION, "%s", error_str);
         goto err;
@@ -45,9 +45,13 @@ err:
     return NULL;
 }
 
+void rlr_shader_use(rlr_t* rlr, rlr_shader_t* shader) {
+    rlr->backend->shader_use(shader->shader);
+}
+
 void rlr_shader_free(rlr_t* rlr, rlr_shader_t* shader) {
     if(shader) {
-        rlr->backend->free_shader(shader->shader);
+        rlr->backend->shader_free(shader->shader);
     }
     free(shader);
 }

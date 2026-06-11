@@ -49,8 +49,20 @@ int32_t main() {
 
     printf("glyph count: %d\n", rlr_font_glyph_count(font));
 
-    while(rlr_render(rlr)) {
-        
+    rlr_obj_label_t* label = rlr_obj_label_create(rlr, 8, 8, 16, "10 fps", font);
+
+    uint64_t fps = 0;
+    char text_buffer[64] = "0 fps";
+    double timer = rlr_time() + 1.0;
+    while(rlr_draw(rlr)) {
+        fps++;
+
+        if(rlr_time() >= timer) {
+            snprintf(text_buffer, 64, "%d fps", fps);
+            rlr_obj_label_text_set(rlr, label, text_buffer);
+            timer += 1.0;
+            fps = 0;
+        }
     }
 
 end:
