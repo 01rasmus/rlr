@@ -57,13 +57,13 @@ rlr_t* rlr_init(const char* title, uint32_t window_width, uint32_t window_height
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glfwSwapInterval(0);
     rlr->window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
     if(!rlr->window) {
         rlr_error_set(RLR_ERR_WINDOW_CREATION);
         goto err;
     }
     glfwMakeContextCurrent(rlr->window);
+    glfwSwapInterval(0);
 
     rlr_backend_t* backend = rlr_backend_gl3((rlr_backend_loader_t)glfwGetProcAddress);
     rlr->backend = backend;
