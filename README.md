@@ -16,6 +16,7 @@ Defined below are the libraries used in the renderer. It mostly depends on other
 - [glfw](https://github.com/glfw/glfw)
 - [stb_ds.h](https://github.com/nothings/stb/blob/master/stb_ds.h)
 - [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h)
+- [rlsl](https://github.com/rasu01/rlsl)
 
 ## Dependencies
 For a computer to run the renderer an OpenGL 3.3, OpenGL ES 3.0 or DirectX 10 compatible graphics card is required.
