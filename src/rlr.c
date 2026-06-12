@@ -6,6 +6,8 @@
 #include "error.h"
 #include "rlr.h"
 
+static rlr_t* _rlr = NULL;
+
 const char mtsdf_fragment[] = "#version 330\n"
 "in vec2 frag_uv;\n"
 "out vec4 final_color;\n"
@@ -30,23 +32,25 @@ const char mtsdf_vertex[] = "#version 330\n"
 "layout (location = 1) in vec2 uv;\n"
 "out vec2 frag_uv;\n"
 "void main() {\n"
+"vec2 inv_screen = vec2(1.0 / 960.0, 1.0 / 540.0);\n"
 "frag_uv = uv;\n"
-"gl_Position = vec4((pos.x / 960.0) * 2.0 - 1.0, (pos.y / 540.0) * 2.0 + 0.9, 0.0, 1.0);\n"
+"//gl_Position = vec4((pos.x / 960.0) * 2.0 - 1.0, (pos.y / 540.0) * 2.0 + 0.9, 0.0, 1.0);\n"
+"gl_Position = vec4(pos.x * inv_screen.x * 2.0 - 1.0, 1.0 - pos.y * inv_screen.y * 2.0, 0.0, 1.0);\n"
 "}\n";
 
-rlr_t* rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags) {
-    rlr_t* rlr = NULL;
+void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags) {
+    _rlr = NULL;
 
-    rlr = malloc(sizeof(rlr_t));
-    if(!rlr) {
+    _rlr = malloc(sizeof(rlr_t));
+    if(!_rlr) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
     }
 
-    rlr->backend = NULL;
-    rlr->window = NULL;
-    rlr->shader_text = NULL;
-    rlr->obj_labels = NULL;
+    _rlr->backend = NULL;
+    _rlr->window = NULL;
+    _rlr->shader_text = NULL;
+    _rlr->obj_labels = NULL;
 
     if(!glfwInit()) {
         rlr_error_set(RLR_ERR_WINDOW_CREATION);
@@ -57,16 +61,16 @@ rlr_t* rlr_init(const char* title, uint32_t window_width, uint32_t window_height
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    rlr->window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
-    if(!rlr->window) {
+    _rlr->window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
+    if(!_rlr->window) {
         rlr_error_set(RLR_ERR_WINDOW_CREATION);
         goto err;
     }
-    glfwMakeContextCurrent(rlr->window);
+    glfwMakeContextCurrent(_rlr->window);
     glfwSwapInterval(0);
 
     rlr_backend_t* backend = rlr_backend_gl3((rlr_backend_loader_t)glfwGetProcAddress);
-    rlr->backend = backend;
+    _rlr->backend = backend;
 
     // if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     //     rlr_error_set(RLR_ERR_CONTEXT_CREATION);
@@ -83,63 +87,68 @@ rlr_t* rlr_init(const char* title, uint32_t window_width, uint32_t window_height
     //     goto err;
     // }
 
-    rlr->shader_text = rlr_shader_create(rlr, mtsdf_vertex, mtsdf_fragment);
-    return rlr;
+    _rlr->shader_text = rlr_shader_create(mtsdf_vertex, mtsdf_fragment);
+    return;
 err:
-    rlr_free(rlr);
-    return NULL;
+    rlr_free();
+    return;
 }
 
-void rlr_free(rlr_t* rlr) {
-    if(!rlr) {
+void rlr_free() {
+    if(!_rlr) {
         return;
     }
 
     //remove objects
-    for(int64_t i = 0; i < arrlen(rlr->obj_labels); i++) {
-        rlr_obj_label_free(rlr, &rlr->obj_labels[i]);
+    for(int64_t i = 0; i < arrlen(_rlr->obj_labels); i++) {
+        rlr_obj_label_free(&_rlr->obj_labels[i]);
     }
-    arrfree(rlr->obj_labels);
+    arrfree(_rlr->obj_labels);
 
     //free backend API and window
-    if(rlr->backend) {
-        rlr->backend->backend_free();
-        free(rlr->backend);
+    if(_rlr->backend) {
+        _rlr->backend->backend_free();
+        free(_rlr->backend);
     }
-    if(rlr->window) {
-        glfwDestroyWindow(rlr->window);
+    if(_rlr->window) {
+        glfwDestroyWindow(_rlr->window);
     }
-    free(rlr);
+    free(_rlr);
     glfwTerminate();
+    _rlr = NULL;
 }
 
 double rlr_time() {
     return glfwGetTime();
 }
 
-bool rlr_draw(rlr_t* rlr) {
+bool rlr_draw() {
     glfwPollEvents();
 
-    if(glfwWindowShouldClose(rlr->window)) {
+    if(glfwWindowShouldClose(_rlr->window)) {
         return false;
     }
 
-    rlr->backend->clear_color(0.2, 0.3, 0.3, 1.0);
-    rlr->backend->clear(RLR_BACKEND_CLEAR_BIT_COLOR);
+    _rlr->backend->clear_color(0.0, 0.0, 0.0, 1.0);
+    _rlr->backend->clear(RLR_BACKEND_CLEAR_BIT_COLOR);
 
     //render objects
-    rlr_shader_use(rlr, rlr->shader_text);
-    for(int64_t i = 0; i < arrlen(rlr->obj_labels); i++) {
-        rlr_obj_label_t* label = &rlr->obj_labels[i];
+    rlr_shader_use(_rlr->shader_text);
+    for(int64_t i = 0; i < arrlen(_rlr->obj_labels); i++) {
+        rlr_obj_label_t* label = &_rlr->obj_labels[i];
         if(!label->visible) {
             continue;
         }
-        rlr_texture_use(rlr, label->font->texture);
-        rlr->backend->vertex_array_bind(label->vao);
-        rlr->backend->buffer_bind(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
-        rlr->backend->draw_array(0, label->vertex_count);
+        rlr_texture_use(label->font->texture);
+        _rlr->backend->vertex_array_bind(label->vao);
+        _rlr->backend->buffer_bind(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
+        _rlr->backend->draw_array(0, label->vertex_count);
     }
 
-    glfwSwapBuffers(rlr->window);
+    glfwSwapBuffers(_rlr->window);
     return true;
+}
+
+rlr_t* _rlr_raw() {
+    return _rlr;
 }

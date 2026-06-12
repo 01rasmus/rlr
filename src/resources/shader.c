@@ -23,7 +23,7 @@ const char shader_fragment_default[] = RLR_SHADER_INLINE(
     }
 );
 
-rlr_shader_t* rlr_shader_create(rlr_t* rlr, const char* vertex_string, const char* fragment_string) {
+rlr_shader_t* rlr_shader_create(const char* vertex_string, const char* fragment_string) {
     rlr_shader_t* shader = malloc(sizeof(rlr_shader_t));
     if(!shader) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -34,24 +34,24 @@ rlr_shader_t* rlr_shader_create(rlr_t* rlr, const char* vertex_string, const cha
     const char* fragment = (fragment_string == NULL) ? shader_fragment_default : fragment_string;
 
     char error_str[RLR_SHADER_ERROR_LENGTH];
-    shader->shader = rlr->backend->shader_create(vertex, fragment, error_str, RLR_SHADER_ERROR_LENGTH);
+    shader->shader = _rlr_raw()->backend->shader_create(vertex, fragment, error_str, RLR_SHADER_ERROR_LENGTH);
     if(!shader->shader) {
         rlr_error_setf(RLR_ERR_BACKEND_SHADER_COMPILATION, "%s", error_str);
         goto err;
     }
     return shader;
 err:
-    rlr_shader_free(rlr, shader);
+    rlr_shader_free(shader);
     return NULL;
 }
 
-void rlr_shader_use(rlr_t* rlr, rlr_shader_t* shader) {
-    rlr->backend->shader_use(shader->shader);
+void rlr_shader_use(rlr_shader_t* shader) {
+    _rlr_raw()->backend->shader_use(shader->shader);
 }
 
-void rlr_shader_free(rlr_t* rlr, rlr_shader_t* shader) {
+void rlr_shader_free(rlr_shader_t* shader) {
     if(shader) {
-        rlr->backend->shader_free(shader->shader);
+        _rlr_raw()->backend->shader_free(shader->shader);
     }
     free(shader);
 }

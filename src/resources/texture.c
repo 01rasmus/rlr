@@ -4,7 +4,7 @@
 #include "texture.h"
 #include "rlr.h"
 
-rlr_texture_t* rlr_texture_create(rlr_t* rlr, const char* texture_path, bool generate_mipmaps) {
+rlr_texture_t* rlr_texture_create(const char* texture_path, bool generate_mipmaps) {
     rlr_texture_t* texture = malloc(sizeof(rlr_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -26,7 +26,7 @@ rlr_texture_t* rlr_texture_create(rlr_t* rlr, const char* texture_path, bool gen
     texture->width = w;
     texture->height = h;
 
-    texture->texture = rlr->backend->texture_create(data, w, h, generate_mipmaps);
+    texture->texture = _rlr_raw()->backend->texture_create(data, w, h, generate_mipmaps);
     if(texture->texture == 0) {
         rlr_error_setf(RLR_ERR_BACKEND_NULL_HANDLE, "file \"%s\"", texture_path);
         goto err;
@@ -36,17 +36,17 @@ rlr_texture_t* rlr_texture_create(rlr_t* rlr, const char* texture_path, bool gen
     return texture;
 err:
     stbi_image_free(data);
-    rlr_texture_free(rlr, texture);
+    rlr_texture_free(texture);
     return NULL;
 }
 
-void rlr_texture_use(rlr_t* rlr, rlr_texture_t* texture) {
-    rlr->backend->texture_use(texture->texture);
+void rlr_texture_use(rlr_texture_t* texture) {
+    _rlr_raw()->backend->texture_bind(texture->texture, 0);
 }
 
-void rlr_texture_free(rlr_t* rlr, rlr_texture_t* texture) {
+void rlr_texture_free(rlr_texture_t* texture) {
     if(texture) {
-        rlr->backend->texture_free(texture->texture);
+        _rlr_raw()->backend->texture_free(texture->texture);
     }
     free(texture);
 }

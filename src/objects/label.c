@@ -10,9 +10,8 @@ typedef struct rlr_obj_label_vertex_t {
     vec2_t uv;
 } rlr_obj_label_vertex_t;
 
-static void rlr_obj_label_upload_vertices(rlr_t* rlr, rlr_obj_label_t* label, const char* text) {
+static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* text) {
     rlr_obj_label_vertex_t* vertices = NULL;
-
     rlr_font_glyph_t* space_glyph = rlr_font_glyph_get(label->font, 32);
     rlr_font_glyph_t* unknown_glyph = rlr_font_glyph_get(label->font, '?');
     float x = label->x;
@@ -46,9 +45,9 @@ static void rlr_obj_label_upload_vertices(rlr_t* rlr, rlr_obj_label_t* label, co
         }
 
         float draw_x1 = x + glyph->plane_left * label->size;
-        float draw_y1 = y + glyph->plane_bottom * label->size;
+        float draw_y1 = y + glyph->plane_top * label->size;
         float draw_x2 = x + glyph->plane_right * label->size;
-        float draw_y2 = y + glyph->plane_top * label->size;
+        float draw_y2 = y + glyph->plane_bottom * label->size;
 
         float u1 = glyph->atlas_left;
         float v2 = glyph->atlas_bottom;
@@ -70,53 +69,53 @@ static void rlr_obj_label_upload_vertices(rlr_t* rlr, rlr_obj_label_t* label, co
         x += glyph->advance * label->size;
     }
 
-    rlr->backend->buffer_bind(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
-    rlr->backend->buffer_update(label->vbo, RLR_BACKEND_BUFFER_ARRAY, arrlenu(vertices) * sizeof(rlr_obj_label_vertex_t), vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
+    _rlr_raw()->backend->buffer_bind(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
+    _rlr_raw()->backend->buffer_update(RLR_BACKEND_BUFFER_ARRAY, arrlenu(vertices) * sizeof(rlr_obj_label_vertex_t), vertices, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
     label->vertex_count = arrlenu(vertices);
     arrfree(vertices);
 }
 
-rlr_obj_label_t* rlr_obj_label_create(rlr_t* rlr, float x, float y, float size, const char* text, rlr_font_t* font) {
-    arrpush(rlr->obj_labels, (rlr_obj_label_t){0});
-    rlr_obj_label_t* label = &arrlast(rlr->obj_labels);
+rlr_obj_label_t* rlr_obj_label_create(float x, float y, float size, const char* text, rlr_font_t* font) {
+    arrpush(_rlr_raw()->obj_labels, (rlr_obj_label_t){0});
+    rlr_obj_label_t* label = &arrlast(_rlr_raw()->obj_labels);
 
-    label->index = arrlenu(rlr->obj_labels) - 1;
+    label->index = arrlenu(_rlr_raw()->obj_labels) - 1;
     label->font = font;
     label->size = size;
     label->x = x;
     label->y = y;
     label->visible = true;
-    label->vao = rlr->backend->vertex_array_create();
-    label->vbo = rlr->backend->buffer_create();
+    label->vao = _rlr_raw()->backend->vertex_array_create();
+    label->vbo = _rlr_raw()->backend->buffer_create();
 
     if(!label->vao || !label->vbo) {
         goto err;
     }
-    rlr->backend->vertex_array_bind(label->vao);
-    rlr->backend->buffer_bind(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
     
-    rlr->backend->vertex_array_attrib_pointer(label->vao, 0, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, pos));
-    rlr->backend->vertex_array_attrib_pointer(label->vao, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, uv));
-
-    rlr_obj_label_upload_vertices(rlr, label, text);
+    _rlr_raw()->backend->vertex_array_bind(label->vao);
+    _rlr_raw()->backend->buffer_bind(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
+    _rlr_raw()->backend->vertex_array_attrib_set(0, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, pos));
+    _rlr_raw()->backend->vertex_array_attrib_set(1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, uv));
+    
+    rlr_obj_label_upload_vertices(label, text);
     return label;
 err:
-    rlr_obj_label_free(rlr, label);
+    rlr_obj_label_free(label);
     return NULL;
 }
 
-void rlr_obj_label_visible_set(rlr_t* rlr, rlr_obj_label_t* label, bool visible) {
+void rlr_obj_label_visible_set(rlr_obj_label_t* label, bool visible) {
     label->visible = false;
 }
 
-void rlr_obj_label_text_set(rlr_t* rlr, rlr_obj_label_t* label, const char* text) {
-    rlr_obj_label_upload_vertices(rlr, label, text);
+void rlr_obj_label_text_set(rlr_obj_label_t* label, const char* text) {
+    rlr_obj_label_upload_vertices(label, text);
 }
 
-void rlr_obj_label_free(rlr_t* rlr, rlr_obj_label_t* label) {
-    if(!rlr || !label) {
+void rlr_obj_label_free(rlr_obj_label_t* label) {
+    if(!_rlr_raw() || !label) {
         return;
     }
-    rlr->backend->vertex_array_free(label->vao);
-    rlr->backend->buffer_free(label->vbo);
+    _rlr_raw()->backend->vertex_array_free(label->vao);
+    _rlr_raw()->backend->buffer_free(label->vbo);
 }

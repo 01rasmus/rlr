@@ -18,7 +18,12 @@ typedef struct rlr_t {
     rlr_obj_label_t* obj_labels;
 } rlr_t;
 
-rlr_t* rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags);
+void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags);
 double rlr_time();
-bool rlr_draw(rlr_t* rlr);
-void rlr_free(rlr_t* rlr);
+bool rlr_draw();
+void rlr_free();
+
+/*
+    internal context fetching function
+*/
+rlr_t* _rlr_raw();

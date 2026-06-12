@@ -81,13 +81,13 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, u
     return (rlr_handle_t)texture;
 }
 
-void GL_TEMPLATE_PREFIX(texture_use)(rlr_handle_t handle) {
-    gl->ActiveTexture(GL_TEXTURE0);
-    gl->BindTexture(GL_TEXTURE_2D, handle);
+void GL_TEMPLATE_PREFIX(texture_bind)(rlr_handle_t texture, uint8_t texture_slot) {
+    gl->ActiveTexture(GL_TEXTURE0 + texture_slot);
+    gl->BindTexture(GL_TEXTURE_2D, texture);
 }
 
-void GL_TEMPLATE_PREFIX(texture_free)(rlr_handle_t handle) {
-    uint32_t tex = (uint32_t)handle;
+void GL_TEMPLATE_PREFIX(texture_free)(rlr_handle_t texture) {
+    uint32_t tex = (uint32_t)texture;
     gl->DeleteTextures(1, &tex);
 }
 
@@ -190,28 +190,8 @@ void GL_TEMPLATE_PREFIX(shader_bind_uniform_block)(rlr_handle_t shader, const ch
     gl->UniformBlockBinding((uint32_t)shader, block_index, slot);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(uniform_buffer_create)(uint64_t size, void* init_data) {
-    uint32_t buffer = 0;
-    gl->GenBuffers(1, &buffer);
-    gl->BindBuffer(GL_UNIFORM_BUFFER, buffer);
-    gl->BufferData(GL_UNIFORM_BUFFER, size, init_data, GL_DYNAMIC_DRAW);
-    gl->BindBuffer(GL_UNIFORM_BUFFER, 0);
-    return (rlr_handle_t)buffer;
-}
-
-void GL_TEMPLATE_PREFIX(uniform_buffer_update)(rlr_handle_t buffer, uint64_t offset, uint64_t size, void* data) {
-    gl->BindBuffer(GL_UNIFORM_BUFFER, (uint32_t)buffer);
-    gl->BufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
-    gl->BindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
 void GL_TEMPLATE_PREFIX(uniform_buffer_bind)(rlr_handle_t buffer, uint32_t slot) {
     gl->BindBufferBase(GL_UNIFORM_BUFFER, slot, (uint32_t)buffer);
-}
-
-void GL_TEMPLATE_PREFIX(uniform_buffer_free)(rlr_handle_t buffer) {
-    uint32_t handle = (uint32_t)buffer;
-    gl->DeleteBuffers(1, &handle);
 }
 
 void GL_TEMPLATE_PREFIX(clear)(uint64_t mask) {
@@ -228,18 +208,17 @@ rlr_handle_t GL_TEMPLATE_PREFIX(vertex_array_create)() {
     return handle;
 }
 
-void GL_TEMPLATE_PREFIX(vertex_array_bind)(rlr_handle_t handle) {
-    gl->BindVertexArray((uint32_t)handle);
+void GL_TEMPLATE_PREFIX(vertex_array_bind)(rlr_handle_t vao) {
+    gl->BindVertexArray((uint32_t)vao);
 }
 
-void GL_TEMPLATE_PREFIX(vertex_array_attrib_pointer)(rlr_handle_t handle, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset) {
-    gl->BindVertexArray(handle);
+void GL_TEMPLATE_PREFIX(vertex_array_attrib_set)(uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset) {
     gl->VertexAttribPointer(index, count, type, normalized, stride, (void*)vertex_offset);
     gl->EnableVertexAttribArray(index);
 }
 
-void GL_TEMPLATE_PREFIX(vertex_array_free)(rlr_handle_t handle) {
-    rlr_handle_t handles[] = { handle };
+void GL_TEMPLATE_PREFIX(vertex_array_free)(rlr_handle_t vao) {
+    rlr_handle_t handles[] = { vao };
     gl->DeleteVertexArrays(1, (uint32_t*)handles);
 }
 
@@ -249,17 +228,16 @@ rlr_handle_t GL_TEMPLATE_PREFIX(buffer_create)() {
     return handle;
 }
 
-void GL_TEMPLATE_PREFIX(buffer_bind)(rlr_handle_t handle, rlr_backend_buffer_target_t target) {
-    gl->BindBuffer(target, handle);
+void GL_TEMPLATE_PREFIX(buffer_bind)(rlr_handle_t buffer, rlr_backend_buffer_target_t target) {
+    gl->BindBuffer(target, buffer);
 }
 
-void GL_TEMPLATE_PREFIX(buffer_update)(rlr_handle_t handle, rlr_backend_buffer_target_t target, uint64_t size, void* data, rlr_backend_buffer_usage_t update_type) {
-    gl->BindBuffer(target, handle);
+void GL_TEMPLATE_PREFIX(buffer_update)(rlr_backend_buffer_target_t target, uint64_t size, void* data, rlr_backend_buffer_usage_t update_type) {
     gl->BufferData(target, size, data, update_type);
 }
 
-void GL_TEMPLATE_PREFIX(buffer_free)(rlr_handle_t handle) {
-    rlr_handle_t handles[1] = { handle };
+void GL_TEMPLATE_PREFIX(buffer_free)(rlr_handle_t buffer) {
+    rlr_handle_t handles[1] = { buffer };
     gl->DeleteBuffers(1, (uint32_t*)handles);
 }
 

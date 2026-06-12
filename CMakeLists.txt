@@ -34,3 +34,6 @@ target_include_directories(${EXECUTABLE} PRIVATE ${LIB_DIR} ${SRC_DIR} ${LIB_DIR
 # library linking
 target_link_libraries(${LIBRARY} glfw OpenGL::GL)
 target_link_libraries(${EXECUTABLE} ${LIBRARY})
+
+target_compile_options(${LIBRARY} PRIVATE -O3)
+target_compile_options(${EXECUTABLE} PRIVATE -O3)

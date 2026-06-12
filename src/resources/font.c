@@ -77,7 +77,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
     hmputs(font->glyphs, glyph);
 }
 
-rlr_font_t* rlr_font_create(rlr_t* rlr, const char* csv_path, const char* texture_atlas_path, rlr_font_type_t type) {
+rlr_font_t* rlr_font_create(const char* csv_path, const char* texture_atlas_path, rlr_font_type_t type) {
     rlr_font_t* font = malloc(sizeof(rlr_font_t));
     if(!font) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -93,7 +93,7 @@ rlr_font_t* rlr_font_create(rlr_t* rlr, const char* csv_path, const char* textur
     font->texture = NULL;
     font->glyphs = NULL;
 
-    font->texture = rlr_texture_create(rlr, texture_atlas_path, false);
+    font->texture = rlr_texture_create(texture_atlas_path, false);
     if(!font->texture) {
         goto err;
     }
@@ -106,7 +106,7 @@ rlr_font_t* rlr_font_create(rlr_t* rlr, const char* csv_path, const char* textur
     return font;
 err:
     free(csv);
-    rlr_font_free(rlr, font);
+    rlr_font_free(font);
     return NULL;
 }
 
@@ -118,9 +118,9 @@ int32_t rlr_font_glyph_count(rlr_font_t* font) {
     return hmlen(font->glyphs);
 }
 
-void rlr_font_free(rlr_t* rlr, rlr_font_t* font) {
+void rlr_font_free(rlr_font_t* font) {
     if(font) {
-        rlr_texture_free(rlr, font->texture);
+        rlr_texture_free(font->texture);
         hmfree(font->glyphs);
     }
     free(font);
