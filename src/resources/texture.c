@@ -40,8 +40,8 @@ err:
     return NULL;
 }
 
-void rlr_texture_use(rlr_texture_t* texture) {
-    _rlr_raw()->backend->texture_bind(texture->texture, 0);
+void rlr_texture_bind(rlr_texture_t* texture, uint8_t texture_slot) {
+    _rlr_raw()->backend->texture_bind(texture->texture, texture_slot);
 }
 
 void rlr_texture_free(rlr_texture_t* texture) {

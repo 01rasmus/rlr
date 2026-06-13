@@ -26,3 +26,16 @@ On linux you need to install some dependencies to build. On debian this command 
 
 ## How to build
 The library can mainly be built in two ways. Either with cmake or make.
+
+## How to generate a font
+Using [msdf-atlas-gen](https://github.com/Chlumsky/msdf-atlas-gen) the folliwing is a sample command
+```
+msdf-atlas-gen -font font.ttf -type mtsdf -format png -pots -pxrange 2 -imageout font.png -csv font.csv -charset charset.txt
+```
+The important thing is that the output is a csv file and that the output uses unicode codepoints(which it does if -charset is declared). [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h) is used to load the image so any image format that is supported by it could be used. The pxrange should be 2, which is used by the internal font shader.
+
+The `charset.txt` must include the unicode points that should be in the final font atlas/csv.
+To just get all of them, `charset.txt` could include the follow:
+```
+[0x0, 0xFFFF]
+```

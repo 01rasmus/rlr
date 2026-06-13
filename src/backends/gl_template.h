@@ -232,8 +232,8 @@ void GL_TEMPLATE_PREFIX(buffer_bind)(rlr_handle_t buffer, rlr_backend_buffer_tar
     gl->BindBuffer(target, buffer);
 }
 
-void GL_TEMPLATE_PREFIX(buffer_update)(rlr_backend_buffer_target_t target, uint64_t size, void* data, rlr_backend_buffer_usage_t update_type) {
-    gl->BufferData(target, size, data, update_type);
+void GL_TEMPLATE_PREFIX(buffer_update)(rlr_backend_buffer_target_t target, uint64_t size, void* data, rlr_backend_buffer_usage_t usage_type) {
+    gl->BufferData(target, size, data, usage_type);
 }
 
 void GL_TEMPLATE_PREFIX(buffer_free)(rlr_handle_t buffer) {
@@ -245,6 +245,10 @@ void GL_TEMPLATE_PREFIX(draw_array)(uint64_t offset, uint32_t vertex_count) {
     gl->Enable(GL_BLEND);
     gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     gl->DrawArrays(GL_TRIANGLES, offset, vertex_count);
+}
+
+void GL_TEMPLATE_PREFIX(viewport_set)(int32_t x, int32_t y, int64_t width, int64_t height) {
+    gl->Viewport(x, y, width, height);
 }
 
 void GL_TEMPLATE_PREFIX(backend_free)() {

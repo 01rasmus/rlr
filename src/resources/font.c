@@ -27,12 +27,12 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
     }
     float plane_bound_bottom = strtof(columns[3], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 4, \"%s\" was not a valid float", row, columns[2]);
+        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 4, \"%s\" was not a valid float", row, columns[3]);
         return;
     }
     float plane_bound_right = strtof(columns[4], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 5, \"%s\" was not a valid float", row, columns[2]);
+        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 5, \"%s\" was not a valid float", row, columns[4]);
         return;
     }
     float plane_bound_top = strtof(columns[5], &end);
@@ -57,6 +57,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
     }
     float atlas_bound_top = strtof(columns[9], &end);
     if(*end != 0) {
+        printf("LASD %f %s\n", atlas_bound_top, columns[9]);
         rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 10, \"%s\" was not a valid float", row, columns[9]);
         return;
     }
@@ -70,8 +71,8 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
         .plane_right = plane_bound_right,
         .atlas_left = atlas_bound_left / font->texture->width,
         .atlas_right = atlas_bound_right / font->texture->width,
-        .atlas_top = (font->texture->height - atlas_bound_bottom) / font->texture->height,
-        .atlas_bottom = (font->texture->height - atlas_bound_top) / font->texture->height,
+        .atlas_top = (font->texture->height - atlas_bound_top) / font->texture->height,
+        .atlas_bottom = (font->texture->height - atlas_bound_bottom) / font->texture->height,
     };
 
     hmputs(font->glyphs, glyph);

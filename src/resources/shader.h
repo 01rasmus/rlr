@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
+#include "backends/backend.h"
 
 #define RLR_SHADER_ERROR_LENGTH       4096
 #define RLR_SHADER_INLINE(SRC)        "#version 330 core\n" #SRC
@@ -15,9 +16,10 @@ typedef enum rlr_shader_uniform_type {
 } rlr_shader_uniform_type;
 
 typedef struct rlr_shader_t {
-    uint64_t shader;
+    rlr_handle_t shader;
 } rlr_shader_t;
 
 rlr_shader_t* rlr_shader_create(const char* vertex, const char* fragment);
+void rlr_shader_bind_uniform_slot(rlr_shader_t* shader, const char* block_name, uint8_t uniform_slot);
 void rlr_shader_use(rlr_shader_t* shader);
 void rlr_shader_free(rlr_shader_t* shader);

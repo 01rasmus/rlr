@@ -3,8 +3,17 @@
 #include <GLFW/glfw3.h>
 #include <stb_ds.h>
 #include "backends/backend.h"
+#include "resources/uniform.h"
+#include "resources/shader.h"
+#include "resources/font.h"
+#include "objects/label.h"
 #include "error.h"
 #include "rlr.h"
+
+typedef struct uniform_ui_t {
+    float inv_x;
+    float inv_y;
+} uniform_ui_t;
 
 static rlr_t* _rlr = NULL;
 
@@ -12,30 +21,34 @@ const char mtsdf_fragment[] = "#version 330\n"
 "in vec2 frag_uv;\n"
 "out vec4 final_color;\n"
 "uniform sampler2D tex;\n"
-"\n"
 "float median(float r, float g, float b) {\n"
 "    return max(min(r,g), min(max(r,g),b));\n"
 "}\n"
+"float screen_px_range() {\n"
+"    float px_range = 2.0;\n"
+"    vec2 unit_range = vec2(px_range) / vec2(textureSize(tex, 0));\n"
+"    vec2 screen_tex_size = vec2(1.0) / fwidth(frag_uv);\n"
+"    return max(0.5 * dot(unit_range, screen_tex_size), 1.0);\n"
+"}\n"
 "void main() {\n"
-"    float px_range = -1.0;\n"
-"    vec3 sample = texture(tex, frag_uv).rgb;\n"
-"    float sd = median(sample.r, sample.g, sample.b);\n"
-"    float smoothing = 1.0 / fwidth(sd);\n"
-"    float screen_px_range = max(0.5 * px_range * smoothing, 1.0);\n"
-"    float screen_px_distance = screen_px_range * (sd - 0.5);\n"
-"    float alpha = clamp(screen_px_distance + 0.5, 0.0f, 1.0);\n"
+"    vec3 msd = texture(tex, frag_uv).rgb;\n"
+"    float sd = median(msd.r, msd.g, msd.b);\n"
+"    float screen_px_distance = screen_px_range() * (sd - 0.5);\n"
+"    float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);\n"
 "    final_color = vec4(1.0, 1.0, 1.0, alpha);\n"
 "}\n";
 
 const char mtsdf_vertex[] = "#version 330\n"
 "layout (location = 0) in vec2 pos;\n"
 "layout (location = 1) in vec2 uv;\n"
+"layout(std140) uniform ui {\n"
+"   float inv_x;\n"
+"   float inv_y;\n"
+"};\n"
 "out vec2 frag_uv;\n"
 "void main() {\n"
-"vec2 inv_screen = vec2(1.0 / 960.0, 1.0 / 540.0);\n"
 "frag_uv = uv;\n"
-"//gl_Position = vec4((pos.x / 960.0) * 2.0 - 1.0, (pos.y / 540.0) * 2.0 + 0.9, 0.0, 1.0);\n"
-"gl_Position = vec4(pos.x * inv_screen.x * 2.0 - 1.0, 1.0 - pos.y * inv_screen.y * 2.0, 0.0, 1.0);\n"
+"gl_Position = vec4(pos.x * inv_x * 2.0 - 1.0, 1.0 - pos.y * inv_y * 2.0, 0.0, 1.0);\n"
 "}\n";
 
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags) {
@@ -51,6 +64,9 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     _rlr->window = NULL;
     _rlr->shader_text = NULL;
     _rlr->obj_labels = NULL;
+
+    _rlr->framebuffer_width = window_width;
+    _rlr->framebuffer_height = window_height;
 
     if(!glfwInit()) {
         rlr_error_set(RLR_ERR_WINDOW_CREATION);
@@ -88,6 +104,16 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     // }
 
     _rlr->shader_text = rlr_shader_create(mtsdf_vertex, mtsdf_fragment);
+    rlr_shader_bind_uniform_slot(_rlr->shader_text, "ui", 0);
+
+    uniform_ui_t ubo_ui = {
+        .inv_x = 1.0 / (float)window_width,
+        .inv_y = 1.0 / (float)window_height
+    };
+
+    _rlr->ubo_ui = rlr_uniform_create_dynamic(sizeof(uniform_ui_t));
+    rlr_uniform_update(_rlr->ubo_ui, 0, &ubo_ui, sizeof(uniform_ui_t));
+    rlr_uniform_bind(_rlr->ubo_ui, 0);
     return;
 err:
     rlr_free();
@@ -104,6 +130,10 @@ void rlr_free() {
         rlr_obj_label_free(&_rlr->obj_labels[i]);
     }
     arrfree(_rlr->obj_labels);
+
+    //free resources
+    rlr_uniform_free(_rlr->ubo_ui);
+    rlr_shader_free(_rlr->shader_text);
 
     //free backend API and window
     if(_rlr->backend) {
@@ -129,7 +159,19 @@ bool rlr_draw() {
         return false;
     }
 
-    _rlr->backend->clear_color(0.0, 0.0, 0.0, 1.0);
+    int32_t width = 0;
+    int32_t height = 0;
+    glfwGetFramebufferSize(_rlr->window, &width, &height);
+    if(width != _rlr->framebuffer_width || height != _rlr->framebuffer_height) {
+        uniform_ui_t ubo_ui = {
+            .inv_x = 1.0 / (float)width,
+            .inv_y = 1.0 / (float)height
+        };
+        rlr_uniform_update(_rlr->ubo_ui, 0, &ubo_ui, sizeof(uniform_ui_t));
+        rlr_backend()->viewport_set(0, 0, width, height);
+    }
+
+    _rlr->backend->clear_color(0.1, 0.2, 0.3, 1.0);
     _rlr->backend->clear(RLR_BACKEND_CLEAR_BIT_COLOR);
 
     //render objects
@@ -139,7 +181,7 @@ bool rlr_draw() {
         if(!label->visible) {
             continue;
         }
-        rlr_texture_use(label->font->texture);
+        rlr_texture_bind(label->font->texture, 0);
         _rlr->backend->vertex_array_bind(label->vao);
         _rlr->backend->buffer_bind(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
         _rlr->backend->draw_array(0, label->vertex_count);
@@ -147,6 +189,10 @@ bool rlr_draw() {
 
     glfwSwapBuffers(_rlr->window);
     return true;
+}
+
+rlr_backend_t* rlr_backend() {
+    return _rlr->backend;
 }
 
 rlr_t* _rlr_raw() {

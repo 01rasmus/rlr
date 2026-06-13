@@ -15,9 +15,9 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
     rlr_font_glyph_t* space_glyph = rlr_font_glyph_get(label->font, 32);
     rlr_font_glyph_t* unknown_glyph = rlr_font_glyph_get(label->font, '?');
     float x = label->x;
-    float y = label->y;
+    float y = label->y + label->size;
     float scale = label->size;
-    float space_width = space_glyph ? ((space_glyph->advance) * scale) : label->size;
+    float space_width = space_glyph ? ((space_glyph->advance) * scale) : label->size * 0.4;
     float start_x = x;
 
     const void* p = text;
@@ -48,6 +48,9 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
         float draw_y1 = y + glyph->plane_top * label->size;
         float draw_x2 = x + glyph->plane_right * label->size;
         float draw_y2 = y + glyph->plane_bottom * label->size;
+
+        draw_y1 = y - glyph->plane_top * label->size;     // top
+        draw_y2 = y - glyph->plane_bottom * label->size;  // bottom
 
         float u1 = glyph->atlas_left;
         float v2 = glyph->atlas_bottom;

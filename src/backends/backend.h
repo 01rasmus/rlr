@@ -1,7 +1,6 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
-#include "resources/shader.h"
 
 typedef uintptr_t rlr_handle_t;
 typedef void (*rlr_backend_proc_t)(void);
@@ -49,6 +48,7 @@ typedef enum rlr_backend_type_t {
     X(void,         clear,                          (uint64_t mask)) \
     X(void,         clear_color,                    (float r, float g, float b, float a)) \
     X(void,         draw_array,                     (uint64_t offset, uint32_t vertex_count)) \
+    X(void,         viewport_set,                   (int32_t x, int32_t y, int64_t width, int64_t height)) \
     X(void,         backend_free,                   ())
 
 typedef struct rlr_backend_t {

@@ -45,6 +45,10 @@ err:
     return NULL;
 }
 
+void rlr_shader_bind_uniform_slot(rlr_shader_t* shader, const char* block_name, uint8_t uniform_slot) {
+    rlr_backend()->shader_bind_uniform_block(shader->shader, block_name, uniform_slot);
+}
+
 void rlr_shader_use(rlr_shader_t* shader) {
     _rlr_raw()->backend->shader_use(shader->shader);
 }

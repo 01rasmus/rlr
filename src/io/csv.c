@@ -20,7 +20,7 @@ bool csv_parse(csv_row_callback_t callback, const char* csv_string, const size_t
     memcpy(copied, csv_string, csv_length);
 
     char* save_ptr = NULL;
-    char* row = strtok_r(copied, "\n", &save_ptr);
+    char* row = strtok_r(copied, "\r\n", &save_ptr);
     uint32_t row_index = 1;
     while(row != NULL) {
         int32_t res = csv_parse_row(callback, row_index, row, column_count, delimiter, user);
@@ -28,7 +28,7 @@ bool csv_parse(csv_row_callback_t callback, const char* csv_string, const size_t
             goto err;
         }
         row_index++;
-        row = strtok_r(NULL, "\n", &save_ptr);
+        row = strtok_r(NULL, "\r\n", &save_ptr);
     }
     free(copied);
     return true;
