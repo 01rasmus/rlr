@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "gpu_math.h"
 
 typedef struct rlr_font_t rlr_font_t;
 typedef struct rlr_t rlr_t;
@@ -10,6 +11,7 @@ typedef struct rlr_obj_label_t {
     uint32_t vao;
     uint32_t vbo;
     uint32_t vertex_count;
+    vec3_t color;
     float x;
     float y;
     float size;

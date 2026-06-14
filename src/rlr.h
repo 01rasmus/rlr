@@ -6,7 +6,9 @@ typedef struct rlr_backend_t rlr_backend_t;
 typedef struct GLFWwindow GLFWwindow;
 
 typedef struct rlr_shader_t rlr_shader_t;
+typedef struct rlr_texture_t rlr_texture_t;
 typedef struct rlr_uniform_t rlr_uniform_t;
+typedef struct rlr_model_static_t rlr_model_static_t;
 typedef struct rlr_obj_label_t rlr_obj_label_t;
 
 typedef struct rlr_t {
@@ -16,9 +18,15 @@ typedef struct rlr_t {
     int32_t framebuffer_width;
     int32_t framebuffer_height;
 
-    //resources
+    rlr_model_static_t* test;
+
+    //built in resources
+    rlr_texture_t* texture_white;
     rlr_shader_t* shader_text;
+    rlr_shader_t* shader_model;
     rlr_uniform_t* ubo_ui;
+    rlr_uniform_t* ubo_model;
+    rlr_uniform_t* ubo_material;
 
     //objects
     rlr_obj_label_t* obj_labels;

@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <stb_ds.h>
 #include "backends/backend.h"
+#include "resources/model_static.h"
 #include "resources/uniform.h"
 #include "resources/shader.h"
 #include "resources/font.h"
@@ -15,10 +16,23 @@ typedef struct uniform_ui_t {
     float inv_y;
 } uniform_ui_t;
 
+typedef struct uniform_model_t {
+    mat4_t model;
+    mat4_t mvp;
+    vec3_t camera_pos;
+} uniform_model_t;
+
+typedef struct uniform_environment_t {
+    vec3_t light_direction;
+    vec3_t ambient_light_color;
+    float ambient_light_strength;
+} uniform_environment_t;
+
 static rlr_t* _rlr = NULL;
 
 const char mtsdf_fragment[] = "#version 330\n"
 "in vec2 frag_uv;\n"
+"in vec3 frag_color;\n"
 "out vec4 final_color;\n"
 "uniform sampler2D tex;\n"
 "float median(float r, float g, float b) {\n"
@@ -35,21 +49,97 @@ const char mtsdf_fragment[] = "#version 330\n"
 "    float sd = median(msd.r, msd.g, msd.b);\n"
 "    float screen_px_distance = screen_px_range() * (sd - 0.5);\n"
 "    float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);\n"
-"    final_color = vec4(1.0, 1.0, 1.0, alpha);\n"
+"    final_color = vec4(frag_color, alpha);\n"
 "}\n";
 
 const char mtsdf_vertex[] = "#version 330\n"
-"layout (location = 0) in vec2 pos;\n"
-"layout (location = 1) in vec2 uv;\n"
+"layout (location = 0) in vec3 color;\n"
+"layout (location = 1) in vec2 pos;\n"
+"layout (location = 2) in vec2 uv;\n"
 "layout(std140) uniform ui {\n"
 "   float inv_x;\n"
 "   float inv_y;\n"
 "};\n"
 "out vec2 frag_uv;\n"
+"out vec3 frag_color;\n"
 "void main() {\n"
 "frag_uv = uv;\n"
+"frag_color = color;\n"
 "gl_Position = vec4(pos.x * inv_x * 2.0 - 1.0, 1.0 - pos.y * inv_y * 2.0, 0.0, 1.0);\n"
 "}\n";
+
+const char model_fragment[] = RLR_SHADER_INLINE(
+    in vec2 frag_uv;
+    in vec3 frag_normal;
+    in vec3 frag_vert_pos;
+    out vec4 out_color;
+
+    uniform sampler2D tex;
+
+    layout(std140) uniform ubo_model {
+        mat4 model;
+        mat4 mvp;
+        vec3 camera_pos;
+    };
+
+    layout(std140) uniform ubo_material {
+        vec4 color;
+        float shininess;
+        float specular_strength;
+        float metallic;
+    };
+
+    const vec3 light_pos = vec3(5000, -5000.0, 0);
+    const vec3 ambient_color = vec3(0.9, 0.5, 0.0);
+
+    void main() {
+        vec4 tex_color = texture(tex, frag_uv);
+        vec3 base_color = tex_color.rgb * color.rgb;
+
+        vec3 N = normalize(frag_normal);
+        vec3 L = normalize(light_pos - frag_vert_pos);
+        vec3 V = normalize(camera_pos - frag_vert_pos);
+        vec3 H = normalize(L + V);
+
+        vec3 diffuse_color = base_color * (1.0 - metallic);
+        vec3 spec_color = mix(vec3(1.0), base_color, metallic);
+
+        float ambient_strength = 0.15;
+        vec3 ambient = base_color * ambient_color * ambient_strength;
+
+        float diff = max(dot(N, L), 0.0);
+        vec3 diffuse = diffuse_color * diff;
+
+        float spec = pow(max(dot(N, H), 0.0), shininess);
+        vec3 specular = spec_color * spec * specular_strength;
+
+        out_color = vec4(ambient + diffuse + specular, tex_color.a * color.a);
+    }
+);
+
+const char model_vertex[] = RLR_SHADER_INLINE(
+    layout(location = 0) in vec3 pos;
+    layout(location = 1) in vec3 normal;
+    layout(location = 2) in vec2 uv;
+
+    layout(std140) uniform ubo_model {
+        mat4 model;
+        mat4 mvp;
+        vec3 camera_pos;
+    };
+
+    out vec2 frag_uv;
+    out vec3 frag_normal;
+    out vec3 frag_vert_pos;
+
+    void main() {
+        vec4 world_pos = model * vec4(pos, 1.0);
+        frag_vert_pos = world_pos.xyz;
+        frag_normal = normalize(mat3(model) * normal);
+        frag_uv = uv;
+        gl_Position = mvp * vec4(pos, 1.0);
+    }
+);
 
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags) {
     _rlr = NULL;
@@ -76,6 +166,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 16);
 
     _rlr->window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
     if(!_rlr->window) {
@@ -103,8 +194,16 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     //     goto err;
     // }
 
+    _rlr->test = rlr_model_static_create("assets/plane.glb");
+
+    _rlr->texture_white = rlr_texture_default();
+
     _rlr->shader_text = rlr_shader_create(mtsdf_vertex, mtsdf_fragment);
     rlr_shader_bind_uniform_slot(_rlr->shader_text, "ui", 0);
+
+    _rlr->shader_model = rlr_shader_create(model_vertex, model_fragment);
+    rlr_shader_bind_uniform_slot(_rlr->shader_model, "ubo_model", 1);
+    rlr_shader_bind_uniform_slot(_rlr->shader_model, "ubo_material", 2);
 
     uniform_ui_t ubo_ui = {
         .inv_x = 1.0 / (float)window_width,
@@ -114,6 +213,25 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     _rlr->ubo_ui = rlr_uniform_create_dynamic(sizeof(uniform_ui_t));
     rlr_uniform_update(_rlr->ubo_ui, 0, &ubo_ui, sizeof(uniform_ui_t));
     rlr_uniform_bind(_rlr->ubo_ui, 0);
+
+    _rlr->ubo_material = rlr_uniform_create_dynamic(sizeof(rlr_material_t));
+    rlr_uniform_bind(_rlr->ubo_material, 2);
+
+    vec3_t cam_pos = vec3_mulf(vec3(-0.05, 0.1, -0.1), 7);
+    vec3_t scene_center = vec3(0, 0, 0);
+    vec3_t up = vec3(0, 1, 0);
+    mat4_t projection = mat4_perspective(1, (float)window_width / (float)window_height, 0.001, 100.0);
+    mat4_t view = mat4_look_at(&cam_pos, &scene_center, &up);
+    uniform_model_t ubo_model = {
+        .mvp = mat4_mul(&projection, &view),
+        .model = mat4_ident,
+        .camera_pos = cam_pos,
+    };
+
+    _rlr->ubo_model = rlr_uniform_create_dynamic(sizeof(uniform_model_t));
+    rlr_uniform_update(_rlr->ubo_model, 0, &ubo_model, sizeof(uniform_model_t));
+    rlr_uniform_bind(_rlr->ubo_model, 1);
+
     return;
 err:
     rlr_free();
@@ -132,8 +250,12 @@ void rlr_free() {
     arrfree(_rlr->obj_labels);
 
     //free resources
+    rlr_texture_free(_rlr->texture_white);
     rlr_uniform_free(_rlr->ubo_ui);
+    rlr_uniform_free(_rlr->ubo_material);
+    rlr_uniform_free(_rlr->ubo_model);
     rlr_shader_free(_rlr->shader_text);
+    rlr_shader_free(_rlr->shader_model);
 
     //free backend API and window
     if(_rlr->backend) {
@@ -172,19 +294,34 @@ bool rlr_draw() {
     }
 
     _rlr->backend->clear_color(0.1, 0.2, 0.3, 1.0);
-    _rlr->backend->clear(RLR_BACKEND_CLEAR_BIT_COLOR);
+    _rlr->backend->clear(RLR_BACKEND_CLEAR_BIT_COLOR | RLR_BACKEND_CLEAR_BIT_DEPTH);
+
+    //render test monkey
+    rlr_shader_use(_rlr->shader_model);
+    rlr_backend()->depth_testing_set(true);
+    for(int64_t i = 0; i < arrlen(_rlr->test->meshes); i++) {
+        rlr_mesh_static_t* mesh = &_rlr->test->meshes[i];
+        rlr_uniform_update(_rlr->ubo_material, 0, &mesh->material, sizeof(rlr_material_t));
+        if(mesh->texture_base) {
+            rlr_texture_bind(mesh->texture_base, 0);
+        } else {
+            rlr_texture_bind(_rlr->texture_white, 0);
+        }
+        rlr_backend()->vertex_array_bind(mesh->vao);
+        rlr_backend()->draw_elements(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32);
+    }
 
     //render objects
     rlr_shader_use(_rlr->shader_text);
+    rlr_backend()->depth_testing_set(false);
     for(int64_t i = 0; i < arrlen(_rlr->obj_labels); i++) {
         rlr_obj_label_t* label = &_rlr->obj_labels[i];
         if(!label->visible) {
             continue;
         }
         rlr_texture_bind(label->font->texture, 0);
-        _rlr->backend->vertex_array_bind(label->vao);
-        _rlr->backend->buffer_bind(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
-        _rlr->backend->draw_array(0, label->vertex_count);
+        rlr_backend()->vertex_array_bind(label->vao);
+        rlr_backend()->draw_array(0, label->vertex_count);
     }
 
     glfwSwapBuffers(_rlr->window);

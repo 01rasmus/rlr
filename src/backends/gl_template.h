@@ -61,7 +61,7 @@ typedef GladGLES2Context glad_context_t;
 static glad_context_t* gl = NULL;
 static rlr_handle_t current_shader = 0;
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, int32_t filter_min, int32_t filter_max, int32_t wrap_s, int32_t wrap_t) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
@@ -69,16 +69,24 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, u
     }
     gl->BindTexture(GL_TEXTURE_2D, texture);
 
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_max);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
 
     gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
     if(generate_mipmaps) {
         gl->GenerateMipmap(GL_TEXTURE_2D);
     }
     return (rlr_handle_t)texture;
+}
+
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_linear)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
+    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, generate_mipmaps, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+}
+
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_nearest)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
+    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, generate_mipmaps, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
 void GL_TEMPLATE_PREFIX(texture_bind)(rlr_handle_t texture, uint8_t texture_slot) {
@@ -245,10 +253,24 @@ void GL_TEMPLATE_PREFIX(draw_array)(uint64_t offset, uint32_t vertex_count) {
     gl->Enable(GL_BLEND);
     gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     gl->DrawArrays(GL_TRIANGLES, offset, vertex_count);
+    gl->Disable(GL_BLEND);
+}
+
+void GL_TEMPLATE_PREFIX(draw_elements)(uint64_t offset, uint32_t index_count, rlr_backend_type_t type) {
+    gl->DrawElements(GL_TRIANGLES, index_count, type, (void*)offset);
 }
 
 void GL_TEMPLATE_PREFIX(viewport_set)(int32_t x, int32_t y, int64_t width, int64_t height) {
     gl->Viewport(x, y, width, height);
+}
+
+void GL_TEMPLATE_PREFIX(depth_testing_set)(bool enabled) {
+    if(enabled) {
+        gl->Enable(GL_DEPTH_TEST);
+        gl->DepthFunc(GL_LESS);
+    } else {
+        gl->Disable(GL_DEPTH_TEST);
+    }
 }
 
 void GL_TEMPLATE_PREFIX(backend_free)() {

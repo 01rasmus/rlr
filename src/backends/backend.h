@@ -13,6 +13,7 @@ typedef rlr_backend_proc_t (*rlr_backend_loader_t)(const char*);
 typedef enum rlr_backend_buffer_target_t {
     RLR_BACKEND_BUFFER_ARRAY            = 0x8892,
     RLR_BACKEND_BUFFER_UNIFORM          = 0x8A11,
+    RLR_BACKEND_BUFFER_ELEMENT_ARRAY    = 0x8893
 } rlr_backend_buffer_target_t;
 
 typedef enum rlr_backend_buffer_usage_t {
@@ -25,6 +26,8 @@ typedef enum rlr_backend_type_t {
     RLR_BACKEND_BUFFER_TYPE_U8          = 0x1401,
     RLR_BACKEND_BUFFER_TYPE_S16         = 0x1402,
     RLR_BACKEND_BUFFER_TYPE_U16         = 0x1403,
+    RLR_BACKEND_BUFFER_TYPE_S32         = 0x1404,
+    RLR_BACKEND_BUFFER_TYPE_U32         = 0x1405,
     RLR_BACKEND_BUFFER_TYPE_FLOAT       = 0x1406
 } rlr_backend_type_t;
 
@@ -37,7 +40,9 @@ typedef enum rlr_backend_type_t {
     X(void,         buffer_bind,                    (rlr_handle_t buffer, rlr_backend_buffer_target_t target)) \
     X(void,         buffer_update,                  (rlr_backend_buffer_target_t target, uint64_t size, void* data, rlr_backend_buffer_usage_t update_type)) \
     X(void,         buffer_free,                    (rlr_handle_t buffer)) \
-    X(rlr_handle_t, texture_create,                 (uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps)) \
+    X(rlr_handle_t, texture_create,                 (uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, int32_t filter_min, int32_t filter_max, int32_t wrap_s, int32_t wrap_t)) \
+    X(rlr_handle_t, texture_create_linear,          (uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps)) \
+    X(rlr_handle_t, texture_create_nearest,         (uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps)) \
     X(void,         texture_bind,                   (rlr_handle_t texture, uint8_t texture_slot)) \
     X(void,         texture_free,                   (rlr_handle_t texture)) \
     X(rlr_handle_t, shader_create,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
@@ -48,7 +53,9 @@ typedef enum rlr_backend_type_t {
     X(void,         clear,                          (uint64_t mask)) \
     X(void,         clear_color,                    (float r, float g, float b, float a)) \
     X(void,         draw_array,                     (uint64_t offset, uint32_t vertex_count)) \
+    X(void,         draw_elements,                  (uint64_t offset, uint32_t element_count, rlr_backend_type_t type)) \
     X(void,         viewport_set,                   (int32_t x, int32_t y, int64_t width, int64_t height)) \
+    X(void,         depth_testing_set,              (bool enabled)) \
     X(void,         backend_free,                   ())
 
 typedef struct rlr_backend_t {

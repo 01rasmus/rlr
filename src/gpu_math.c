@@ -78,11 +78,8 @@ mat4_t mat4_mulf(mat4_t* mat, float other) {
 }
 
 mat4_t mat4_trs(vec3_t* translation, quat_t* rotation, vec3_t* scale) {
-    mat4_t translation_rotation_matrix;
-    mat4_t scale_matrix;
-    
-    memset(translation_rotation_matrix.matrix, 0, 16);
-    memset(scale_matrix.matrix, 0, 16);
+    mat4_t translation_rotation_matrix = {0};
+    mat4_t scale_matrix = {0};
     
     translation_rotation_matrix.matrix[3][0] = translation->x;
     translation_rotation_matrix.matrix[3][1] = translation->y;
@@ -110,11 +107,10 @@ mat4_t mat4_trs(vec3_t* translation, quat_t* rotation, vec3_t* scale) {
 mat4_t mat4_look_towards_vec3(vec3_t* position, vec3_t* look_direction, vec3_t* up) {
     vec3_t nf = *look_direction;
     vec3_t nu = vec3_normalize(*up);
-    vec3_t ns = vec3_cross(nf, nu);
-    vec3_normalize(ns);
+    vec3_t ns = vec3_normalize(vec3_cross(nf, nu));
     nu = vec3_cross(ns, nf);
 
-    mat4_t view_matrix;
+    mat4_t view_matrix = {0};
     view_matrix.matrix[0][0] = ns.x;
     view_matrix.matrix[0][1] = nu.x;
     view_matrix.matrix[0][2] = -nf.x;
@@ -127,6 +123,7 @@ mat4_t mat4_look_towards_vec3(vec3_t* position, vec3_t* look_direction, vec3_t* 
     view_matrix.matrix[3][0] = -vec3_dot(ns, *position);
     view_matrix.matrix[3][1] = -vec3_dot(nu, *position);
     view_matrix.matrix[3][2] = vec3_dot(nf, *position);
+    view_matrix.matrix[3][3] = 1.0;
     return view_matrix;
 }
 
@@ -136,8 +133,7 @@ mat4_t mat4_look_towards_quat(vec3_t* position, quat_t* look_direction, vec3_t* 
 }
 
 mat4_t mat4_look_at(vec3_t* position, vec3_t* look_position, vec3_t* up) {
-    vec3_t direction = vec3_sub(*look_position, *position);
-    vec3_normalize(direction);
+    vec3_t direction = vec3_normalize(vec3_sub(*look_position, *position));
     return mat4_look_towards_vec3(position, &direction, up);
 }
 
@@ -148,23 +144,14 @@ mat4_t mat4_perspective(float fov, float aspect_ratio, float znear, float zfar) 
     float top = scale;
     float bottom = -top;
 
-    mat4_t perspective;
+    mat4_t perspective = {0};
     perspective.matrix[0][0] = (2.0 * znear) / (right - left);
-    perspective.matrix[0][1] = 0.0;
-    perspective.matrix[0][2] = 0.0;
-    perspective.matrix[0][3] = 0.0;
-    perspective.matrix[1][0] = 0.0;
     perspective.matrix[1][1] = (2.0 * znear) / (top - bottom);
-    perspective.matrix[1][2] = 0.0;
-    perspective.matrix[1][3] = 0.0;
     perspective.matrix[2][0] = (right + left) / (right - left);
     perspective.matrix[2][1] = (top + bottom) / (top - bottom);
     perspective.matrix[2][2] = -(zfar + znear) / (zfar - znear);
-    perspective.matrix[2][3] = -1.0;   
-    perspective.matrix[3][0] = 0.0;
-    perspective.matrix[3][1] = 0.0;
+    perspective.matrix[2][3] = -1.0;
     perspective.matrix[3][2] = (-2.0 * zfar * znear) / (zfar - znear);
-    perspective.matrix[3][3] = 0.0;
     return perspective;
 }
 
@@ -173,19 +160,10 @@ mat4_t mat4_orthographic(float left, float right, float bottom, float top, float
     float suby = top-bottom;
     float subz = zfar-znear;
 
-    mat4_t orthographic;
+    mat4_t orthographic = {0};
     orthographic.matrix[0][0] = 2.0 / subx;
-    orthographic.matrix[0][1] = 0.0;
-    orthographic.matrix[0][2] = 0.0;
-    orthographic.matrix[0][3] = 0.0;
-    orthographic.matrix[1][0] = 0.0;
     orthographic.matrix[1][1] = 2.0 / suby;
-    orthographic.matrix[1][2] = 0.0;
-    orthographic.matrix[1][3] = 0.0;
-    orthographic.matrix[2][0] = 0.0;
-    orthographic.matrix[2][1] = 0.0;
     orthographic.matrix[2][2] = -2.0 / subz;
-    orthographic.matrix[2][3] = 0.0;
     orthographic.matrix[3][0] = -(right + left) / subx;
     orthographic.matrix[3][1] = -(top + bottom) / suby;
     orthographic.matrix[3][2] = -(zfar + znear) / subz;

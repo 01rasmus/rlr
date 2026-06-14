@@ -94,7 +94,7 @@ rlr_font_t* rlr_font_create(const char* csv_path, const char* texture_atlas_path
     font->texture = NULL;
     font->glyphs = NULL;
 
-    font->texture = rlr_texture_create(texture_atlas_path, false);
+    font->texture = rlr_texture_load(texture_atlas_path, false);
     if(!font->texture) {
         goto err;
     }
