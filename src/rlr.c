@@ -88,7 +88,7 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         vec4 color;
         float shininess;
         float specular_strength;
-        float metallic;
+        float reflectiveness;
     };
 
     const vec3 light_pos = vec3(0, 5000.0, 0);
@@ -103,13 +103,13 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         vec3 V = normalize(camera_pos - frag_vert_pos);
         vec3 H = normalize(L + V);
 
-        vec3 R = reflect(-V, N);
+        vec3 R = normalize(reflect(-V, N));
         vec3 reflected_color = texture(cube_map, R).rgb;
 
-        vec3 diffuse_color = base_color * mix(1.0, 0.35, metallic);
-        vec3 spec_color = mix(vec3(1.0), base_color, metallic);
+        vec3 diffuse_color = base_color;
+        vec3 spec_color = vec3(1.0);
 
-        float ambient_strength = 0.35;
+        float ambient_strength = 0.15;
         vec3 ambient = base_color * ambient_color * ambient_strength;
 
         float diff = max(dot(N, L), 0.0);
@@ -119,10 +119,7 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         vec3 specular = spec_color * spec * specular_strength;
 
         vec3 lit_color = ambient + diffuse + specular;
-
-        float env_strength = metallic * specular_strength;
-        vec3 final_rgb = lit_color + reflected_color * env_strength;
-
+        vec3 final_rgb = mix(lit_color, reflected_color, reflectiveness);
         out_color = vec4(final_rgb, tex_color.a * color.a);
     }
 );
@@ -145,7 +142,7 @@ const char model_vertex[] = RLR_SHADER_INLINE(
     void main() {
         vec4 world_pos = model * vec4(pos, 1.0);
         frag_vert_pos = world_pos.xyz;
-        frag_normal = normalize(mat3(model) * normal);
+        frag_normal = mat3(transpose(inverse(model))) * normal;
         frag_uv = uv;
         gl_Position = mvp * vec4(pos, 1.0);
     }
@@ -204,8 +201,16 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     //     goto err;
     // }
 
-    _rlr->test = rlr_model_static_create("assets/planetest.glb");
-    _rlr->test_cube_map = rlr_cube_map_load("assets/skybox/right.jpg", "assets/skybox/left.jpg", "assets/skybox/top.jpg", "assets/skybox/bottom.jpg", "assets/skybox/front.jpg", "assets/skybox/back.jpg");
+    _rlr->test = rlr_model_static_create("assets/plane.glb");
+    //_rlr->test_cube_map = rlr_cube_map_load("assets/skybox/right.jpg", "assets/skybox/left.jpg", "assets/skybox/top.jpg", "assets/skybox/bottom.jpg", "assets/skybox/front.jpg", "assets/skybox/back.jpg");
+    _rlr->test_cube_map = rlr_cube_map_load(
+        "assets/s/px.png",
+        "assets/s/nx.png",
+        "assets/s/py.png",
+        "assets/s/ny.png",
+        "assets/s/pz.png",
+        "assets/s/nz.png"
+    );
     rlr_cube_map_bind(_rlr->test_cube_map, 4);
 
     _rlr->texture_white = rlr_texture_default();

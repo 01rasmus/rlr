@@ -156,17 +156,16 @@ rlr_model_static_t* rlr_model_static_create(const char* glb_model_location) {
             if(material) {
                 mesh->texture_base = rlr_texture_load_from_cgltf(material->pbr_metallic_roughness.base_color_texture.texture);
                 float roughness = material->pbr_metallic_roughness.roughness_factor;
-                float metallic = material->pbr_metallic_roughness.metallic_factor;
-                mesh->material.shininess = 4.0 + (1.0 - roughness) * 124.0;
-                mesh->material.specular_strength = 0.05 + (1.0 - roughness) * 0.45;
-                mesh->material.metallic = metallic;
                 memcpy(mesh->material.color, material->pbr_metallic_roughness.base_color_factor, sizeof(float) * 4);
+                mesh->material.shininess = 4.0 + powf(1.0 - roughness, 2.0) * 124.0;
+                mesh->material.specular_strength = 0.05 + (1.0 - roughness) * 0.45;
+                mesh->material.reflectiveness = (1.0 - roughness) * 0.5;
             } else {
                 float def_color[4] = { 1.0, 1.0, 1.0, 1.0 };
                 memcpy(mesh->material.color, def_color, sizeof(float) * 4);
-                mesh->material.metallic = 0.0;
                 mesh->material.shininess = 32.0;
                 mesh->material.specular_strength = 0.2;
+                mesh->material.reflectiveness = 0.0;
             }
         }
     }

@@ -8,7 +8,7 @@ typedef struct rlr_material_t {
     float color[4];
     float shininess;
     float specular_strength;
-    float metallic;
+    float reflectiveness;
 } rlr_material_t;
 
 typedef struct rlr_mesh_static_t {

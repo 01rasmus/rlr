@@ -108,7 +108,7 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t
 
     for(int64_t i = 0; i < sizeof(texture_data) / sizeof(texture_data[0]); i++) {
         if(texture_data[i]) {
-            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data[0]);
+            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data[i]);
         }
     }
 
@@ -339,6 +339,11 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     #define X(RET, NAME, PARAMS) backend->NAME = GL_TEMPLATE_PREFIX(NAME);
     RLR_BACKEND_FUNCTIONS(X)
     #undef X
+
+    //set init options
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+    gl->Enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    #endif
 
     return backend;
 err:
