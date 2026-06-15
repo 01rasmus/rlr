@@ -8,6 +8,7 @@ typedef struct GLFWwindow GLFWwindow;
 typedef struct rlr_shader_t rlr_shader_t;
 typedef struct rlr_texture_t rlr_texture_t;
 typedef struct rlr_uniform_t rlr_uniform_t;
+typedef struct rlr_cube_map_t rlr_cube_map_t;
 typedef struct rlr_model_static_t rlr_model_static_t;
 typedef struct rlr_obj_label_t rlr_obj_label_t;
 
@@ -19,6 +20,7 @@ typedef struct rlr_t {
     int32_t framebuffer_height;
 
     rlr_model_static_t* test;
+    rlr_cube_map_t* test_cube_map;
 
     //built in resources
     rlr_texture_t* texture_white;

@@ -89,9 +89,40 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_nearest)(uint8_t* rgba, uint32_t 
     return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, generate_mipmaps, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-void GL_TEMPLATE_PREFIX(texture_bind)(rlr_handle_t texture, uint8_t texture_slot) {
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height) {
+    uint32_t texture = 0;
+    gl->GenTextures(1, &texture);
+    if(texture == 0) {
+        return 0;
+    }
+    gl->BindTexture(GL_TEXTURE_CUBE_MAP, texture);
+
+    const uint8_t* texture_data[6] = {
+        right,
+        left,
+        top,
+        bottom,
+        front,
+        back
+    };
+
+    for(int64_t i = 0; i < sizeof(texture_data) / sizeof(texture_data[0]); i++) {
+        if(texture_data[i]) {
+            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data[0]);
+        }
+    }
+
+    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    return texture;
+}
+
+void GL_TEMPLATE_PREFIX(texture_bind)(rlr_handle_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot) {
     gl->ActiveTexture(GL_TEXTURE0 + texture_slot);
-    gl->BindTexture(GL_TEXTURE_2D, texture);
+    gl->BindTexture(type, texture);
 }
 
 void GL_TEMPLATE_PREFIX(texture_free)(rlr_handle_t texture) {
@@ -184,18 +215,27 @@ void GL_TEMPLATE_PREFIX(shader_use)(rlr_handle_t shader) {
     if(shader != current_shader) {
         current_shader = shader;
         gl->UseProgram((uint32_t)shader);
-        //gl->Uniform1i(gl->GetUniformLocation(shader, "tex"), 0);
     }
 }
 
-void GL_TEMPLATE_PREFIX(shader_bind_uniform_block)(rlr_handle_t shader, const char* uniform_block_name, uint32_t slot) {
+void GL_TEMPLATE_PREFIX(shader_bind_uniform_block_slot)(rlr_handle_t shader, const char* uniform_block_name, uint32_t slot) {
     GL_TEMPLATE_PREFIX(shader_use)(shader);
-    uint32_t block_index = gl->GetUniformBlockIndex((uint32_t)shader, uniform_block_name);
+    int32_t block_index = gl->GetUniformBlockIndex((uint32_t)shader, uniform_block_name);
     if(block_index == GL_INVALID_INDEX) {
         //ERROR
         return;
     }
     gl->UniformBlockBinding((uint32_t)shader, block_index, slot);
+}
+
+void GL_TEMPLATE_PREFIX(shader_bind_texture_slot)(rlr_handle_t shader, const char* texture_var_name, uint32_t texture_slot) {
+    GL_TEMPLATE_PREFIX(shader_use)(shader);
+    int32_t location = gl->GetUniformLocation((uint32_t)shader, texture_var_name);
+    if(location == GL_INVALID_INDEX) {
+        //ERROR
+        return;
+    }
+    gl->Uniform1i(location, texture_slot);
 }
 
 void GL_TEMPLATE_PREFIX(uniform_buffer_bind)(rlr_handle_t buffer, uint32_t slot) {

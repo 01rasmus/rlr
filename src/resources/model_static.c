@@ -165,8 +165,8 @@ rlr_model_static_t* rlr_model_static_create(const char* glb_model_location) {
                 float def_color[4] = { 1.0, 1.0, 1.0, 1.0 };
                 memcpy(mesh->material.color, def_color, sizeof(float) * 4);
                 mesh->material.metallic = 0.0;
-                mesh->material.shininess = 0.25;
-                mesh->material.specular_strength = 0.5;
+                mesh->material.shininess = 32.0;
+                mesh->material.specular_strength = 0.2;
             }
         }
     }

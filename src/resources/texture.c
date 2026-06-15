@@ -127,7 +127,7 @@ err:
 }
 
 void rlr_texture_bind(rlr_texture_t* texture, uint8_t texture_slot) {
-    _rlr_raw()->backend->texture_bind(texture->texture, texture_slot);
+    _rlr_raw()->backend->texture_bind(texture->texture, RLR_BACKEND_TEXTURE_2D, texture_slot);
 }
 
 void rlr_texture_free(rlr_texture_t* texture) {

@@ -4,6 +4,7 @@
 #include <stb_ds.h>
 #include "backends/backend.h"
 #include "resources/model_static.h"
+#include "resources/cube_map.h"
 #include "resources/uniform.h"
 #include "resources/shader.h"
 #include "resources/font.h"
@@ -75,6 +76,7 @@ const char model_fragment[] = RLR_SHADER_INLINE(
     out vec4 out_color;
 
     uniform sampler2D tex;
+    uniform samplerCube cube_map;
 
     layout(std140) uniform ubo_model {
         mat4 model;
@@ -89,8 +91,8 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         float metallic;
     };
 
-    const vec3 light_pos = vec3(5000, -5000.0, 0);
-    const vec3 ambient_color = vec3(0.9, 0.5, 0.0);
+    const vec3 light_pos = vec3(0, 5000.0, 0);
+    const vec3 ambient_color = vec3(0.2, 0.5, 0.4);
 
     void main() {
         vec4 tex_color = texture(tex, frag_uv);
@@ -101,10 +103,13 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         vec3 V = normalize(camera_pos - frag_vert_pos);
         vec3 H = normalize(L + V);
 
-        vec3 diffuse_color = base_color * (1.0 - metallic);
+        vec3 R = reflect(-V, N);
+        vec3 reflected_color = texture(cube_map, R).rgb;
+
+        vec3 diffuse_color = base_color * mix(1.0, 0.35, metallic);
         vec3 spec_color = mix(vec3(1.0), base_color, metallic);
 
-        float ambient_strength = 0.15;
+        float ambient_strength = 0.35;
         vec3 ambient = base_color * ambient_color * ambient_strength;
 
         float diff = max(dot(N, L), 0.0);
@@ -113,7 +118,12 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         float spec = pow(max(dot(N, H), 0.0), shininess);
         vec3 specular = spec_color * spec * specular_strength;
 
-        out_color = vec4(ambient + diffuse + specular, tex_color.a * color.a);
+        vec3 lit_color = ambient + diffuse + specular;
+
+        float env_strength = metallic * specular_strength;
+        vec3 final_rgb = lit_color + reflected_color * env_strength;
+
+        out_color = vec4(final_rgb, tex_color.a * color.a);
     }
 );
 
@@ -194,7 +204,9 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     //     goto err;
     // }
 
-    _rlr->test = rlr_model_static_create("assets/plane.glb");
+    _rlr->test = rlr_model_static_create("assets/planetest.glb");
+    _rlr->test_cube_map = rlr_cube_map_load("assets/skybox/right.jpg", "assets/skybox/left.jpg", "assets/skybox/top.jpg", "assets/skybox/bottom.jpg", "assets/skybox/front.jpg", "assets/skybox/back.jpg");
+    rlr_cube_map_bind(_rlr->test_cube_map, 4);
 
     _rlr->texture_white = rlr_texture_default();
 
@@ -204,6 +216,8 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     _rlr->shader_model = rlr_shader_create(model_vertex, model_fragment);
     rlr_shader_bind_uniform_slot(_rlr->shader_model, "ubo_model", 1);
     rlr_shader_bind_uniform_slot(_rlr->shader_model, "ubo_material", 2);
+    rlr_shader_bind_texture_slot(_rlr->shader_model, "tex", 0);
+    rlr_shader_bind_texture_slot(_rlr->shader_model, "cube_map", 4);
 
     uniform_ui_t ubo_ui = {
         .inv_x = 1.0 / (float)window_width,

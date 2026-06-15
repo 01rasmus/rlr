@@ -16,6 +16,12 @@ typedef enum rlr_backend_buffer_target_t {
     RLR_BACKEND_BUFFER_ELEMENT_ARRAY    = 0x8893
 } rlr_backend_buffer_target_t;
 
+typedef enum rlr_backend_texture_type_t {
+    RLR_BACKEND_TEXTURE_2D              = 0x0DE1,
+    RLR_BACKEND_TEXTURE_2D_ARRAY        = 0x8C1A,
+    RLR_BACKEND_TEXTURE_CUBE_MAP        = 0x8513,
+} rlr_backend_texture_type_t;
+
 typedef enum rlr_backend_buffer_usage_t {
     RLR_BACKEND_BUFFER_USAGE_DYNAMIC    = 0x88E8,
     RLR_BACKEND_BUFFER_USAGE_STATIC     = 0x88E4
@@ -43,12 +49,14 @@ typedef enum rlr_backend_type_t {
     X(rlr_handle_t, texture_create,                 (uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, int32_t filter_min, int32_t filter_max, int32_t wrap_s, int32_t wrap_t)) \
     X(rlr_handle_t, texture_create_linear,          (uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps)) \
     X(rlr_handle_t, texture_create_nearest,         (uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps)) \
-    X(void,         texture_bind,                   (rlr_handle_t texture, uint8_t texture_slot)) \
+    X(rlr_handle_t, texture_create_cube_map,        (uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height)) \
+    X(void,         texture_bind,                   (rlr_handle_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot)) \
     X(void,         texture_free,                   (rlr_handle_t texture)) \
     X(rlr_handle_t, shader_create,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
     X(void,         shader_free,                    (rlr_handle_t shader)) \
     X(void,         shader_use,                     (rlr_handle_t shader)) \
-    X(void,         shader_bind_uniform_block,      (rlr_handle_t shader, const char* uniform_block_name, uint32_t uniform_block_slot)) \
+    X(void,         shader_bind_uniform_block_slot, (rlr_handle_t shader, const char* uniform_block_name, uint32_t uniform_block_slot)) \
+    X(void,         shader_bind_texture_slot,       (rlr_handle_t shader, const char* texture_var_name, uint32_t texture_slot)) \
     X(void,         uniform_buffer_bind,            (rlr_handle_t buffer, uint32_t uniform_block_slot)) \
     X(void,         clear,                          (uint64_t mask)) \
     X(void,         clear_color,                    (float r, float g, float b, float a)) \
