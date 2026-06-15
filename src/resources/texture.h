@@ -10,8 +10,8 @@ typedef struct rlr_texture_t {
     float height;
 } rlr_texture_t;
 
-rlr_texture_t* rlr_texture_load(const char* texture_path, bool generate_mipmaps);
+rlr_texture_t* rlr_texture_load(const char* texture_path, bool generate_mipmaps, bool use_srgb_color_space);
 rlr_texture_t* rlr_texture_default();
-rlr_texture_t* rlr_texture_load_from_cgltf(cgltf_texture* tex);
+rlr_texture_t* rlr_texture_load_cgltf_base(cgltf_texture* tex);
 void rlr_texture_bind(rlr_texture_t* texture, uint8_t texture_slot);
 void rlr_texture_free(rlr_texture_t* texture);

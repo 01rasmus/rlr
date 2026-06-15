@@ -61,7 +61,7 @@ typedef GladGLES2Context glad_context_t;
 static glad_context_t* gl = NULL;
 static rlr_handle_t current_shader = 0;
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, int32_t filter_min, int32_t filter_max, int32_t wrap_s, int32_t wrap_t) {
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, bool use_srgb_color_space, int32_t filter_min, int32_t filter_max, int32_t wrap_s, int32_t wrap_t) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
@@ -74,19 +74,20 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, u
     gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
     gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
 
-    gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    int32_t internal_format = use_srgb_color_space ? GL_SRGB8_ALPHA8 : GL_RGBA8;
+    gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
     if(generate_mipmaps) {
         gl->GenerateMipmap(GL_TEXTURE_2D);
     }
     return (rlr_handle_t)texture;
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_linear)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
-    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, generate_mipmaps, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_linear)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, bool use_srgb_color_space) {
+    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, generate_mipmaps, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_nearest)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps) {
-    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, generate_mipmaps, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_nearest)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, bool use_srgb_color_space) {
+    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, generate_mipmaps, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
 rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height) {
@@ -108,7 +109,7 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t
 
     for(int64_t i = 0; i < sizeof(texture_data) / sizeof(texture_data[0]); i++) {
         if(texture_data[i]) {
-            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data[i]);
+            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data[i]);
         }
     }
 
@@ -190,14 +191,13 @@ rlr_handle_t GL_TEMPLATE_PREFIX(shader_create)(const char* vertex_shader, const 
     gl->AttachShader(program, vid);
     gl->AttachShader(program, fid);
     gl->LinkProgram(program);
+    if(_rlr_shader_program_link_error(program, error, error_size)) {
+        goto err;
+    }
 
     //finished linking, now we can detach and delete
     gl->DetachShader(program, vid);
     gl->DetachShader(program, fid);
-
-    if(_rlr_shader_program_link_error(program, error, error_size)) {
-        goto err;
-    }
     gl->DeleteShader(vid);
     gl->DeleteShader(fid);
     return (rlr_handle_t)program;
@@ -339,11 +339,6 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     #define X(RET, NAME, PARAMS) backend->NAME = GL_TEMPLATE_PREFIX(NAME);
     RLR_BACKEND_FUNCTIONS(X)
     #undef X
-
-    //set init options
-    #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
-    gl->Enable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    #endif
 
     return backend;
 err:

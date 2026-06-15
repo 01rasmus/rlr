@@ -31,43 +31,50 @@ typedef struct uniform_environment_t {
 
 static rlr_t* _rlr = NULL;
 
-const char mtsdf_fragment[] = "#version 330\n"
-"in vec2 frag_uv;\n"
-"in vec3 frag_color;\n"
-"out vec4 final_color;\n"
-"uniform sampler2D tex;\n"
-"float median(float r, float g, float b) {\n"
-"    return max(min(r,g), min(max(r,g),b));\n"
-"}\n"
-"float screen_px_range() {\n"
-"    float px_range = 2.0;\n"
-"    vec2 unit_range = vec2(px_range) / vec2(textureSize(tex, 0));\n"
-"    vec2 screen_tex_size = vec2(1.0) / fwidth(frag_uv);\n"
-"    return max(0.5 * dot(unit_range, screen_tex_size), 1.0);\n"
-"}\n"
-"void main() {\n"
-"    vec3 msd = texture(tex, frag_uv).rgb;\n"
-"    float sd = median(msd.r, msd.g, msd.b);\n"
-"    float screen_px_distance = screen_px_range() * (sd - 0.5);\n"
-"    float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);\n"
-"    final_color = vec4(frag_color, alpha);\n"
-"}\n";
+const char mtsdf_fragment[] = RLR_SHADER_INLINE(
+    in vec2 frag_uv;
+    in vec3 frag_color;
+    out vec4 final_color;
+    uniform sampler2D tex;
 
-const char mtsdf_vertex[] = "#version 330\n"
-"layout (location = 0) in vec3 color;\n"
-"layout (location = 1) in vec2 pos;\n"
-"layout (location = 2) in vec2 uv;\n"
-"layout(std140) uniform ui {\n"
-"   float inv_x;\n"
-"   float inv_y;\n"
-"};\n"
-"out vec2 frag_uv;\n"
-"out vec3 frag_color;\n"
-"void main() {\n"
-"frag_uv = uv;\n"
-"frag_color = color;\n"
-"gl_Position = vec4(pos.x * inv_x * 2.0 - 1.0, 1.0 - pos.y * inv_y * 2.0, 0.0, 1.0);\n"
-"}\n";
+    float median(float r, float g, float b) {
+        return max(min(r,g), min(max(r,g),b));
+    }
+
+    float screen_px_range() {
+        float px_range = 2.0;
+        vec2 unit_range = vec2(px_range) / vec2(textureSize(tex, 0));
+        vec2 screen_tex_size = vec2(1.0) / fwidth(frag_uv);
+        return max(0.5 * dot(unit_range, screen_tex_size), 1.0);
+    }
+
+    void main() {
+        vec3 msd = texture(tex, frag_uv).rgb;
+        float sd = median(msd.r, msd.g, msd.b);
+        float screen_px_distance = screen_px_range() * (sd - 0.5);
+        float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);
+        final_color = vec4(frag_color, alpha);
+    }
+);
+
+const char mtsdf_vertex[] = RLR_SHADER_INLINE(
+    layout (location = 0) in vec3 color;
+    layout (location = 1) in vec2 pos;
+    layout (location = 2) in vec2 uv;
+    layout(std140) uniform ui {
+        float inv_x;
+        float inv_y;
+    } ui_data;
+
+    out vec2 frag_uv;
+    out vec3 frag_color;
+
+    void main() {
+        frag_uv = uv;
+        frag_color = color;
+        gl_Position = vec4(pos.x * ui_data.inv_x * 2.0 - 1.0, 1.0 - pos.y * ui_data.inv_y * 2.0, 0.0, 1.0);
+    }
+);
 
 const char model_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
@@ -82,45 +89,44 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         mat4 model;
         mat4 mvp;
         vec3 camera_pos;
-    };
+    } model;
 
     layout(std140) uniform ubo_material {
         vec4 color;
         float shininess;
         float specular_strength;
         float reflectiveness;
-    };
+    } material;
 
     const vec3 light_pos = vec3(0, 5000.0, 0);
     const vec3 ambient_color = vec3(0.2, 0.5, 0.4);
 
     void main() {
         vec4 tex_color = texture(tex, frag_uv);
-        vec3 base_color = tex_color.rgb * color.rgb;
+        vec3 diffuse_color = tex_color.rgb * material.color.rgb;
 
         vec3 N = normalize(frag_normal);
         vec3 L = normalize(light_pos - frag_vert_pos);
-        vec3 V = normalize(camera_pos - frag_vert_pos);
+        vec3 V = normalize(model.camera_pos - frag_vert_pos);
         vec3 H = normalize(L + V);
 
         vec3 R = normalize(reflect(-V, N));
         vec3 reflected_color = texture(cube_map, R).rgb;
 
-        vec3 diffuse_color = base_color;
         vec3 spec_color = vec3(1.0);
 
-        float ambient_strength = 0.15;
-        vec3 ambient = base_color * ambient_color * ambient_strength;
+        float ambient_strength = 0.35;
+        vec3 ambient = diffuse_color * ambient_color * ambient_strength;
 
         float diff = max(dot(N, L), 0.0);
         vec3 diffuse = diffuse_color * diff;
 
-        float spec = pow(max(dot(N, H), 0.0), shininess);
-        vec3 specular = spec_color * spec * specular_strength;
+        float spec = pow(max(dot(N, H), 0.0), material.shininess);
+        vec3 specular = spec_color * spec * material.specular_strength;
 
         vec3 lit_color = ambient + diffuse + specular;
-        vec3 final_rgb = mix(lit_color, reflected_color, reflectiveness);
-        out_color = vec4(final_rgb, tex_color.a * color.a);
+        vec3 final_rgb = mix(lit_color, reflected_color, material.reflectiveness);
+        out_color = vec4(final_rgb, tex_color.a * material.color.a);
     }
 );
 
@@ -133,24 +139,22 @@ const char model_vertex[] = RLR_SHADER_INLINE(
         mat4 model;
         mat4 mvp;
         vec3 camera_pos;
-    };
+    } model;
 
     out vec2 frag_uv;
     out vec3 frag_normal;
     out vec3 frag_vert_pos;
 
     void main() {
-        vec4 world_pos = model * vec4(pos, 1.0);
+        vec4 world_pos = model.model * vec4(pos, 1.0);
         frag_vert_pos = world_pos.xyz;
-        frag_normal = mat3(transpose(inverse(model))) * normal;
+        frag_normal = mat3(transpose(inverse(model.model))) * normal;
         frag_uv = uv;
-        gl_Position = mvp * vec4(pos, 1.0);
+        gl_Position = model.mvp * vec4(pos, 1.0);
     }
 );
 
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags) {
-    _rlr = NULL;
-
     _rlr = malloc(sizeof(rlr_t));
     if(!_rlr) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -170,10 +174,15 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         goto err;
     }
 
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // glfwWindowHint(GLFW_SAMPLES, 16);
+
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 16);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    // glfwWindowHint(GLFW_SAMPLES, 8);
 
     _rlr->window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
     if(!_rlr->window) {
@@ -183,7 +192,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     glfwMakeContextCurrent(_rlr->window);
     glfwSwapInterval(0);
 
-    rlr_backend_t* backend = rlr_backend_gl3((rlr_backend_loader_t)glfwGetProcAddress);
+    rlr_backend_t* backend = rlr_backend_gles3((rlr_backend_loader_t)glfwGetProcAddress);
     _rlr->backend = backend;
 
     // if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -214,7 +223,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     rlr_cube_map_bind(_rlr->test_cube_map, 4);
 
     _rlr->texture_white = rlr_texture_default();
-
+    
     _rlr->shader_text = rlr_shader_create(mtsdf_vertex, mtsdf_fragment);
     rlr_shader_bind_uniform_slot(_rlr->shader_text, "ui", 0);
 

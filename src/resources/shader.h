@@ -4,7 +4,8 @@
 #include "backends/backend.h"
 
 #define RLR_SHADER_ERROR_LENGTH       4096
-#define RLR_SHADER_INLINE(SRC)        "#version 330 core\n" #SRC
+//#define RLR_SHADER_INLINE(SRC)        "#version 330 core\n" #SRC
+#define RLR_SHADER_INLINE(SRC)        "#version 300 es\nprecision highp float;\nprecision highp int;\n" #SRC
 
 typedef enum rlr_shader_uniform_type {
     RLR_SHADER_UNIFORM_BOOL,

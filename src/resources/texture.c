@@ -4,7 +4,7 @@
 #include "texture.h"
 #include "rlr.h"
 
-rlr_texture_t* rlr_texture_load(const char* texture_path, bool generate_mipmaps) {
+rlr_texture_t* rlr_texture_load(const char* texture_path, bool generate_mipmaps, bool use_srgb_color_space) {
     rlr_texture_t* texture = malloc(sizeof(rlr_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -26,7 +26,7 @@ rlr_texture_t* rlr_texture_load(const char* texture_path, bool generate_mipmaps)
     texture->width = w;
     texture->height = h;
 
-    texture->texture = rlr_backend()->texture_create_linear(data, w, h, generate_mipmaps);
+    texture->texture = rlr_backend()->texture_create_linear(data, w, h, generate_mipmaps, use_srgb_color_space);
     if(texture->texture == 0) {
         rlr_error_setf(RLR_ERR_BACKEND_NULL_HANDLE, "file \"%s\"", texture_path);
         goto err;
@@ -52,7 +52,7 @@ rlr_texture_t* rlr_texture_default() {
     texture->width = 1;
 
     uint8_t data[4] = {255, 255, 255, 255};
-    texture->texture = rlr_backend()->texture_create_nearest(data, 1, 1, false);
+    texture->texture = rlr_backend()->texture_create_nearest(data, 1, 1, false, false);
     if(texture->texture == 0) {
         rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
         goto err;
@@ -64,7 +64,7 @@ err:
     return NULL;
 }
 
-rlr_texture_t* rlr_texture_load_from_cgltf(cgltf_texture* tex) {
+rlr_texture_t* rlr_texture_load_cgltf_base(cgltf_texture* tex) {
     rlr_texture_t* texture = malloc(sizeof(rlr_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -109,7 +109,7 @@ rlr_texture_t* rlr_texture_load_from_cgltf(cgltf_texture* tex) {
         };
     }
 
-    texture->texture = rlr_backend()->texture_create(data, w, h, true, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t);
+    texture->texture = rlr_backend()->texture_create(data, w, h, true, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t, true);
     if(texture->texture == 0) {
         rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
         goto err;

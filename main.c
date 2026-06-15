@@ -26,7 +26,7 @@ int32_t main() {
         goto end;
     }
 
-    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 24, "0 fps", font2);
+    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 20, "0 fps", font2);
 
     uint64_t fps = 60;
     char text_buffer[4096] = "0 fps";

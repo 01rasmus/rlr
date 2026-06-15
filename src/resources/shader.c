@@ -29,10 +29,10 @@ rlr_shader_t* rlr_shader_create(const char* vertex_string, const char* fragment_
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
     }
-
+    
     const char* vertex = (vertex_string == NULL) ? shader_vertex_default : vertex_string;
     const char* fragment = (fragment_string == NULL) ? shader_fragment_default : fragment_string;
-
+    
     char error_str[RLR_SHADER_ERROR_LENGTH];
     shader->shader = _rlr_raw()->backend->shader_create(vertex, fragment, error_str, RLR_SHADER_ERROR_LENGTH);
     if(!shader->shader) {
