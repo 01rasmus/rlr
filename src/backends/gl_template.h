@@ -340,6 +340,9 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     RLR_BACKEND_FUNCTIONS(X)
     #undef X
 
+    gl->Enable(GL_CULL_FACE);
+    gl->CullFace(GL_BACK);
+
     return backend;
 err:
     free(backend);

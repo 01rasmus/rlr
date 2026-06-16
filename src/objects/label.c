@@ -63,12 +63,12 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
         rlr_obj_label_vertex_t vert3 = (rlr_obj_label_vertex_t){.pos = vec2(draw_x1, draw_y2), .uv = vec2(u1, v2), .color = label->color};
         rlr_obj_label_vertex_t vert4 = (rlr_obj_label_vertex_t){.pos = vec2(draw_x2, draw_y2), .uv = vec2(u2, v2), .color = label->color};
 
+        arrpush(vertices, vert3);
+        arrpush(vertices, vert2);
         arrpush(vertices, vert1);
-        arrpush(vertices, vert2);
         arrpush(vertices, vert3);
-        arrpush(vertices, vert2);
         arrpush(vertices, vert4);
-        arrpush(vertices, vert3);
+        arrpush(vertices, vert2);
 
         x += glyph->advance * label->size;
     }
