@@ -7,6 +7,7 @@
 #include "src/resources/shader.h"
 #include "src/resources/font.h"
 #include "src/objects/label.h"
+#include "src/objects/sprite.h"
 
 int32_t main() {
 
@@ -26,7 +27,12 @@ int32_t main() {
         goto end;
     }
 
-    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 20, "0 fps", font2);
+    rlr_texture_t* tex = rlr_texture_load("assets/ability_placeholder.png", false, false);
+    rlr_texture_t* tex2 = rlr_texture_load("assets/unkown_unit.png", false, false);
+    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 20, "0 fps", font);
+
+    rlr_obj_sprite_create(tex, rlr_rect(12, 12, 320, 240), 0);
+    rlr_obj_sprite_create(tex2, rlr_rect(64, 512, 128, 128), 0);
 
     uint64_t fps = 60;
     char text_buffer[4096] = "0 fps";

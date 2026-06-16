@@ -27,6 +27,11 @@ typedef enum rlr_backend_buffer_usage_t {
     RLR_BACKEND_BUFFER_USAGE_STATIC     = 0x88E4
 } rlr_backend_buffer_usage_t;
 
+typedef enum rlr_backen_vertex_array_attrib_type_t {
+    RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX = 0,
+    RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE = 1,
+} rlr_backen_vertex_array_attrib_type_t;
+
 typedef enum rlr_backend_type_t {
     RLR_BACKEND_BUFFER_TYPE_S8          = 0x1400,
     RLR_BACKEND_BUFFER_TYPE_U8          = 0x1401,
@@ -40,11 +45,11 @@ typedef enum rlr_backend_type_t {
 #define RLR_BACKEND_FUNCTIONS(X) \
     X(rlr_handle_t, vertex_array_create,            ()) \
     X(void,         vertex_array_bind,              (rlr_handle_t vao)) \
-    X(void,         vertex_array_attrib_set,        (uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset)) \
+    X(void,         vertex_array_attrib_set,        (rlr_backen_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset)) \
     X(void,         vertex_array_free,              (rlr_handle_t vao)) \
     X(rlr_handle_t, buffer_create,                  ()) \
     X(void,         buffer_bind,                    (rlr_handle_t buffer, rlr_backend_buffer_target_t target)) \
-    X(void,         buffer_update,                  (rlr_backend_buffer_target_t target, uint64_t size, void* data, rlr_backend_buffer_usage_t update_type)) \
+    X(void,         buffer_update,                  (rlr_backend_buffer_target_t target, uint64_t size, const void* data, rlr_backend_buffer_usage_t update_type)) \
     X(void,         buffer_free,                    (rlr_handle_t buffer)) \
     X(rlr_handle_t, texture_create,                 (uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space, bool generate_mipmaps, int32_t filter_min, int32_t filter_max, int32_t wrap_s, int32_t wrap_t)) \
     X(rlr_handle_t, texture_create_linear,          (uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space, bool generate_mipmaps)) \
@@ -61,6 +66,7 @@ typedef enum rlr_backend_type_t {
     X(void,         clear,                          (uint64_t mask)) \
     X(void,         clear_color,                    (float r, float g, float b, float a)) \
     X(void,         draw_array,                     (uint64_t offset, uint32_t vertex_count)) \
+    X(void,         draw_array_instanced,           (uint64_t offset, uint32_t vertex_count, uint32_t instance_count)) \
     X(void,         draw_elements,                  (uint64_t offset, uint32_t element_count, rlr_backend_type_t type)) \
     X(void,         viewport_set,                   (int32_t x, int32_t y, int64_t width, int64_t height)) \
     X(void,         depth_testing_set,              (bool enabled)) \

@@ -1,0 +1,18 @@
+#pragma once
+#include <stdint.h>
+#include "math/rect.h"
+
+typedef struct rlr_texture_t rlr_texture_t;
+
+typedef struct rlr_obj_sprite_t {
+    rlr_texture_t* texture;
+    rlr_rect_t rectangle;
+    rlr_rect_t scissor;
+    rlr_rect_t uv;
+    int32_t layer;
+    uint32_t index;
+} rlr_obj_sprite_t;
+
+rlr_obj_sprite_t* rlr_obj_sprite_create(rlr_texture_t* texture, rlr_rect_t rectangle, int32_t layer);
+rlr_obj_sprite_t* rlr_obj_sprite_create_ext(rlr_texture_t* texture, rlr_rect_t rectangle, int32_t layer, rlr_rect_t uv, rlr_rect_t scissor);
+void rlr_obj_sprite_free(rlr_obj_sprite_t* sprite);

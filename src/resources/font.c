@@ -96,7 +96,7 @@ rlr_font_t* rlr_font_create(const char* csv_path, const char* texture_atlas_path
 
     font->texture = rlr_texture_load(texture_atlas_path, false, false);
     if(!font->texture) {
-        goto err;
+        font->texture = _rlr_raw()->texture_white;
     }
 
     if(!csv_parse(_rlr_font_csv_callback, csv, 10, ",", font)) {

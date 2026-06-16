@@ -1,0 +1,260 @@
+#include <stb_ds.h>
+#include "resources/texture.h"
+#include "resources/uniform.h"
+#include "resources/shader.h"
+#include "resources/font.h"
+#include "objects/label.h"
+#include "objects/sprite.h"
+#include "ui.h"
+#include "rlr.h"
+
+static const rlr_vec2_t quad_vertices[6] = {
+    rlr_vec2(1, 1),
+    rlr_vec2(1, 0),
+    rlr_vec2(0, 0),
+    rlr_vec2(0, 1),
+    rlr_vec2(1, 1),
+    rlr_vec2(0, 0)
+};
+
+const char mtsdf_fragment[] = RLR_SHADER_INLINE(
+    in vec2 frag_uv;
+    in vec3 frag_color;
+    out vec4 final_color;
+    uniform sampler2D tex;
+
+    float median(float r, float g, float b) {
+        return max(min(r,g), min(max(r,g),b));
+    }
+
+    float screen_px_range() {
+        float px_range = 2.0;
+        vec2 unit_range = vec2(px_range) / vec2(textureSize(tex, 0));
+        vec2 screen_tex_size = vec2(1.0) / fwidth(frag_uv);
+        return max(0.5 * dot(unit_range, screen_tex_size), 1.0);
+    }
+
+    void main() {
+        vec3 msd = texture(tex, frag_uv).rgb;
+        float sd = median(msd.r, msd.g, msd.b);
+        float screen_px_distance = screen_px_range() * (sd - 0.5);
+        float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);
+        final_color = vec4(frag_color, alpha);
+    }
+);
+
+const char basic_fragment[] = RLR_SHADER_INLINE(
+    in vec2 frag_uv;
+    in vec3 frag_color;
+    out vec4 final_color;
+    uniform sampler2D tex;
+
+    void main() {
+        final_color = texture(tex, frag_uv);
+    }
+);
+
+const char sprite_vertex[] = RLR_SHADER_INLINE(
+    layout (location = 0) in vec2 pos;
+    layout (location = 1) in vec2 rect_pos;
+    layout (location = 2) in vec2 rect_size;
+
+    layout(std140) uniform inv_screen_size {
+        float inv_x;
+        float inv_y;
+    } ui_data;
+
+    out vec2 frag_uv;
+    out vec3 frag_color;
+
+    void main() {
+        frag_uv = pos;
+
+        float x = rect_pos.x + pos.x * rect_size.x;
+        float y = rect_pos.y + pos.y * rect_size.y;
+
+        gl_Position = vec4(x * ui_data.inv_x * 2.0 - 1.0, 1.0 - y * ui_data.inv_y * 2.0, 0.0, 1.0);
+    }
+);
+
+const char mtsdf_vertex[] = RLR_SHADER_INLINE(
+    layout (location = 0) in vec3 color;
+    layout (location = 1) in vec2 pos;
+    layout (location = 2) in vec2 uv;
+    layout(std140) uniform inv_screen_size {
+        float inv_x;
+        float inv_y;
+    } ui_data;
+
+    out vec2 frag_uv;
+    out vec3 frag_color;
+
+    void main() {
+        frag_uv = uv;
+        frag_color = color;
+        gl_Position = vec4(pos.x * ui_data.inv_x * 2.0 - 1.0, 1.0 - pos.y * ui_data.inv_y * 2.0, 0.0, 1.0);
+    }
+);
+
+typedef struct rlr_instance_data_ui_t {
+    rlr_vec2_t pos;
+    rlr_vec2_t size;
+} rlr_instance_data_ui_t;
+
+typedef struct rlr_uniform_screen_size_t {
+    float inv_x;
+    float inv_y;
+} rlr_uniform_screen_size_t;
+
+bool rlr_pipeline_ui_init() {
+    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+    (*pu) = (rlr_pipeline_ui_t){0};
+    pu->shader_sprite = rlr_shader_create(sprite_vertex, basic_fragment);
+    pu->shader_text = rlr_shader_create(mtsdf_vertex, mtsdf_fragment);
+    if(!pu->shader_sprite || !pu->shader_text) {
+        goto err;
+    }
+    rlr_shader_bind_uniform_slot(pu->shader_sprite, "inv_screen_size", 0);
+    rlr_shader_bind_uniform_slot(pu->shader_text, "inv_screen_size", 0);
+
+    pu->quad_vbo = rlr_backend()->buffer_create();
+    if(!pu->quad_vbo) {
+        goto err;
+    }
+
+    pu->ubo_screen_size = rlr_uniform_create_dynamic(sizeof(rlr_uniform_screen_size_t));
+    rlr_uniform_bind(pu->ubo_screen_size, 0);
+
+    rlr_backend()->buffer_bind(pu->quad_vbo, RLR_BACKEND_BUFFER_ARRAY);
+    rlr_backend()->buffer_update(RLR_BACKEND_BUFFER_ARRAY, sizeof(quad_vertices), quad_vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
+    pu->is_dirty = true;
+    return true;
+err:
+    return false;
+}
+
+static rlr_pipline_ui_draw_command_t rlr_pipeline_ui_new_command() {
+    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+
+    rlr_pipline_ui_draw_command_t command = {0};
+    command.vao = rlr_backend()->vertex_array_create();
+    command.instance_vbo = rlr_backend()->buffer_create();
+    rlr_backend()->vertex_array_bind(command.vao);
+    rlr_backend()->buffer_bind(pu->quad_vbo, RLR_BACKEND_BUFFER_ARRAY);
+    rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_vec2_t), 0);
+    rlr_backend()->buffer_bind(command.instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+    rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, pos));
+    rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, size));
+    return command;
+}
+
+static void rlr_pipeline_ui_rebuild_commands() {
+    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+
+    uint64_t needed_commands = arrlenu(pu->obj_sprites);
+    uint64_t commands_available = arrlenu(pu->commands);
+    while(needed_commands > commands_available) {
+        arrpush(pu->commands, rlr_pipeline_ui_new_command());
+        commands_available++;
+    }
+
+    for(int64_t i = 0; i < arrlen(pu->obj_sprites); i++) {
+        rlr_pipline_ui_draw_command_t* command = &pu->commands[i];
+        rlr_obj_sprite_t* sprite = &pu->obj_sprites[i];
+
+        command->shader = pu->shader_sprite;
+        command->instance_count = 1;
+        command->should_scissor = false;
+        command->texture = sprite->texture;
+
+        rlr_instance_data_ui_t data = {
+            .pos = rlr_vec2(sprite->rectangle.x, sprite->rectangle.y),
+            .size = rlr_vec2(sprite->rectangle.width, sprite->rectangle.height),
+        };
+        rlr_backend()->buffer_bind(command->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+        rlr_backend()->buffer_update(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_ui_t), &data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+    }
+
+    pu->command_count = needed_commands;
+    pu->is_dirty = false;
+}
+
+void rlr_pipeline_ui_draw() {
+    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+    if(pu->is_dirty) {
+        rlr_pipeline_ui_rebuild_commands();
+    }
+
+    rlr_backend()->depth_testing_set(false);
+    for(uint64_t i = 0; i < pu->command_count; i++) {
+        rlr_shader_use(pu->commands[i].shader);
+        rlr_texture_bind(pu->commands[i].texture, 0);
+        rlr_backend()->vertex_array_bind(pu->commands[i].vao);
+        rlr_backend()->draw_array_instanced(0, 6, pu->commands[i].instance_count);
+    }
+
+    rlr_shader_use(pu->shader_text);
+    for(int64_t i = 0; i < arrlen(pu->obj_labels); i++) {
+        rlr_obj_label_t* label = &pu->obj_labels[i];
+        if(!label->visible) {
+            continue;
+        }
+        rlr_texture_bind(label->font->texture, 0);
+        rlr_backend()->vertex_array_bind(label->vao);
+        rlr_backend()->draw_array(0, label->vertex_count);
+    }
+}
+
+void rlr_pipeline_ui_viewport_set(float width, float height) {
+    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+
+    rlr_uniform_screen_size_t data = {
+        .inv_x = 1.0 / (float)width,
+        .inv_y = 1.0 / (float)height
+    };
+    rlr_uniform_update(pu->ubo_screen_size, 0, &data, sizeof(rlr_uniform_screen_size_t));
+}
+
+void rlr_pipeline_ui_free() {
+    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+    if(!pu) {
+        return;
+    }
+
+    rlr_shader_free(pu->shader_text);
+    rlr_shader_free(pu->shader_sprite);
+    rlr_uniform_free(pu->ubo_screen_size);
+
+    for(int64_t i = 0; i < arrlen(pu->obj_labels); i++) {
+        rlr_obj_label_free(&pu->obj_labels[i]);
+    }
+    for(int64_t i = 0; i < arrlen(pu->obj_sprites); i++) {
+        rlr_obj_sprite_free(&pu->obj_sprites[i]);
+    }
+    arrfree(pu->obj_labels);
+    arrfree(pu->obj_sprites);
+}
+
+rlr_obj_label_t* rlr_pipeline_ui_alloc_label() {
+    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+    arrpush(pu->obj_labels, (rlr_obj_label_t){0});
+    rlr_obj_label_t* label = &arrlast(pu->obj_labels);
+    label->index = arrlenu(pu->obj_labels) - 1;
+    return label;
+}
+
+rlr_obj_sprite_t* rlr_pipeline_ui_alloc_sprite() {
+    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+    arrpush(pu->obj_sprites, (rlr_obj_sprite_t){0});
+    rlr_obj_sprite_t* sprite = &arrlast(pu->obj_sprites);
+    sprite->index = arrlenu(pu->obj_sprites) - 1;
+    return sprite;
+}
+
+void rlr_pipeline_ui_free_label(rlr_obj_label_t* label) {
+
+}
+
+void rlr_pipeline_ui_free_sprite(rlr_obj_sprite_t* sprite) {
+
+}

@@ -1,60 +1,9 @@
 #include <stdint.h>
 #include <string.h>
-#include "gpu_math.h"
+#include "matrix.h"
 
-quat_t quat_from_euler(vec3_t* euler) {
-    quat_t quat;
-    quat.w =  cos(euler->x/2.0)*cos(euler->y/2.0)*cos(euler->z/2.0) + sin(euler->x/2.0)*sin(euler->y/2.0)*sin(euler->z/2.0);
-    quat.x = -cos(euler->x/2.0)*sin(euler->y/2.0)*cos(euler->z/2.0) - sin(euler->x/2.0)*cos(euler->y/2.0)*sin(euler->z/2.0);
-    quat.y =  cos(euler->x/2.0)*sin(euler->y/2.0)*sin(euler->z/2.0) - sin(euler->x/2.0)*cos(euler->y/2.0)*cos(euler->z/2.0);
-    quat.z =  sin(euler->x/2.0)*sin(euler->y/2.0)*cos(euler->z/2.0) - cos(euler->x/2.0)*cos(euler->y/2.0)*sin(euler->z/2.0);
-    return quat;
-}
-
-vec3_t quat_to_euler(quat_t* quat) {
-    float sp = -2.0 * (quat->y*quat->z - quat->w*quat->x);
-    if(fabsf(sp) > 0.9999) {
-        float p = 3.14159265 / 2.0 * sp;
-        float h = atan2(-quat->x*quat->z - quat->w*quat->y, 0.5 - quat->y*quat->y - quat->z*quat->z);
-        float b = 0.0;
-        return vec3(h, p ,b);
-    } else {
-        float p = asin(sp);
-        float h = atan2(quat->x*quat->z - quat->w*quat->y, 0.5 - quat->x*quat->x - quat->y*quat->y);
-        float b = atan2(quat->x*quat->y - quat->w*quat->z, 0.5 - quat->x*quat->x - quat->z*quat->z);
-        return vec3(h, p ,b);
-    }
-}
-
-quat_t quat_slerp(quat_t* q1, quat_t* q2, float t) {
-    float cos_half_theta = q1->w * q2->w + q1->x * q2->x + q1->y * q2->y + q1->z * q2->z;
-    if(fabsf(cos_half_theta) >= 1.0){
-        return quat(q1->w, q1->x, q1->y, q1->z);
-    }
-
-    float half_theta = acos(cos_half_theta);
-    float sinhalf_theta = sqrt(1.0 - cos_half_theta*cos_half_theta);
-    if (fabs(sinhalf_theta) < 0.001){
-        return quat(q1->w * 0.5 + q2->w * 0.5, q1->x * 0.5 + q2->x * 0.5, q1->y * 0.5 + q2->y * 0.5, q1->z * 0.5 + q2->z * 0.5);
-    }
-
-    float ratio_1 = sin((1 - t) * half_theta) / sinhalf_theta;
-    float ratio_2 = sin(t * half_theta) / sinhalf_theta; 
-    return quat(q1->w * ratio_1 + q2->w * ratio_2, q1->x * ratio_1 + q2->x * ratio_2, q1->y * ratio_1 + q2->y * ratio_2, q1->z * ratio_1 + q2->z * ratio_2);
-}
-
-quat_t quat_normalize(quat_t* quat) {
-    quat_t new_quat;
-    float norm = sqrt(quat->x*quat->x + quat->y*quat->y + quat->z*quat->z + quat->w*quat->w);
-    new_quat.x = quat->w / norm;
-    new_quat.y = quat->x / norm;
-    new_quat.z = quat->y / norm;
-    new_quat.w = quat->z / norm;
-    return new_quat;
-}
-
-mat4_t mat4_mul(mat4_t* mat, mat4_t* other) {
-    mat4_t multiplied;
+rlr_mat4_t rlr_mat4_mul(rlr_mat4_t* mat, rlr_mat4_t* other) {
+    rlr_mat4_t multiplied;
     for(int32_t y = 0; y < 4; y++) {
         for(int32_t x = 0; x < 4; x++) {
             float m1 = other->matrix[x][0] * mat->matrix[0][y];
@@ -67,8 +16,8 @@ mat4_t mat4_mul(mat4_t* mat, mat4_t* other) {
     return multiplied;
 }
 
-mat4_t mat4_mulf(mat4_t* mat, float other) {
-    mat4_t multiplied;
+rlr_mat4_t rlr_mat4_mulf(rlr_mat4_t* mat, float other) {
+    rlr_mat4_t multiplied;
     for(int32_t y = 0; y < 4; y++) {
         for(int32_t x = 0; x < 4; x++) {
             multiplied.matrix[x][y] = mat->matrix[x][y] * other;
@@ -77,9 +26,9 @@ mat4_t mat4_mulf(mat4_t* mat, float other) {
     return multiplied;
 }
 
-mat4_t mat4_trs(vec3_t* translation, quat_t* rotation, vec3_t* scale) {
-    mat4_t translation_rotation_matrix = {0};
-    mat4_t scale_matrix = {0};
+rlr_mat4_t rlr_mat4_trs(rlr_vec3_t* translation, rlr_quat_t* rotation, rlr_vec3_t* scale) {
+    rlr_mat4_t translation_rotation_matrix = {0};
+    rlr_mat4_t scale_matrix = {0};
     
     translation_rotation_matrix.matrix[3][0] = translation->x;
     translation_rotation_matrix.matrix[3][1] = translation->y;
@@ -101,16 +50,16 @@ mat4_t mat4_trs(vec3_t* translation, quat_t* rotation, vec3_t* scale) {
     scale_matrix.matrix[2][2] = scale->z;
     scale_matrix.matrix[3][3] = 1.0;
 
-    return mat4_mul(&translation_rotation_matrix, &scale_matrix);
+    return rlr_mat4_mul(&translation_rotation_matrix, &scale_matrix);
 }
 
-mat4_t mat4_look_towards_vec3(vec3_t* position, vec3_t* look_direction, vec3_t* up) {
-    vec3_t nf = *look_direction;
-    vec3_t nu = vec3_normalize(*up);
-    vec3_t ns = vec3_normalize(vec3_cross(nf, nu));
-    nu = vec3_cross(ns, nf);
+rlr_mat4_t rlr_mat4_look_towards_vec3(rlr_vec3_t* position, rlr_vec3_t* look_direction, rlr_vec3_t* up) {
+    rlr_vec3_t nf = *look_direction;
+    rlr_vec3_t nu = rlr_vec3_normalize(*up);
+    rlr_vec3_t ns = rlr_vec3_normalize(rlr_vec3_cross(nf, nu));
+    nu = rlr_vec3_cross(ns, nf);
 
-    mat4_t view_matrix = {0};
+    rlr_mat4_t view_matrix = {0};
     view_matrix.matrix[0][0] = ns.x;
     view_matrix.matrix[0][1] = nu.x;
     view_matrix.matrix[0][2] = -nf.x;
@@ -120,31 +69,31 @@ mat4_t mat4_look_towards_vec3(vec3_t* position, vec3_t* look_direction, vec3_t* 
     view_matrix.matrix[2][0] = ns.z;
     view_matrix.matrix[2][1] = nu.z;
     view_matrix.matrix[2][2] = -nf.z;
-    view_matrix.matrix[3][0] = -vec3_dot(ns, *position);
-    view_matrix.matrix[3][1] = -vec3_dot(nu, *position);
-    view_matrix.matrix[3][2] = vec3_dot(nf, *position);
+    view_matrix.matrix[3][0] = -rlr_vec3_dot(ns, *position);
+    view_matrix.matrix[3][1] = -rlr_vec3_dot(nu, *position);
+    view_matrix.matrix[3][2] = rlr_vec3_dot(nf, *position);
     view_matrix.matrix[3][3] = 1.0;
     return view_matrix;
 }
 
-mat4_t mat4_look_towards_quat(vec3_t* position, quat_t* look_direction, vec3_t* up) {
-    vec3_t euler_direction = quat_to_euler(look_direction);
-    return mat4_look_towards_vec3(position, &euler_direction, up);
+rlr_mat4_t rlr_mat4_look_towards_quat(rlr_vec3_t* position, rlr_quat_t* look_direction, rlr_vec3_t* up) {
+    rlr_vec3_t euler_direction = rlr_quat_to_euler(look_direction);
+    return rlr_mat4_look_towards_vec3(position, &euler_direction, up);
 }
 
-mat4_t mat4_look_at(vec3_t* position, vec3_t* look_position, vec3_t* up) {
-    vec3_t direction = vec3_normalize(vec3_sub(*look_position, *position));
-    return mat4_look_towards_vec3(position, &direction, up);
+rlr_mat4_t rlr_mat4_look_at(rlr_vec3_t* position, rlr_vec3_t* look_position, rlr_vec3_t* up) {
+    rlr_vec3_t direction = rlr_vec3_normalize(rlr_vec3_sub(*look_position, *position));
+    return rlr_mat4_look_towards_vec3(position, &direction, up);
 }
 
-mat4_t mat4_perspective(float fov, float aspect_ratio, float znear, float zfar) {
+rlr_mat4_t rlr_mat4_perspective(float fov, float aspect_ratio, float znear, float zfar) {
     float scale = tan(fov * 0.5) * znear;
     float right = aspect_ratio * scale;
     float left = -right;
     float top = scale;
     float bottom = -top;
 
-    mat4_t perspective = {0};
+    rlr_mat4_t perspective = {0};
     perspective.matrix[0][0] = (2.0 * znear) / (right - left);
     perspective.matrix[1][1] = (2.0 * znear) / (top - bottom);
     perspective.matrix[2][0] = (right + left) / (right - left);
@@ -155,12 +104,12 @@ mat4_t mat4_perspective(float fov, float aspect_ratio, float znear, float zfar) 
     return perspective;
 }
 
-mat4_t mat4_orthographic(float left, float right, float bottom, float top, float znear, float zfar) {
+rlr_mat4_t rlr_mat4_orthographic(float left, float right, float bottom, float top, float znear, float zfar) {
     float subx = right-left;
     float suby = top-bottom;
     float subz = zfar-znear;
 
-    mat4_t orthographic = {0};
+    rlr_mat4_t orthographic = {0};
     orthographic.matrix[0][0] = 2.0 / subx;
     orthographic.matrix[1][1] = 2.0 / suby;
     orthographic.matrix[2][2] = -2.0 / subz;
@@ -171,8 +120,8 @@ mat4_t mat4_orthographic(float left, float right, float bottom, float top, float
     return orthographic;
 }
 
-mat4_t mat4_transpose(mat4_t* matrix) {
-    mat4_t transposed_matrix;
+rlr_mat4_t rlr_mat4_transpose(rlr_mat4_t* matrix) {
+    rlr_mat4_t transposed_matrix;
     transposed_matrix.matrix[0][0] = matrix->matrix[0][0];
     transposed_matrix.matrix[1][0] = matrix->matrix[0][1];
     transposed_matrix.matrix[2][0] = matrix->matrix[0][2];
@@ -192,8 +141,8 @@ mat4_t mat4_transpose(mat4_t* matrix) {
     return transposed_matrix;
 }
 
-mat4_t mat4_adjoint(mat4_t* matrix) {
-    mat4_t adjoint_matrix;
+rlr_mat4_t rlr_mat4_adjoint(rlr_mat4_t* matrix) {
+    rlr_mat4_t adjoint_matrix;
     float a = matrix->matrix[0][0];
     float b = matrix->matrix[0][1];
     float c = matrix->matrix[0][2];
@@ -229,13 +178,13 @@ mat4_t mat4_adjoint(mat4_t* matrix) {
     return adjoint_matrix;
 }
 
-mat4_t mat4_inverse(mat4_t* matrix) {
-    mat4_t adjoint = mat4_adjoint(matrix);
-    float determinant = mat4_determinant(matrix);
-    return mat4_mulf(&adjoint, 1.0 / determinant);
+rlr_mat4_t rlr_mat4_inverse(rlr_mat4_t* matrix) {
+    rlr_mat4_t adjoint = rlr_mat4_adjoint(matrix);
+    float determinant = rlr_mat4_determinant(matrix);
+    return rlr_mat4_mulf(&adjoint, 1.0 / determinant);
 }
 
-float mat4_determinant(mat4_t* matrix) {
+float rlr_mat4_determinant(rlr_mat4_t* matrix) {
     float det1 = matrix->matrix[0][0] * (matrix->matrix[1][1] * (matrix->matrix[2][2]*matrix->matrix[3][3]-matrix->matrix[2][3]*matrix->matrix[3][2]) + matrix->matrix[1][2]*(matrix->matrix[2][3]*matrix->matrix[3][1] - matrix->matrix[2][1]*matrix->matrix[3][3]) + matrix->matrix[1][3] * (matrix->matrix[2][1]*matrix->matrix[3][2]-matrix->matrix[2][2]*matrix->matrix[3][1]));
     float det2 = matrix->matrix[0][1] * (matrix->matrix[1][0] * (matrix->matrix[2][2]*matrix->matrix[3][3]-matrix->matrix[2][3]*matrix->matrix[3][2]) + matrix->matrix[1][2]*(matrix->matrix[2][3]*matrix->matrix[3][0] - matrix->matrix[2][0]*matrix->matrix[3][3]) + matrix->matrix[1][3] * (matrix->matrix[2][0]*matrix->matrix[3][2]-matrix->matrix[2][2]*matrix->matrix[3][0]));
     float det3 = matrix->matrix[0][2] * (matrix->matrix[1][0] * (matrix->matrix[2][1]*matrix->matrix[3][3]-matrix->matrix[2][3]*matrix->matrix[3][1]) + matrix->matrix[1][1]*(matrix->matrix[2][3]*matrix->matrix[3][1] - matrix->matrix[2][0]*matrix->matrix[3][3]) + matrix->matrix[1][3] * (matrix->matrix[2][0]*matrix->matrix[3][1]-matrix->matrix[2][1]*matrix->matrix[3][0]));

@@ -1,14 +1,14 @@
 #include <stb_ds.h>
 #include <utf8.h>
 #include "resources/font.h"
-#include "gpu_math.h"
+#include "math/vec.h"
 #include "rlr.h"
 #include "label.h"
 
 typedef struct rlr_obj_label_vertex_t {
-    vec3_t color;
-    vec2_t pos;
-    vec2_t uv;
+    rlr_vec3_t color;
+    rlr_vec2_t pos;
+    rlr_vec2_t uv;
 } rlr_obj_label_vertex_t;
 
 static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* text) {
@@ -58,10 +58,10 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
         float u2 = glyph->atlas_right;
         float v1 = glyph->atlas_top;
 
-        rlr_obj_label_vertex_t vert1 = (rlr_obj_label_vertex_t){.pos = vec2(draw_x1, draw_y1), .uv = vec2(u1, v1), .color = label->color};
-        rlr_obj_label_vertex_t vert2 = (rlr_obj_label_vertex_t){.pos = vec2(draw_x2, draw_y1), .uv = vec2(u2, v1), .color = label->color};
-        rlr_obj_label_vertex_t vert3 = (rlr_obj_label_vertex_t){.pos = vec2(draw_x1, draw_y2), .uv = vec2(u1, v2), .color = label->color};
-        rlr_obj_label_vertex_t vert4 = (rlr_obj_label_vertex_t){.pos = vec2(draw_x2, draw_y2), .uv = vec2(u2, v2), .color = label->color};
+        rlr_obj_label_vertex_t vert1 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x1, draw_y1), .uv = rlr_vec2(u1, v1), .color = label->color};
+        rlr_obj_label_vertex_t vert2 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x2, draw_y1), .uv = rlr_vec2(u2, v1), .color = label->color};
+        rlr_obj_label_vertex_t vert3 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x1, draw_y2), .uv = rlr_vec2(u1, v2), .color = label->color};
+        rlr_obj_label_vertex_t vert4 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x2, draw_y2), .uv = rlr_vec2(u2, v2), .color = label->color};
 
         arrpush(vertices, vert3);
         arrpush(vertices, vert2);
@@ -80,15 +80,13 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
 }
 
 rlr_obj_label_t* rlr_obj_label_create(float x, float y, float size, const char* text, rlr_font_t* font) {
-    arrpush(_rlr_raw()->obj_labels, (rlr_obj_label_t){0});
-    rlr_obj_label_t* label = &arrlast(_rlr_raw()->obj_labels);
+    rlr_obj_label_t* label = rlr_pipeline_ui_alloc_label();
 
-    label->index = arrlenu(_rlr_raw()->obj_labels) - 1;
     label->font = font;
     label->size = size;
     label->x = x;
     label->y = y;
-    label->color = vec3(1.0, 0.9, 1.0);
+    label->color = rlr_vec3(1.0, 0.9, 1.0);
     label->visible = true;
     label->vao = _rlr_raw()->backend->vertex_array_create();
     label->vbo = _rlr_raw()->backend->buffer_create();
@@ -99,9 +97,9 @@ rlr_obj_label_t* rlr_obj_label_create(float x, float y, float size, const char* 
     
     _rlr_raw()->backend->vertex_array_bind(label->vao);
     _rlr_raw()->backend->buffer_bind(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
-    _rlr_raw()->backend->vertex_array_attrib_set(0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, color));
-    _rlr_raw()->backend->vertex_array_attrib_set(1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, pos));
-    _rlr_raw()->backend->vertex_array_attrib_set(2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, uv));
+    _rlr_raw()->backend->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, color));
+    _rlr_raw()->backend->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, pos));
+    _rlr_raw()->backend->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, uv));
     
     rlr_obj_label_upload_vertices(label, text);
     return label;
@@ -124,4 +122,5 @@ void rlr_obj_label_free(rlr_obj_label_t* label) {
     }
     _rlr_raw()->backend->vertex_array_free(label->vao);
     _rlr_raw()->backend->buffer_free(label->vbo);
+    rlr_pipeline_ui_free_label(label);
 }

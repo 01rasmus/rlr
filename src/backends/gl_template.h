@@ -260,9 +260,10 @@ void GL_TEMPLATE_PREFIX(vertex_array_bind)(rlr_handle_t vao) {
     gl->BindVertexArray((uint32_t)vao);
 }
 
-void GL_TEMPLATE_PREFIX(vertex_array_attrib_set)(uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset) {
+void GL_TEMPLATE_PREFIX(vertex_array_attrib_set)(rlr_backen_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset) {
     gl->VertexAttribPointer(index, count, type, normalized, stride, (void*)vertex_offset);
     gl->EnableVertexAttribArray(index);
+    gl->VertexAttribDivisor(index, attrib_type);
 }
 
 void GL_TEMPLATE_PREFIX(vertex_array_free)(rlr_handle_t vao) {
@@ -280,7 +281,7 @@ void GL_TEMPLATE_PREFIX(buffer_bind)(rlr_handle_t buffer, rlr_backend_buffer_tar
     gl->BindBuffer(target, buffer);
 }
 
-void GL_TEMPLATE_PREFIX(buffer_update)(rlr_backend_buffer_target_t target, uint64_t size, void* data, rlr_backend_buffer_usage_t usage_type) {
+void GL_TEMPLATE_PREFIX(buffer_update)(rlr_backend_buffer_target_t target, uint64_t size, const void* data, rlr_backend_buffer_usage_t usage_type) {
     gl->BufferData(target, size, data, usage_type);
 }
 
@@ -294,6 +295,10 @@ void GL_TEMPLATE_PREFIX(draw_array)(uint64_t offset, uint32_t vertex_count) {
     gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     gl->DrawArrays(GL_TRIANGLES, offset, vertex_count);
     gl->Disable(GL_BLEND);
+}
+
+void GL_TEMPLATE_PREFIX(draw_array_instanced)(uint64_t offset, uint32_t vertex_count, uint32_t instance_count) {
+    gl->DrawArraysInstanced(GL_TRIANGLES, offset, vertex_count, instance_count);
 }
 
 void GL_TEMPLATE_PREFIX(draw_elements)(uint64_t offset, uint32_t index_count, rlr_backend_type_t type) {

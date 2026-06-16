@@ -1,16 +1,16 @@
 #include <stdlib.h>
 #include <cgltf.h>
 #include <stb_ds.h>
+#include "math/vec.h"
 #include "texture.h"
 #include "error.h"
 #include "model_static.h"
-#include "gpu_math.h"
 #include "rlr.h"
 
 typedef struct rlr_model_static_vertex_t {
-    vec3_t pos;
-    vec3_t normal;
-    vec2_t uv;
+    rlr_vec3_t pos;
+    rlr_vec3_t normal;
+    rlr_vec2_t uv;
 } rlr_model_static_vertex_t;
 
 rlr_model_static_t* rlr_model_static_create(const char* glb_model_location) {
@@ -116,9 +116,9 @@ rlr_model_static_t* rlr_model_static_create(const char* glb_model_location) {
                 }
 
                 rlr_model_static_vertex_t vertex = {
-                    .pos = vec3(pos[0], pos[1], pos[2]),
-                    .normal = vec3(norm[0], norm[1], norm[2]),
-                    .uv = vec2(uv[0], uv[1]),
+                    .pos = rlr_vec3(pos[0], pos[1], pos[2]),
+                    .normal = rlr_vec3(norm[0], norm[1], norm[2]),
+                    .uv = rlr_vec2(uv[0], uv[1]),
                 };
                 arrpush(vertices, vertex);
             }
@@ -145,9 +145,9 @@ rlr_model_static_t* rlr_model_static_create(const char* glb_model_location) {
             rlr_backend()->vertex_array_bind(mesh->vao);
             rlr_backend()->buffer_bind(mesh->vbo, RLR_BACKEND_BUFFER_ARRAY);
             rlr_backend()->buffer_update(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_model_static_vertex_t) * arrlenu(vertices), vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
-            rlr_backend()->vertex_array_attrib_set(0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, pos));
-            rlr_backend()->vertex_array_attrib_set(1, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, normal));
-            rlr_backend()->vertex_array_attrib_set(2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, uv));
+            rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, pos));
+            rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, normal));
+            rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, uv));
             rlr_backend()->buffer_bind(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
             rlr_backend()->buffer_update(RLR_BACKEND_BUFFER_ELEMENT_ARRAY, sizeof(uint32_t) * arrlenu(indices), indices, RLR_BACKEND_BUFFER_USAGE_STATIC);
 

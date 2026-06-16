@@ -9,72 +9,24 @@
 #include "resources/shader.h"
 #include "resources/font.h"
 #include "objects/label.h"
+#include "objects/sprite.h"
+#include "math/matrix.h"
 #include "error.h"
 #include "rlr.h"
 
-typedef struct uniform_ui_t {
-    float inv_x;
-    float inv_y;
-} uniform_ui_t;
-
 typedef struct uniform_model_t {
-    mat4_t model;
-    mat4_t mvp;
-    vec3_t camera_pos;
+    rlr_mat4_t model;
+    rlr_mat4_t mvp;
+    rlr_vec3_t camera_pos;
 } uniform_model_t;
 
 typedef struct uniform_environment_t {
-    vec3_t light_direction;
-    vec3_t ambient_light_color;
+    rlr_vec3_t light_direction;
+    rlr_vec3_t ambient_light_color;
     float ambient_light_strength;
 } uniform_environment_t;
 
 static rlr_t* _rlr = NULL;
-
-const char mtsdf_fragment[] = RLR_SHADER_INLINE(
-    in vec2 frag_uv;
-    in vec3 frag_color;
-    out vec4 final_color;
-    uniform sampler2D tex;
-
-    float median(float r, float g, float b) {
-        return max(min(r,g), min(max(r,g),b));
-    }
-
-    float screen_px_range() {
-        float px_range = 2.0;
-        vec2 unit_range = vec2(px_range) / vec2(textureSize(tex, 0));
-        vec2 screen_tex_size = vec2(1.0) / fwidth(frag_uv);
-        return max(0.5 * dot(unit_range, screen_tex_size), 1.0);
-    }
-
-    void main() {
-        vec3 msd = texture(tex, frag_uv).rgb;
-        float sd = median(msd.r, msd.g, msd.b);
-        float screen_px_distance = screen_px_range() * (sd - 0.5);
-        float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);
-        final_color = vec4(frag_color, alpha);
-    }
-);
-
-const char mtsdf_vertex[] = RLR_SHADER_INLINE(
-    layout (location = 0) in vec3 color;
-    layout (location = 1) in vec2 pos;
-    layout (location = 2) in vec2 uv;
-    layout(std140) uniform ui {
-        float inv_x;
-        float inv_y;
-    } ui_data;
-
-    out vec2 frag_uv;
-    out vec3 frag_color;
-
-    void main() {
-        frag_uv = uv;
-        frag_color = color;
-        gl_Position = vec4(pos.x * ui_data.inv_x * 2.0 - 1.0, 1.0 - pos.y * ui_data.inv_y * 2.0, 0.0, 1.0);
-    }
-);
 
 const char model_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
@@ -163,8 +115,6 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
 
     _rlr->backend = NULL;
     _rlr->window = NULL;
-    _rlr->shader_text = NULL;
-    _rlr->obj_labels = NULL;
 
     _rlr->framebuffer_width = window_width;
     _rlr->framebuffer_height = window_height;
@@ -174,14 +124,14 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         goto err;
     }
 
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // glfwWindowHint(GLFW_SAMPLES, 16);
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    // glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     // glfwWindowHint(GLFW_SAMPLES, 8);
 
     _rlr->window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
@@ -192,7 +142,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     glfwMakeContextCurrent(_rlr->window);
     glfwSwapInterval(0);
 
-    rlr_backend_t* backend = rlr_backend_gles3((rlr_backend_loader_t)glfwGetProcAddress);
+    rlr_backend_t* backend = rlr_backend_gl3((rlr_backend_loader_t)glfwGetProcAddress);
     _rlr->backend = backend;
 
     // if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -209,6 +159,15 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     //     rlr_error_setf(RLR_ERR_OPENGL_INCOMPATIBLE_VERSION, "expected atleast OpenGL 3.3, but got OpenGL %d.%d", major, minor);
     //     goto err;
     // }
+    
+    //setup default resources
+    _rlr->texture_white = rlr_texture_default();
+
+    //setup pipelines
+    if(!rlr_pipeline_ui_init()) {
+        goto err;
+    }
+    rlr_pipeline_ui_viewport_set(window_width, window_height);
 
     _rlr->test = rlr_model_static_create("assets/plane.glb");
     //_rlr->test_cube_map = rlr_cube_map_load("assets/skybox/right.jpg", "assets/skybox/left.jpg", "assets/skybox/top.jpg", "assets/skybox/bottom.jpg", "assets/skybox/front.jpg", "assets/skybox/back.jpg");
@@ -222,37 +181,23 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     );
     rlr_cube_map_bind(_rlr->test_cube_map, 4);
 
-    _rlr->texture_white = rlr_texture_default();
-    
-    _rlr->shader_text = rlr_shader_create(mtsdf_vertex, mtsdf_fragment);
-    rlr_shader_bind_uniform_slot(_rlr->shader_text, "ui", 0);
-
     _rlr->shader_model = rlr_shader_create(model_vertex, model_fragment);
     rlr_shader_bind_uniform_slot(_rlr->shader_model, "ubo_model", 1);
     rlr_shader_bind_uniform_slot(_rlr->shader_model, "ubo_material", 2);
     rlr_shader_bind_texture_slot(_rlr->shader_model, "tex", 0);
     rlr_shader_bind_texture_slot(_rlr->shader_model, "cube_map", 4);
 
-    uniform_ui_t ubo_ui = {
-        .inv_x = 1.0 / (float)window_width,
-        .inv_y = 1.0 / (float)window_height
-    };
-
-    _rlr->ubo_ui = rlr_uniform_create_dynamic(sizeof(uniform_ui_t));
-    rlr_uniform_update(_rlr->ubo_ui, 0, &ubo_ui, sizeof(uniform_ui_t));
-    rlr_uniform_bind(_rlr->ubo_ui, 0);
-
     _rlr->ubo_material = rlr_uniform_create_dynamic(sizeof(rlr_material_t));
     rlr_uniform_bind(_rlr->ubo_material, 2);
 
-    vec3_t cam_pos = vec3_mulf(vec3(-0.05, 0.1, -0.1), 7);
-    vec3_t scene_center = vec3(0, 0, 0);
-    vec3_t up = vec3(0, 1, 0);
-    mat4_t projection = mat4_perspective(1, (float)window_width / (float)window_height, 0.001, 100.0);
-    mat4_t view = mat4_look_at(&cam_pos, &scene_center, &up);
+    rlr_vec3_t cam_pos = rlr_vec3_mulf(rlr_vec3(-0.05, 0.1, -0.1), 7);
+    rlr_vec3_t scene_center = rlr_vec3(0, 0, 0);
+    rlr_vec3_t up = rlr_vec3(0, 1, 0);
+    rlr_mat4_t projection = rlr_mat4_perspective(1, (float)window_width / (float)window_height, 0.001, 100.0);
+    rlr_mat4_t view = rlr_mat4_look_at(&cam_pos, &scene_center, &up);
     uniform_model_t ubo_model = {
-        .mvp = mat4_mul(&projection, &view),
-        .model = mat4_ident,
+        .mvp = rlr_mat4_mul(&projection, &view),
+        .model = rlr_mat4_ident,
         .camera_pos = cam_pos,
     };
 
@@ -271,18 +216,13 @@ void rlr_free() {
         return;
     }
 
-    //remove objects
-    for(int64_t i = 0; i < arrlen(_rlr->obj_labels); i++) {
-        rlr_obj_label_free(&_rlr->obj_labels[i]);
-    }
-    arrfree(_rlr->obj_labels);
+    //free pipelines
+    rlr_pipeline_ui_free();
 
     //free resources
     rlr_texture_free(_rlr->texture_white);
-    rlr_uniform_free(_rlr->ubo_ui);
     rlr_uniform_free(_rlr->ubo_material);
     rlr_uniform_free(_rlr->ubo_model);
-    rlr_shader_free(_rlr->shader_text);
     rlr_shader_free(_rlr->shader_model);
 
     //free backend API and window
@@ -313,11 +253,7 @@ bool rlr_draw() {
     int32_t height = 0;
     glfwGetFramebufferSize(_rlr->window, &width, &height);
     if(width != _rlr->framebuffer_width || height != _rlr->framebuffer_height) {
-        uniform_ui_t ubo_ui = {
-            .inv_x = 1.0 / (float)width,
-            .inv_y = 1.0 / (float)height
-        };
-        rlr_uniform_update(_rlr->ubo_ui, 0, &ubo_ui, sizeof(uniform_ui_t));
+        rlr_pipeline_ui_viewport_set(width, height);
         rlr_backend()->viewport_set(0, 0, width, height);
     }
 
@@ -339,18 +275,7 @@ bool rlr_draw() {
         rlr_backend()->draw_elements(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32);
     }
 
-    //render objects
-    rlr_shader_use(_rlr->shader_text);
-    rlr_backend()->depth_testing_set(false);
-    for(int64_t i = 0; i < arrlen(_rlr->obj_labels); i++) {
-        rlr_obj_label_t* label = &_rlr->obj_labels[i];
-        if(!label->visible) {
-            continue;
-        }
-        rlr_texture_bind(label->font->texture, 0);
-        rlr_backend()->vertex_array_bind(label->vao);
-        rlr_backend()->draw_array(0, label->vertex_count);
-    }
+    rlr_pipeline_ui_draw();
 
     glfwSwapBuffers(_rlr->window);
     return true;

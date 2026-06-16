@@ -1,6 +1,5 @@
 #pragma once
 #include "backends/backend.h"
-#include "gpu_math.h"
 
 typedef struct rlr_texture_t rlr_texture_t;
 
