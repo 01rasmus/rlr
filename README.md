@@ -16,6 +16,7 @@ Defined below are the libraries used in the renderer. It mostly depends on other
 - [glfw](https://github.com/glfw/glfw)
 - [stb_ds.h](https://github.com/nothings/stb/blob/master/stb_ds.h)
 - [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h)
+- [stb_image_resize2.h](https://github.com/nothings/stb/blob/master/stb_image_resize2.h)
 - [rlsl](https://github.com/rasu01/rlsl)
 
 ## Dependencies
