@@ -51,9 +51,9 @@ typedef enum rlr_backend_type_t {
     X(void,         buffer_bind,                    (rlr_handle_t buffer, rlr_backend_buffer_target_t target)) \
     X(void,         buffer_update,                  (rlr_backend_buffer_target_t target, uint64_t size, const void* data, rlr_backend_buffer_usage_t update_type)) \
     X(void,         buffer_free,                    (rlr_handle_t buffer)) \
-    X(rlr_handle_t, texture_create,                 (uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space, bool generate_mipmaps, int32_t filter_min, int32_t filter_max, int32_t wrap_s, int32_t wrap_t)) \
-    X(rlr_handle_t, texture_create_linear,          (uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space, bool generate_mipmaps)) \
-    X(rlr_handle_t, texture_create_nearest,         (uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space, bool generate_mipmaps)) \
+    X(rlr_handle_t, texture_create,                 (uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
+    X(rlr_handle_t, texture_create_linear,          (uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space)) \
+    X(rlr_handle_t, texture_create_nearest,         (uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space)) \
     X(rlr_handle_t, texture_create_cube_map,        (uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height)) \
     X(void,         texture_bind,                   (rlr_handle_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot)) \
     X(void,         texture_free,                   (rlr_handle_t texture)) \
@@ -70,6 +70,11 @@ typedef enum rlr_backend_type_t {
     X(void,         draw_elements,                  (uint64_t offset, uint32_t element_count, rlr_backend_type_t type)) \
     X(void,         viewport_set,                   (int32_t x, int32_t y, int64_t width, int64_t height)) \
     X(void,         depth_testing_set,              (bool enabled)) \
+    X(void,         blending_set,                   (bool enabled)) \
+    X(void,         scissor_set,                    (float x, float y, float width, float height)) \
+    X(void,         scissor_disable,                ()) \
+    X(uint64_t,     statistics_draw_calls,          ()) \
+    X(void,         statistics_reset,               ()) \
     X(void,         backend_free,                   ())
 
 typedef struct rlr_backend_t {

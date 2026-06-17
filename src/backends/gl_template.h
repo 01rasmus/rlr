@@ -55,13 +55,33 @@ typedef GladGLES2Context glad_context_t;
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stb_image_resize2.h>
 #include "error.h"
 #include "backend.h"
 
+#define TEXTURE_RESIZE_BUFFER   (4096 * 4096 * 4)
+
+static uint8_t* texture_resize_buffer = NULL;
 static glad_context_t* gl = NULL;
+static uint64_t statistic_draw_call_count = 0;
+
+static float current_height = 0.0;
+static rlr_handle_t current_textures[16] = {0};
 static rlr_handle_t current_shader = 0;
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, bool use_srgb_color_space, int32_t filter_min, int32_t filter_max, int32_t wrap_s, int32_t wrap_t) {
+static bool texture_filter_uses_mipmaps(int32_t filter) {
+    switch(filter) {
+        case GL_NEAREST_MIPMAP_NEAREST:
+        case GL_LINEAR_MIPMAP_NEAREST:
+        case GL_NEAREST_MIPMAP_LINEAR:
+        case GL_LINEAR_MIPMAP_LINEAR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
@@ -69,25 +89,34 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, u
     }
     gl->BindTexture(GL_TEXTURE_2D, texture);
 
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_max);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
-
     int32_t internal_format = use_srgb_color_space ? GL_SRGB8_ALPHA8 : GL_RGBA8;
-    gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-    if(generate_mipmaps) {
+
+    if(use_srgb_color_space) {
+        int32_t output_w = 64;
+        int32_t output_h = 64;
+        rgba = stbir_resize_uint8_srgb(rgba, width, height, 0, texture_resize_buffer, output_w, output_h, 0, STBIR_RGBA);
+        gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, output_w, output_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    } else {
+        gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    }
+
+    if(texture_filter_uses_mipmaps(filter_min)) {
         gl->GenerateMipmap(GL_TEXTURE_2D);
     }
+
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
+    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
     return (rlr_handle_t)texture;
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_linear)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, bool use_srgb_color_space) {
-    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, generate_mipmaps, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_linear)(uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space) {
+    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_nearest)(uint8_t* rgba, uint32_t width, uint32_t height, bool generate_mipmaps, bool use_srgb_color_space) {
-    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, generate_mipmaps, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_nearest)(uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space) {
+    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
 rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height) {
@@ -109,7 +138,10 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t
 
     for(int64_t i = 0; i < sizeof(texture_data) / sizeof(texture_data[0]); i++) {
         if(texture_data[i]) {
-            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data[i]);
+            int32_t output_w = 64;
+            int32_t output_h = 64;
+            stbir_resize_uint8_linear(texture_data[i], width, height, 0, texture_resize_buffer, output_w, output_h, 0, STBIR_RGBA);
+            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB8, output_w, output_h, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_resize_buffer);
         }
     }
 
@@ -122,8 +154,12 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t
 }
 
 void GL_TEMPLATE_PREFIX(texture_bind)(rlr_handle_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot) {
+    if(current_textures[texture_slot] == texture) {
+        return;
+    }
     gl->ActiveTexture(GL_TEXTURE0 + texture_slot);
     gl->BindTexture(type, texture);
+    current_textures[texture_slot] = texture;
 }
 
 void GL_TEMPLATE_PREFIX(texture_free)(rlr_handle_t texture) {
@@ -212,10 +248,11 @@ void GL_TEMPLATE_PREFIX(shader_free)(rlr_handle_t shader) {
 }
 
 void GL_TEMPLATE_PREFIX(shader_use)(rlr_handle_t shader) {
-    if(shader != current_shader) {
-        current_shader = shader;
-        gl->UseProgram((uint32_t)shader);
+    if(shader == current_shader) {
+        return;
     }
+    current_shader = shader;
+    gl->UseProgram((uint32_t)shader);
 }
 
 void GL_TEMPLATE_PREFIX(shader_bind_uniform_block_slot)(rlr_handle_t shader, const char* uniform_block_name, uint32_t slot) {
@@ -291,22 +328,23 @@ void GL_TEMPLATE_PREFIX(buffer_free)(rlr_handle_t buffer) {
 }
 
 void GL_TEMPLATE_PREFIX(draw_array)(uint64_t offset, uint32_t vertex_count) {
-    gl->Enable(GL_BLEND);
-    gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     gl->DrawArrays(GL_TRIANGLES, offset, vertex_count);
-    gl->Disable(GL_BLEND);
+    statistic_draw_call_count++;
 }
 
 void GL_TEMPLATE_PREFIX(draw_array_instanced)(uint64_t offset, uint32_t vertex_count, uint32_t instance_count) {
     gl->DrawArraysInstanced(GL_TRIANGLES, offset, vertex_count, instance_count);
+    statistic_draw_call_count++;
 }
 
 void GL_TEMPLATE_PREFIX(draw_elements)(uint64_t offset, uint32_t index_count, rlr_backend_type_t type) {
     gl->DrawElements(GL_TRIANGLES, index_count, type, (void*)offset);
+    statistic_draw_call_count++;
 }
 
 void GL_TEMPLATE_PREFIX(viewport_set)(int32_t x, int32_t y, int64_t width, int64_t height) {
     gl->Viewport(x, y, width, height);
+    current_height = height;
 }
 
 void GL_TEMPLATE_PREFIX(depth_testing_set)(bool enabled) {
@@ -318,8 +356,36 @@ void GL_TEMPLATE_PREFIX(depth_testing_set)(bool enabled) {
     }
 }
 
+void GL_TEMPLATE_PREFIX(blending_set)(bool enabled) {
+    if(enabled) {
+        gl->Enable(GL_BLEND);
+        gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    } else {
+        gl->Disable(GL_BLEND);
+    }
+}
+
+void GL_TEMPLATE_PREFIX(scissor_set)(float x, float y, float width, float height) {
+    gl->Enable(GL_SCISSOR_TEST);
+    gl->Scissor(x, current_height - y - height, width, height);
+}
+
+void GL_TEMPLATE_PREFIX(scissor_disable)() {
+    gl->Disable(GL_SCISSOR_TEST);
+}
+
+uint64_t GL_TEMPLATE_PREFIX(statistics_draw_calls)() {
+    return statistic_draw_call_count;
+}
+
+void GL_TEMPLATE_PREFIX(statistics_reset)() {
+    statistic_draw_call_count = 0;
+}
+
+
 void GL_TEMPLATE_PREFIX(backend_free)() {
     free(gl);
+    free(texture_resize_buffer);
     gl = NULL;
 }
 
@@ -341,17 +407,27 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     }
     memset(backend, 0, sizeof(rlr_backend_t));
 
+    texture_resize_buffer = malloc(TEXTURE_RESIZE_BUFFER);
+    if(!texture_resize_buffer) {
+        rlr_error_set(RLR_ERR_NO_MEMORY);
+        goto err;
+    }
+
     #define X(RET, NAME, PARAMS) backend->NAME = GL_TEMPLATE_PREFIX(NAME);
     RLR_BACKEND_FUNCTIONS(X)
     #undef X
 
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+        gl->Disable(GL_MULTISAMPLE);
+    #endif
+
     gl->Enable(GL_CULL_FACE);
     gl->CullFace(GL_BACK);
-
+    statistic_draw_call_count = 0;
     return backend;
 err:
-    free(backend);
     GL_TEMPLATE_PREFIX(backend_free)();
+    free(backend);
     return NULL;
 }
 

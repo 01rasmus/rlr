@@ -13,12 +13,12 @@ typedef struct rlr_obj_label_vertex_t {
 
 static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* text) {
     rlr_obj_label_vertex_t* vertices = NULL;
-    rlr_font_glyph_t* space_glyph = rlr_font_glyph_get(label->font, 32);
+    rlr_font_glyph_t* space_glyph = rlr_font_glyph_get(label->font, ' ');
     rlr_font_glyph_t* unknown_glyph = rlr_font_glyph_get(label->font, '?');
     float x = label->x;
     float y = label->y + label->size;
-    float scale = label->size;
-    float space_width = space_glyph ? ((space_glyph->advance) * scale) : label->size * 0.4;
+    float space_width = space_glyph ? ((space_glyph->advance * label->size)) : label->size;
+    float tab_width = space_width * 8.0;
     float start_x = x;
 
     const void* p = text;
@@ -28,6 +28,13 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
 
         if(unicode == ' ') {
             x += space_width;
+            continue;
+        }
+
+        if (unicode == '\t') {
+            float local_x = x - start_x;
+            float next_tab = floorf(local_x / tab_width + 1.0f) * tab_width;
+            x = start_x + next_tab;
             continue;
         }
 

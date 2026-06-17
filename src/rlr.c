@@ -54,31 +54,32 @@ const char model_fragment[] = RLR_SHADER_INLINE(
     const vec3 ambient_color = vec3(0.2, 0.5, 0.4);
 
     void main() {
-        vec4 tex_color = texture(tex, frag_uv);
-        vec3 diffuse_color = tex_color.rgb * material.color.rgb;
+        out_color = texture(tex, frag_uv);
+        // vec4 tex_color = texture(tex, frag_uv);
+        // vec3 diffuse_color = tex_color.rgb * material.color.rgb;
 
-        vec3 N = normalize(frag_normal);
-        vec3 L = normalize(light_pos - frag_vert_pos);
-        vec3 V = normalize(model.camera_pos - frag_vert_pos);
-        vec3 H = normalize(L + V);
+        // vec3 N = normalize(frag_normal);
+        // vec3 L = normalize(light_pos - frag_vert_pos);
+        // vec3 V = normalize(model.camera_pos - frag_vert_pos);
+        // vec3 H = normalize(L + V);
 
-        vec3 R = normalize(reflect(-V, N));
-        vec3 reflected_color = texture(cube_map, R).rgb;
+        // vec3 R = normalize(reflect(-V, N));
+        // vec3 reflected_color = texture(cube_map, R).rgb;
 
-        vec3 spec_color = vec3(1.0);
+        // vec3 spec_color = vec3(1.0);
 
-        float ambient_strength = 0.35;
-        vec3 ambient = diffuse_color * ambient_color * ambient_strength;
+        // float ambient_strength = 0.35;
+        // vec3 ambient = diffuse_color * ambient_color * ambient_strength;
 
-        float diff = max(dot(N, L), 0.0);
-        vec3 diffuse = diffuse_color * diff;
+        // float diff = max(dot(N, L), 0.0);
+        // vec3 diffuse = diffuse_color * diff;
 
-        float spec = pow(max(dot(N, H), 0.0), material.shininess);
-        vec3 specular = spec_color * spec * material.specular_strength;
+        // float spec = pow(max(dot(N, H), 0.0), material.shininess);
+        // vec3 specular = spec_color * spec * material.specular_strength;
 
-        vec3 lit_color = ambient + diffuse + specular;
-        vec3 final_rgb = mix(lit_color, reflected_color, material.reflectiveness);
-        out_color = vec4(final_rgb, tex_color.a * material.color.a);
+        // vec3 lit_color = ambient + diffuse + specular;
+        // vec3 final_rgb = mix(lit_color, reflected_color, material.reflectiveness);
+        // out_color = vec4(final_rgb, tex_color.a * material.color.a);
     }
 );
 
@@ -160,6 +161,8 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     //     goto err;
     // }
     
+    rlr_backend()->viewport_set(0, 0, window_width, window_height);
+
     //setup default resources
     _rlr->texture_white = rlr_texture_default();
 

@@ -46,7 +46,6 @@ rlr_model_static_t* rlr_model_static_create(const char* glb_model_location) {
         goto err;
     }
 
-    //data->meshes[0].primitives[0].material
     for(size_t i = 0; i < data->meshes_count; i++) {
         cgltf_mesh* mesh = &data->meshes[i];
 

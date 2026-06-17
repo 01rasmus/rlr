@@ -58,6 +58,8 @@ const char sprite_vertex[] = RLR_SHADER_INLINE(
     layout (location = 0) in vec2 pos;
     layout (location = 1) in vec2 rect_pos;
     layout (location = 2) in vec2 rect_size;
+    layout (location = 3) in vec2 uv;
+    layout (location = 4) in vec2 uv_size;
 
     layout(std140) uniform inv_screen_size {
         float inv_x;
@@ -68,11 +70,9 @@ const char sprite_vertex[] = RLR_SHADER_INLINE(
     out vec3 frag_color;
 
     void main() {
-        frag_uv = pos;
-
+        frag_uv = vec2(uv.x + pos.x * uv_size.x, uv.y + pos.y * uv_size.y);
         float x = rect_pos.x + pos.x * rect_size.x;
         float y = rect_pos.y + pos.y * rect_size.y;
-
         gl_Position = vec4(x * ui_data.inv_x * 2.0 - 1.0, 1.0 - y * ui_data.inv_y * 2.0, 0.0, 1.0);
     }
 );
@@ -99,12 +99,27 @@ const char mtsdf_vertex[] = RLR_SHADER_INLINE(
 typedef struct rlr_instance_data_ui_t {
     rlr_vec2_t pos;
     rlr_vec2_t size;
+    rlr_vec2_t uv;
+    rlr_vec2_t uv_size;
 } rlr_instance_data_ui_t;
 
 typedef struct rlr_uniform_screen_size_t {
     float inv_x;
     float inv_y;
 } rlr_uniform_screen_size_t;
+
+static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
+    const rlr_obj_sprite_t* spr_a = a;
+    const rlr_obj_sprite_t* spr_b = b;
+
+    if (spr_a->layer != spr_b->layer)
+        return (spr_a->layer > spr_b->layer) - (spr_a->layer < spr_b->layer);
+
+    if (spr_a->texture->texture != spr_b->texture->texture)
+        return (spr_a->texture->texture > spr_b->texture->texture) - (spr_a->texture->texture < spr_b->texture->texture);
+
+    return 0;
+}
 
 bool rlr_pipeline_ui_init() {
     rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
@@ -145,8 +160,12 @@ static rlr_pipline_ui_draw_command_t rlr_pipeline_ui_new_command() {
     rlr_backend()->buffer_bind(command.instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
     rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, pos));
     rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, size));
+    rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv));
+    rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv_size));
     return command;
 }
+
+#include <stdio.h>
 
 static void rlr_pipeline_ui_rebuild_commands() {
     rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
@@ -158,25 +177,53 @@ static void rlr_pipeline_ui_rebuild_commands() {
         commands_available++;
     }
 
-    for(int64_t i = 0; i < arrlen(pu->obj_sprites); i++) {
-        rlr_pipline_ui_draw_command_t* command = &pu->commands[i];
-        rlr_obj_sprite_t* sprite = &pu->obj_sprites[i];
+    rlr_instance_data_ui_t* instance_data = NULL;
 
-        command->shader = pu->shader_sprite;
-        command->instance_count = 1;
-        command->should_scissor = false;
-        command->texture = sprite->texture;
+    qsort(pu->obj_sprites, arrlenu(pu->obj_sprites), sizeof(rlr_obj_sprite_t), rlr_pipeline_ui_sorter_sprite);
+    int64_t current_command = 0;
+    rlr_texture_t* current_texture = NULL;
+
+    for(int64_t i = 0; i < arrlen(pu->obj_sprites); i++) {
+        rlr_obj_sprite_t* sprite = &pu->obj_sprites[i];
+        if(current_texture == NULL) {
+            current_texture = sprite->texture;
+        }
+
+        if(current_texture->texture != sprite->texture->texture) {
+            rlr_pipline_ui_draw_command_t* command = &pu->commands[current_command];
+            command->shader = pu->shader_sprite;
+            command->instance_count = arrlenu(instance_data);
+            command->should_scissor = false;
+            command->texture = current_texture;
+            rlr_backend()->buffer_bind(command->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+            rlr_backend()->buffer_update(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_ui_t) * arrlenu(instance_data), instance_data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+
+            current_texture = sprite->texture;
+            current_command++;
+            arrsetlen(instance_data, 0);
+        }
 
         rlr_instance_data_ui_t data = {
             .pos = rlr_vec2(sprite->rectangle.x, sprite->rectangle.y),
             .size = rlr_vec2(sprite->rectangle.width, sprite->rectangle.height),
+            .uv = rlr_vec2(sprite->uv.x, sprite->uv.y),
+            .uv_size = rlr_vec2(sprite->uv.width - sprite->uv.x, sprite->uv.height - sprite->uv.y),
         };
+        arrpush(instance_data, data);
+    }
+    if(arrlenu(instance_data) > 0) {
+        rlr_pipline_ui_draw_command_t* command = &pu->commands[current_command++];
+        command->shader = pu->shader_sprite;
+        command->instance_count = arrlenu(instance_data);
+        command->should_scissor = false;
+        command->texture = current_texture;
         rlr_backend()->buffer_bind(command->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-        rlr_backend()->buffer_update(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_ui_t), &data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+        rlr_backend()->buffer_update(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_ui_t) * arrlenu(instance_data), instance_data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
     }
 
-    pu->command_count = needed_commands;
+    pu->command_count = current_command;
     pu->is_dirty = false;
+    arrfree(instance_data);
 }
 
 void rlr_pipeline_ui_draw() {
@@ -184,6 +231,8 @@ void rlr_pipeline_ui_draw() {
     if(pu->is_dirty) {
         rlr_pipeline_ui_rebuild_commands();
     }
+
+    rlr_backend()->blending_set(true);
 
     rlr_backend()->depth_testing_set(false);
     for(uint64_t i = 0; i < pu->command_count; i++) {
@@ -203,6 +252,8 @@ void rlr_pipeline_ui_draw() {
         rlr_backend()->vertex_array_bind(label->vao);
         rlr_backend()->draw_array(0, label->vertex_count);
     }
+
+    rlr_backend()->blending_set(false);
 }
 
 void rlr_pipeline_ui_viewport_set(float width, float height) {
