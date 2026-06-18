@@ -47,7 +47,7 @@ rlr_cube_map_t* rlr_cube_map_load(const char* right, const char* left, const cha
         }
     }
 
-    cm->texture = rlr_backend()->texture_create_cube_map(texture_data[0], texture_data[1], texture_data[2], texture_data[3], texture_data[4], texture_data[5], width, height);
+    cm->texture = rlr_backend()->texture_create_cube_map(texture_data[0], texture_data[1], texture_data[2], texture_data[3], texture_data[4], texture_data[5], width, height, 3);
     if(!cm->texture) {
         rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
         goto err;

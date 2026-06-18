@@ -81,7 +81,35 @@ static bool texture_filter_uses_mipmaps(int32_t filter) {
     }
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t) {
+static int32_t texture_internal_format(int32_t channels, bool srgb) {
+    switch(channels) {
+        case 1:
+            return GL_R8;
+        case 2:
+            return GL_RG8;
+        case 3:
+            return srgb ? GL_SRGB8 : GL_RGB8;
+        case 4:
+        default:
+            return srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8;
+    }
+}
+
+static int32_t texture_format(int32_t channels) {
+    switch(channels) {
+        case 1:
+            return GL_RED;
+        case 2:
+            return GL_RG;
+        case 3:
+            return GL_RGB;
+        case 4:
+        default:
+            return GL_RGBA;
+    }
+}
+
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
@@ -89,15 +117,16 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, u
     }
     gl->BindTexture(GL_TEXTURE_2D, texture);
 
-    int32_t internal_format = use_srgb_color_space ? GL_SRGB8_ALPHA8 : GL_RGBA8;
+    int32_t internal_format = texture_internal_format(channels, use_srgb_color_space);
+    int32_t format = texture_format(channels);
 
     if(use_srgb_color_space) {
         int32_t output_w = 64;
         int32_t output_h = 64;
-        rgba = stbir_resize_uint8_srgb(rgba, width, height, 0, texture_resize_buffer, output_w, output_h, 0, STBIR_RGBA);
-        gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, output_w, output_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+        stbir_resize_uint8_srgb(color_data, width, height, 0, texture_resize_buffer, output_w, output_h, 0, channels);
+        gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, output_w, output_h, 0, format, GL_UNSIGNED_BYTE, texture_resize_buffer);
     } else {
-        gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+        gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, color_data);
     }
 
     if(texture_filter_uses_mipmaps(filter_min)) {
@@ -111,15 +140,15 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create)(uint8_t* rgba, uint32_t width, u
     return (rlr_handle_t)texture;
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_linear)(uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space) {
-    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_linear)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
+    return GL_TEMPLATE_PREFIX(texture_create)(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_nearest)(uint8_t* rgba, uint32_t width, uint32_t height, bool use_srgb_color_space) {
-    return GL_TEMPLATE_PREFIX(texture_create)(rgba, width, height, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_nearest)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
+    return GL_TEMPLATE_PREFIX(texture_create)(color_data, width, height, channels, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height) {
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height, int32_t channels) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
@@ -136,12 +165,15 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_cube_map)(uint8_t* right, uint8_t
         back
     };
 
+    int32_t internal_format = texture_internal_format(channels, true);
+    int32_t format = texture_format(channels);
+    
     for(int64_t i = 0; i < sizeof(texture_data) / sizeof(texture_data[0]); i++) {
         if(texture_data[i]) {
             int32_t output_w = 64;
             int32_t output_h = 64;
-            stbir_resize_uint8_linear(texture_data[i], width, height, 0, texture_resize_buffer, output_w, output_h, 0, STBIR_RGBA);
-            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB8, output_w, output_h, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_resize_buffer);
+            stbir_resize_uint8_linear(texture_data[i], width, height, 0, texture_resize_buffer, output_w, output_h, 0, channels);
+            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, output_w, output_h, 0, format, GL_UNSIGNED_BYTE, texture_resize_buffer);
         }
     }
 

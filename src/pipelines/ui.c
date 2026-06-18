@@ -19,25 +19,19 @@ static const rlr_vec2_t quad_vertices[6] = {
 
 const char mtsdf_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
-    in vec3 frag_color;
+    flat in vec3 frag_color;
+    flat in float screen_px_range;
     out vec4 final_color;
     uniform sampler2D tex;
 
     float median(float r, float g, float b) {
-        return max(min(r,g), min(max(r,g),b));
-    }
-
-    float screen_px_range() {
-        float px_range = 2.0;
-        vec2 unit_range = vec2(px_range) / vec2(textureSize(tex, 0));
-        vec2 screen_tex_size = vec2(1.0) / fwidth(frag_uv);
-        return max(0.5 * dot(unit_range, screen_tex_size), 1.0);
+        return max(min(r, g), min(max(r, g), b));
     }
 
     void main() {
         vec3 msd = texture(tex, frag_uv).rgb;
         float sd = median(msd.r, msd.g, msd.b);
-        float screen_px_distance = screen_px_range() * (sd - 0.5);
+        float screen_px_distance = screen_px_range * (sd - 0.5);
         float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);
         final_color = vec4(frag_color, alpha);
     }
@@ -81,17 +75,20 @@ const char mtsdf_vertex[] = RLR_SHADER_INLINE(
     layout (location = 0) in vec3 color;
     layout (location = 1) in vec2 pos;
     layout (location = 2) in vec2 uv;
+    layout (location = 3) in float spr;
     layout(std140) uniform inv_screen_size {
         float inv_x;
         float inv_y;
     } ui_data;
 
     out vec2 frag_uv;
-    out vec3 frag_color;
+    flat out vec3 frag_color;
+    flat out float screen_px_range;
 
     void main() {
         frag_uv = uv;
         frag_color = color;
+        screen_px_range = spr;
         gl_Position = vec4(pos.x * ui_data.inv_x * 2.0 - 1.0, 1.0 - pos.y * ui_data.inv_y * 2.0, 0.0, 1.0);
     }
 );

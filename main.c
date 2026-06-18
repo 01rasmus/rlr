@@ -14,10 +14,10 @@ int32_t main() {
     rlr_font_t* font = NULL;
     rlr_font_t* font2 = NULL;
     rlr_shader_t* shader = NULL;
-    rlr_init("rl render", 960, 540, 0);
+    rlr_init("rl render", 1024, 768, 0);
 
-    font = rlr_font_create("assets/noto_sans.csv", "assets/noto_sans.png", RLR_FONT_TYPE_MTSDF);
-    font2 = rlr_font_create("assets/tinos-mtsdf.csv", "assets/tinos-mtsdf.png", RLR_FONT_TYPE_MTSDF);
+    font = rlr_font_create("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
+    font2 = rlr_font_create("assets/tinos-small.csv", "assets/tinos-small.png", 2.0);
     if(!font || !font2) {
         goto end;
     }
@@ -31,7 +31,7 @@ int32_t main() {
     rlr_texture_t* ability_empty = rlr_texture_load("assets/ability_empty.png", false);
     rlr_texture_t* hero_unknown = rlr_texture_load("assets/unknown_unit.png", false);
 
-    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 16, "0 fps", font);
+    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 16, "0 fps", font2);
     
     float ui_x = 4;
     float ui_y = 540 - 119 - 4;

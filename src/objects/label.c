@@ -9,8 +9,10 @@ typedef struct rlr_obj_label_vertex_t {
     rlr_vec3_t color;
     rlr_vec2_t pos;
     rlr_vec2_t uv;
+    float screen_px_range;
 } rlr_obj_label_vertex_t;
 
+#include <stdio.h>
 static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* text) {
     rlr_obj_label_vertex_t* vertices = NULL;
     rlr_font_glyph_t* space_glyph = rlr_font_glyph_get(label->font, ' ');
@@ -53,22 +55,27 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
         }
 
         float draw_x1 = x + glyph->plane_left * label->size;
-        float draw_y1 = y + glyph->plane_top * label->size;
+        float draw_y1 = y - glyph->plane_top * label->size;
         float draw_x2 = x + glyph->plane_right * label->size;
-        float draw_y2 = y + glyph->plane_bottom * label->size;
-
-        draw_y1 = y - glyph->plane_top * label->size;     // top
-        draw_y2 = y - glyph->plane_bottom * label->size;  // bottom
+        float draw_y2 = y - glyph->plane_bottom * label->size;
 
         float u1 = glyph->atlas_left;
         float v2 = glyph->atlas_bottom;
         float u2 = glyph->atlas_right;
         float v1 = glyph->atlas_top;
 
-        rlr_obj_label_vertex_t vert1 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x1, draw_y1), .uv = rlr_vec2(u1, v1), .color = label->color};
-        rlr_obj_label_vertex_t vert2 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x2, draw_y1), .uv = rlr_vec2(u2, v1), .color = label->color};
-        rlr_obj_label_vertex_t vert3 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x1, draw_y2), .uv = rlr_vec2(u1, v2), .color = label->color};
-        rlr_obj_label_vertex_t vert4 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x2, draw_y2), .uv = rlr_vec2(u2, v2), .color = label->color};
+        //calculate the screen px range
+        float texture_width = (u2 - u1) * label->font->texture->width;
+        float quad_width = draw_x2 - draw_x1;
+        float screen_px_range = quad_width / texture_width * (label->font->px_range);
+        if(screen_px_range < 1.0) {
+            screen_px_range = 1.0;
+        }
+
+        rlr_obj_label_vertex_t vert1 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x1, draw_y1), .uv = rlr_vec2(u1, v1), .color = label->color, .screen_px_range = screen_px_range};
+        rlr_obj_label_vertex_t vert2 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x2, draw_y1), .uv = rlr_vec2(u2, v1), .color = label->color, .screen_px_range = screen_px_range};
+        rlr_obj_label_vertex_t vert3 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x1, draw_y2), .uv = rlr_vec2(u1, v2), .color = label->color, .screen_px_range = screen_px_range};
+        rlr_obj_label_vertex_t vert4 = (rlr_obj_label_vertex_t){.pos = rlr_vec2(draw_x2, draw_y2), .uv = rlr_vec2(u2, v2), .color = label->color, .screen_px_range = screen_px_range};
 
         arrpush(vertices, vert3);
         arrpush(vertices, vert2);
@@ -107,6 +114,7 @@ rlr_obj_label_t* rlr_obj_label_create(float x, float y, float size, const char* 
     _rlr_raw()->backend->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, color));
     _rlr_raw()->backend->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, pos));
     _rlr_raw()->backend->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, uv));
+    _rlr_raw()->backend->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 3, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, screen_px_range));
     
     rlr_obj_label_upload_vertices(label, text);
     return label;

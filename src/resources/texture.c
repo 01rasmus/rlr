@@ -17,7 +17,8 @@ rlr_texture_t* rlr_texture_load(const char* texture_path, bool use_srgb_color_sp
 
     int32_t w = 0;
     int32_t h = 0;
-    uint8_t* data = stbi_load(texture_path, &w, &h, NULL, 4);
+    int32_t channels = 0;
+    uint8_t* data = stbi_load(texture_path, &w, &h, &channels, 0);
     if(!data) {
         rlr_error_setf(RLR_ERR_IMAGE_NOT_LOADED, "file \"%s\"", texture_path);
         goto err;
@@ -26,7 +27,7 @@ rlr_texture_t* rlr_texture_load(const char* texture_path, bool use_srgb_color_sp
     texture->width = w;
     texture->height = h;
 
-    texture->texture = rlr_backend()->texture_create_linear(data, w, h, use_srgb_color_space);
+    texture->texture = rlr_backend()->texture_create_linear(data, w, h, channels, use_srgb_color_space);
     if(texture->texture == 0) {
         rlr_error_setf(RLR_ERR_BACKEND_NULL_HANDLE, "file \"%s\"", texture_path);
         goto err;
@@ -51,8 +52,8 @@ rlr_texture_t* rlr_texture_default() {
     texture->height = 1;
     texture->width = 1;
 
-    uint8_t data[4] = {255, 255, 255, 255};
-    texture->texture = rlr_backend()->texture_create_nearest(data, 1, 1, false);
+    uint8_t data[1] = {255};
+    texture->texture = rlr_backend()->texture_create_nearest(data, 1, 1, 1, false);
     if(texture->texture == 0) {
         rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
         goto err;
@@ -91,7 +92,8 @@ rlr_texture_t* rlr_texture_load_cgltf_base(cgltf_texture* tex) {
 
     int32_t w = 0;
     int32_t h = 0;
-    uint8_t* data = stbi_load_from_memory(texture_data, size, &w, &h, NULL, 4);
+    int32_t channels = 0;
+    uint8_t* data = stbi_load_from_memory(texture_data, size, &w, &h, &channels, 0);
     if(!data) {
         rlr_error_set(RLR_ERR_IMAGE_NOT_LOADED);
         goto err;
@@ -109,7 +111,7 @@ rlr_texture_t* rlr_texture_load_cgltf_base(cgltf_texture* tex) {
         };
     }
 
-    texture->texture = rlr_backend()->texture_create(data, w, h, true, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t);
+    texture->texture = rlr_backend()->texture_create(data, w, h, channels, true, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t);
     if(texture->texture == 0) {
         rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
         goto err;
