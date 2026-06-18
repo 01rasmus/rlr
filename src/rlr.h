@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
+#include "pipelines/stencil.h"
 #include "pipelines/ui.h"
 
 typedef struct rlr_backend_t rlr_backend_t;
@@ -23,6 +24,7 @@ typedef struct rlr_t {
     rlr_cube_map_t* test_cube_map;
 
     //pipelines
+    rlr_pipeline_stencil_t pipeline_stencil;
     rlr_pipeline_ui_t pipeline_ui;
 
     //built in resources

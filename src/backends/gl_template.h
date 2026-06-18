@@ -144,6 +144,10 @@ rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_linear)(uint8_t* color_data, uint
     return GL_TEMPLATE_PREFIX(texture_create)(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
+rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_linear_mipmap)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
+    return GL_TEMPLATE_PREFIX(texture_create)(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+}
+
 rlr_handle_t GL_TEMPLATE_PREFIX(texture_create_nearest)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
     return GL_TEMPLATE_PREFIX(texture_create)(color_data, width, height, channels, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
@@ -319,6 +323,10 @@ void GL_TEMPLATE_PREFIX(clear_color)(float r, float g, float b, float a) {
     gl->ClearColor(r, g, b, a);
 }
 
+void GL_TEMPLATE_PREFIX(clear_stencil)(int32_t stencil) {
+    gl->ClearStencil(stencil);
+}
+
 rlr_handle_t GL_TEMPLATE_PREFIX(vertex_array_create)() {
     rlr_handle_t handle = 0;
     gl->GenVertexArrays(1, (uint32_t*)&handle);
@@ -329,7 +337,7 @@ void GL_TEMPLATE_PREFIX(vertex_array_bind)(rlr_handle_t vao) {
     gl->BindVertexArray((uint32_t)vao);
 }
 
-void GL_TEMPLATE_PREFIX(vertex_array_attrib_set)(rlr_backen_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset) {
+void GL_TEMPLATE_PREFIX(vertex_array_attrib_set)(rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset) {
     gl->VertexAttribPointer(index, count, type, normalized, stride, (void*)vertex_offset);
     gl->EnableVertexAttribArray(index);
     gl->VertexAttribDivisor(index, attrib_type);
@@ -404,6 +412,26 @@ void GL_TEMPLATE_PREFIX(scissor_set)(float x, float y, float width, float height
 
 void GL_TEMPLATE_PREFIX(scissor_disable)() {
     gl->Disable(GL_SCISSOR_TEST);
+}
+
+void GL_TEMPLATE_PREFIX(stencil_enable)() {
+    gl->Enable(GL_STENCIL_TEST);
+}
+
+void GL_TEMPLATE_PREFIX(stencil_mask)(uint8_t mask) {
+    gl->StencilMask(mask);
+}
+
+void GL_TEMPLATE_PREFIX(stencil_func)(rlr_backend_stencil_func_t func, uint8_t ref, uint8_t mask) {
+    gl->StencilFunc(func, ref, mask);
+}
+
+void GL_TEMPLATE_PREFIX(stencil_op)(rlr_backend_stencil_op_t fail, rlr_backend_stencil_op_t zfail, rlr_backend_stencil_op_t zpass) {
+    gl->StencilOp(fail, zfail, zpass);
+}
+
+void GL_TEMPLATE_PREFIX(stencil_disable)() {
+    gl->Disable(GL_STENCIL_TEST);
 }
 
 uint64_t GL_TEMPLATE_PREFIX(statistics_draw_calls)() {

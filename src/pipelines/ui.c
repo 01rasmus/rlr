@@ -17,7 +17,7 @@ static const rlr_vec2_t quad_vertices[6] = {
     rlr_vec2(0, 0)
 };
 
-const char mtsdf_fragment[] = RLR_SHADER_INLINE(
+static const char mtsdf_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
     flat in vec3 frag_color;
     flat in float screen_px_range;
@@ -37,7 +37,7 @@ const char mtsdf_fragment[] = RLR_SHADER_INLINE(
     }
 );
 
-const char basic_fragment[] = RLR_SHADER_INLINE(
+static const char basic_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
     in vec3 frag_color;
     out vec4 final_color;
@@ -48,7 +48,7 @@ const char basic_fragment[] = RLR_SHADER_INLINE(
     }
 );
 
-const char sprite_vertex[] = RLR_SHADER_INLINE(
+static const char sprite_vertex[] = RLR_SHADER_INLINE(
     layout (location = 0) in vec2 pos;
     layout (location = 1) in vec2 rect_pos;
     layout (location = 2) in vec2 rect_size;
@@ -71,7 +71,7 @@ const char sprite_vertex[] = RLR_SHADER_INLINE(
     }
 );
 
-const char mtsdf_vertex[] = RLR_SHADER_INLINE(
+static const char mtsdf_vertex[] = RLR_SHADER_INLINE(
     layout (location = 0) in vec3 color;
     layout (location = 1) in vec2 pos;
     layout (location = 2) in vec2 uv;
@@ -162,8 +162,6 @@ static rlr_pipline_ui_draw_command_t rlr_pipeline_ui_new_command() {
     return command;
 }
 
-#include <stdio.h>
-
 static void rlr_pipeline_ui_rebuild_commands() {
     rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
 
@@ -229,6 +227,8 @@ void rlr_pipeline_ui_draw() {
         rlr_pipeline_ui_rebuild_commands();
     }
 
+    rlr_backend()->stencil_disable();
+    rlr_backend()->stencil_mask(0xff);
     rlr_backend()->blending_set(true);
 
     rlr_backend()->depth_testing_set(false);

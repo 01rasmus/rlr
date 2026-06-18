@@ -94,7 +94,8 @@ rlr_font_t* rlr_font_create(const char* csv_path, const char* texture_atlas_path
     font->texture = NULL;
     font->glyphs = NULL;
 
-    font->texture = rlr_texture_load(texture_atlas_path, false);
+    //msdf textures need to use normal linear filtering (dont use mipmap filtering)
+    font->texture = rlr_texture_load(texture_atlas_path, false, RLR_TEXTURE_FILTER_LINEAR);
     if(!font->texture) {
         font->texture = _rlr_raw()->texture_white;
     }

@@ -4,7 +4,7 @@
 #include "texture.h"
 #include "rlr.h"
 
-rlr_texture_t* rlr_texture_load(const char* texture_path, bool use_srgb_color_space) {
+rlr_texture_t* rlr_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_texture_filter_t filter) {
     rlr_texture_t* texture = malloc(sizeof(rlr_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -26,8 +26,22 @@ rlr_texture_t* rlr_texture_load(const char* texture_path, bool use_srgb_color_sp
 
     texture->width = w;
     texture->height = h;
+    switch(filter) {
+        case RLR_TEXTURE_FILTER_NEAREST: {
+            texture->texture = rlr_backend()->texture_create_nearest(data, w, h, channels, use_srgb_color_space);
+            break;
+        }
+        case RLR_TEXTURE_FILTER_LINEAR: {
+            texture->texture = rlr_backend()->texture_create_linear(data, w, h, channels, use_srgb_color_space);
+            break;
+        }
+        default:
+        case RLR_TEXTURE_FILTER_LINEAR_MIPMAP: {
+            texture->texture = rlr_backend()->texture_create_linear_mipmap(data, w, h, channels, use_srgb_color_space);
+            break;
+        }
+    }
 
-    texture->texture = rlr_backend()->texture_create_linear(data, w, h, channels, use_srgb_color_space);
     if(texture->texture == 0) {
         rlr_error_setf(RLR_ERR_BACKEND_NULL_HANDLE, "file \"%s\"", texture_path);
         goto err;
