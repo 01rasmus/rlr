@@ -8,12 +8,12 @@
 #include "src/resources/font.h"
 #include "src/objects/label.h"
 #include "src/objects/sprite.h"
+#include "src/objects/model_occluder.h"
 
 int32_t main() {
 
     rlr_font_t* font = NULL;
     rlr_font_t* font2 = NULL;
-    rlr_shader_t* shader = NULL;
     rlr_init("rl render", 1024, 768, 0);
 
     font = rlr_font_create("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
@@ -22,26 +22,23 @@ int32_t main() {
         goto end;
     }
 
-    shader = rlr_shader_create(NULL, NULL);
-    if(!shader) {
-        goto end;
-    }
-
     rlr_texture_t* ta_ui = rlr_texture_load("assets/ui_texture_atlas_large.png", false, RLR_TEXTURE_FILTER_LINEAR_MIPMAP);
-    rlr_texture_t* ability_empty = rlr_texture_load("assets/ability_empty.png", false, RLR_TEXTURE_FILTER_LINEAR_MIPMAP);
-    rlr_texture_t* hero_unknown = rlr_texture_load("assets/unknown_unit.png", false, RLR_TEXTURE_FILTER_LINEAR_MIPMAP);
+    rlr_texture_t* ability_empty = rlr_texture_load("assets/ability_empty_small.png", false, RLR_TEXTURE_FILTER_LINEAR_MIPMAP);
+    rlr_texture_t* hero_unknown = rlr_texture_load("assets/unknown_unit_small.png", false, RLR_TEXTURE_FILTER_LINEAR_MIPMAP);
 
-    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 16, "0 fps", font);
+    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 20, "0 fps", font);
     
-    float ui_x = 4;
-    float ui_y = 540 - 119 - 4;
+    float ui_x = 8;
+    float ui_y = -8;
     for(int32_t i = 0; i < 7; i++) {
         float x = ui_x + 4 + i * 32;
-        float y = ui_y + 119 - 4 - 32;
-        rlr_obj_sprite_create(ability_empty, rlr_rect(x, y, 32, 32), 0);
+        float y = ui_y - 4;
+        rlr_obj_sprite_create(ability_empty, rlr_rect(x, y, 32, 32), RLR_ANCHOR_BOTTOM_LEFT, RLR_ANCHOR_BOTTOM_LEFT, 0);
     }
-    rlr_obj_sprite_create(hero_unknown, rlr_rect(ui_x + 5, ui_y + 5, 73, 73), 0);
-    rlr_obj_sprite_create_ext(ta_ui, rlr_rect(ui_x, ui_y, 286, 119), 1, rlr_rect(0, 0, 286, 119), rlr_rect(0, 0, 0, 0));
+    rlr_obj_sprite_create(hero_unknown, rlr_rect(ui_x + 5, ui_y - 41, 73, 73), RLR_ANCHOR_BOTTOM_LEFT, RLR_ANCHOR_BOTTOM_LEFT, 0);
+    rlr_obj_sprite_create_ext(ta_ui, rlr_rect(ui_x, ui_y, 286, 119), RLR_ANCHOR_BOTTOM_LEFT, RLR_ANCHOR_BOTTOM_LEFT, 1, rlr_rect(0, 0, 286, 119), rlr_rect(0, 0, 0, 0));
+    rlr_obj_model_occluder_create(rlr_rect(ui_x + 2, ui_y - 2, 282, 115), RLR_ANCHOR_BOTTOM_LEFT, RLR_ANCHOR_BOTTOM_LEFT);
+    rlr_obj_model_occluder_create(rlr_rect(-8, -8, 256, 256), RLR_ANCHOR_BOTTOM_RIGHT, RLR_ANCHOR_BOTTOM_RIGHT);
 
     uint64_t fps = 60;
     char text_buffer[4096] = "0 fps";

@@ -19,7 +19,7 @@ char* str_from_file(const char* filepath) {
     char* str = NULL;
     FILE* file = NULL;
 
-    file = fopen(filepath, "r");
+    file = fopen(filepath, "rb");
     if(!file) {
         rlr_error_setf(RLR_ERR_FILE_NOT_FOUND, "file \"%s\"", filepath);
         goto err;
@@ -37,8 +37,8 @@ char* str_from_file(const char* filepath) {
 
     size_t read = fread(str, 1, length, file);
     if(read != length) {
-        rlr_error_setf(RLR_ERR_FILE_NOT_READ_PROPERLY, "file \"%s\"", filepath);
-        goto err;
+       rlr_error_setf(RLR_ERR_FILE_NOT_READ_PROPERLY, "file \"%s\"", filepath);
+       goto err;
     }
 
     str[length] = 0;

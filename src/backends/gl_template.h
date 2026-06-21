@@ -237,45 +237,61 @@ rlr_handle_t GL_TEMPLATE_PREFIX(shader_create)(const char* vertex_shader, const 
     uint32_t vid = 0;
     uint32_t fid = 0;
 
-    int32_t vertex_length[1] = { strlen(vertex_shader) };
-    int32_t fragment_length[1] = { strlen(fragment_shader) };
+    int32_t vertex_length[1] = { vertex_shader ? strlen(vertex_shader) : 0 };
+    int32_t fragment_length[1] = { fragment_shader ? strlen(fragment_shader) : 0 };
     const char* vertex_strings[1] = { vertex_shader };
     const char* fragment_strings[1] = { fragment_shader };
 
     //compile vertex shader
-    vid = gl->CreateShader(GL_VERTEX_SHADER);
-    gl->ShaderSource(vid, 1, vertex_strings, vertex_length);
-    gl->CompileShader(vid);
-    if(_rlr_shader_compilation_error(vid, error, error_size)) {
-        goto err;
+    if(vertex_shader) {
+        vid = gl->CreateShader(GL_VERTEX_SHADER);
+        gl->ShaderSource(vid, 1, vertex_strings, vertex_length);
+        gl->CompileShader(vid);
+        if(_rlr_shader_compilation_error(vid, error, error_size)) {
+            goto err;
+        }
     }
 
     //compile fragment shader
-    fid = gl->CreateShader(GL_FRAGMENT_SHADER);
-    gl->ShaderSource(fid, 1, fragment_strings, fragment_length);
-    gl->CompileShader(fid);
-    if(_rlr_shader_compilation_error(fid, error, error_size)) {
-        goto err;
+    if(fragment_shader) {
+        fid = gl->CreateShader(GL_FRAGMENT_SHADER);
+        gl->ShaderSource(fid, 1, fragment_strings, fragment_length);
+        gl->CompileShader(fid);
+        if(_rlr_shader_compilation_error(fid, error, error_size)) {
+            goto err;
+        }
     }
 
     //linking to the program
     uint32_t program = gl->CreateProgram();
     gl->AttachShader(program, vid);
-    gl->AttachShader(program, fid);
-    gl->LinkProgram(program);
+    if(fragment_shader) {
+        gl->AttachShader(program, fid);
+    }
+    if(vertex_strings) {
+        gl->LinkProgram(program);
+    }
     if(_rlr_shader_program_link_error(program, error, error_size)) {
         goto err;
     }
 
     //finished linking, now we can detach and delete
-    gl->DetachShader(program, vid);
-    gl->DetachShader(program, fid);
-    gl->DeleteShader(vid);
-    gl->DeleteShader(fid);
+    if(vertex_shader) {
+        gl->DetachShader(program, vid);
+        gl->DeleteShader(vid);
+    }
+    if(fragment_shader) {
+        gl->DetachShader(program, fid);
+        gl->DeleteShader(fid);
+    }
     return (rlr_handle_t)program;
 err:
-    gl->DeleteShader(vid);
-    gl->DeleteShader(fid);
+    if(vid) {
+        gl->DeleteShader(vid);
+    }
+    if(fid) {
+        gl->DeleteShader(fid);
+    }
     return 0;
 }
 
@@ -326,6 +342,15 @@ void GL_TEMPLATE_PREFIX(clear_color)(float r, float g, float b, float a) {
 void GL_TEMPLATE_PREFIX(clear_stencil)(int32_t stencil) {
     gl->ClearStencil(stencil);
 }
+
+void GL_TEMPLATE_PREFIX(mask_color)(bool r, bool g, bool b, bool a) {
+    gl->ColorMask(r, g, b, a);
+}
+
+void GL_TEMPLATE_PREFIX(mask_depth)(bool z) {
+    gl->DepthMask(z);
+}
+
 
 rlr_handle_t GL_TEMPLATE_PREFIX(vertex_array_create)() {
     rlr_handle_t handle = 0;
@@ -476,10 +501,6 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     #define X(RET, NAME, PARAMS) backend->NAME = GL_TEMPLATE_PREFIX(NAME);
     RLR_BACKEND_FUNCTIONS(X)
     #undef X
-
-    #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
-        gl->Disable(GL_MULTISAMPLE);
-    #endif
 
     gl->Enable(GL_CULL_FACE);
     gl->CullFace(GL_BACK);

@@ -1,8 +1,13 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.18)
 project(rl_render C)
 set(CMAKE_C_STANDARD 11)
 
-find_package(OpenGL REQUIRED)
+if(WIN32)
+    set(OPENGL_LIBS opengl32 gdi32)
+else()
+    find_package(OpenGL REQUIRED)
+    set(OPENGL_LIBS OpenGL::GL)
+endif()
 
 # directories
 set(LIB_DIR "${CMAKE_SOURCE_DIR}/lib")
@@ -32,7 +37,7 @@ target_include_directories(${LIBRARY} PRIVATE ${LIB_DIR} ${SRC_DIR} ${LIB_DIR}/g
 target_include_directories(${EXECUTABLE} PRIVATE ${LIB_DIR} ${SRC_DIR} ${LIB_DIR}/glfw/include)
 
 # library linking
-target_link_libraries(${LIBRARY} glfw OpenGL::GL)
+target_link_libraries(${LIBRARY} glfw ${OPENGL_LIBS})
 target_link_libraries(${EXECUTABLE} ${LIBRARY})
 
 target_compile_options(${LIBRARY} PRIVATE -O3)

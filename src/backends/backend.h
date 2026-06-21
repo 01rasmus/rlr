@@ -89,6 +89,8 @@ typedef enum rlr_backend_type_t {
     X(void,         clear,                          (uint64_t mask)) \
     X(void,         clear_color,                    (float r, float g, float b, float a)) \
     X(void,         clear_stencil,                  (int32_t stencil)) \
+    X(void,         mask_color,                     (bool r, bool g, bool b, bool a)) \
+    X(void,         mask_depth,                     (bool z)) \
     X(void,         draw_array,                     (uint64_t offset, uint32_t vertex_count)) \
     X(void,         draw_array_instanced,           (uint64_t offset, uint32_t vertex_count, uint32_t instance_count)) \
     X(void,         draw_elements,                  (uint64_t offset, uint32_t element_count, rlr_backend_type_t type)) \

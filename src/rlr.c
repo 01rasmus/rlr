@@ -55,7 +55,11 @@ const char model_fragment[] = RLR_SHADER_INLINE(
 
     void main() {
         // out_color = texture(tex, frag_uv);
+        // for(int i = 0; i < 50; i++) {
+        //     out_color *= vec4(texture(tex, frag_uv).rgb * model.camera_pos * material.color.rgb, 1.0);
+        // }
         vec4 tex_color = texture(tex, frag_uv);
+
         vec3 diffuse_color = tex_color.rgb * material.color.rgb;
 
         vec3 N = normalize(frag_normal);
@@ -129,7 +133,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // glfwWindowHint(GLFW_SAMPLES, 16);
+    //glfwWindowHint(GLFW_SAMPLES, 16);
 
     // glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

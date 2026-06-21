@@ -54,10 +54,13 @@ static const char sprite_vertex[] = RLR_SHADER_INLINE(
     layout (location = 2) in vec2 rect_size;
     layout (location = 3) in vec2 uv;
     layout (location = 4) in vec2 uv_size;
+    layout (location = 5) in vec2 screen_anchor;
 
     layout(std140) uniform inv_screen_size {
         float inv_x;
         float inv_y;
+        float screen_width;
+        float screen_height;
     } ui_data;
 
     out vec2 frag_uv;
@@ -65,8 +68,8 @@ static const char sprite_vertex[] = RLR_SHADER_INLINE(
 
     void main() {
         frag_uv = vec2(uv.x + pos.x * uv_size.x, uv.y + pos.y * uv_size.y);
-        float x = rect_pos.x + pos.x * rect_size.x;
-        float y = rect_pos.y + pos.y * rect_size.y;
+        float x = (rect_pos.x + screen_anchor.x * ui_data.screen_width) + pos.x * rect_size.x;
+        float y = (rect_pos.y + screen_anchor.y * ui_data.screen_height) + pos.y * rect_size.y;
         gl_Position = vec4(x * ui_data.inv_x * 2.0 - 1.0, 1.0 - y * ui_data.inv_y * 2.0, 0.0, 1.0);
     }
 );
@@ -98,11 +101,14 @@ typedef struct rlr_instance_data_ui_t {
     rlr_vec2_t size;
     rlr_vec2_t uv;
     rlr_vec2_t uv_size;
+    rlr_vec2_t screen_anchor;
 } rlr_instance_data_ui_t;
 
 typedef struct rlr_uniform_screen_size_t {
     float inv_x;
     float inv_y;
+    float screen_width;
+    float screen_height;
 } rlr_uniform_screen_size_t;
 
 static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
@@ -159,6 +165,7 @@ static rlr_pipline_ui_draw_command_t rlr_pipeline_ui_new_command() {
     rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, size));
     rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv));
     rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv_size));
+    rlr_backend()->vertex_array_attrib_set(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, screen_anchor));
     return command;
 }
 
@@ -198,11 +205,16 @@ static void rlr_pipeline_ui_rebuild_commands() {
             arrsetlen(instance_data, 0);
         }
 
+        rlr_vec2_t screen_anchor_vec = rlr_anchor_vec(sprite->screen_anchor);
+        rlr_vec2_t local_anchor_vec = rlr_anchor_vec(sprite->local_anchor);
+        float width = sprite->rectangle.width;
+        float height = sprite->rectangle.height;
         rlr_instance_data_ui_t data = {
-            .pos = rlr_vec2(sprite->rectangle.x, sprite->rectangle.y),
-            .size = rlr_vec2(sprite->rectangle.width, sprite->rectangle.height),
+            .pos = rlr_vec2(sprite->rectangle.x - (width * local_anchor_vec.x), sprite->rectangle.y - (height * local_anchor_vec.y)),
+            .size = rlr_vec2(width, height),
             .uv = rlr_vec2(sprite->uv.x, sprite->uv.y),
             .uv_size = rlr_vec2(sprite->uv.width - sprite->uv.x, sprite->uv.height - sprite->uv.y),
+            .screen_anchor = screen_anchor_vec,
         };
         arrpush(instance_data, data);
     }
@@ -228,7 +240,6 @@ void rlr_pipeline_ui_draw() {
     }
 
     rlr_backend()->stencil_disable();
-    rlr_backend()->stencil_mask(0xff);
     rlr_backend()->blending_set(true);
 
     rlr_backend()->depth_testing_set(false);
@@ -258,7 +269,9 @@ void rlr_pipeline_ui_viewport_set(float width, float height) {
 
     rlr_uniform_screen_size_t data = {
         .inv_x = 1.0 / (float)width,
-        .inv_y = 1.0 / (float)height
+        .inv_y = 1.0 / (float)height,
+        .screen_width = (float)width,
+        .screen_height = (float)height
     };
     rlr_uniform_update(pu->ubo_screen_size, 0, &data, sizeof(rlr_uniform_screen_size_t));
 }

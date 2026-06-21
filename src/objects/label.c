@@ -12,7 +12,6 @@ typedef struct rlr_obj_label_vertex_t {
     float screen_px_range;
 } rlr_obj_label_vertex_t;
 
-#include <stdio.h>
 static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* text) {
     rlr_obj_label_vertex_t* vertices = NULL;
     rlr_font_glyph_t* space_glyph = rlr_font_glyph_get(label->font, ' ');
