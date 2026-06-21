@@ -122,11 +122,11 @@ err:
     return NULL;
 }
 
-void rlr_obj_label_visible_set(rlr_obj_label_t* label, bool visible) {
+void rlr_obj_label_set_visability(rlr_obj_label_t* label, bool visible) {
     label->visible = visible;
 }
 
-void rlr_obj_label_text_set(rlr_obj_label_t* label, const char* text) {
+void rlr_obj_label_set_text(rlr_obj_label_t* label, const char* text) {
     rlr_obj_label_upload_vertices(label, text);
 }
 
