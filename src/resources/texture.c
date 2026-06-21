@@ -4,8 +4,8 @@
 #include "texture.h"
 #include "rlr.h"
 
-rlr_texture_t* rlr_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_texture_filter_t filter) {
-    rlr_texture_t* texture = malloc(sizeof(rlr_texture_t));
+rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter) {
+    rlr_res_texture_t* texture = malloc(sizeof(rlr_res_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
@@ -27,16 +27,16 @@ rlr_texture_t* rlr_texture_load(const char* texture_path, bool use_srgb_color_sp
     texture->width = w;
     texture->height = h;
     switch(filter) {
-        case RLR_TEXTURE_FILTER_NEAREST: {
+        case RLR_RES_TEXTURE_FILTER_NEAREST: {
             texture->texture = rlr_backend()->texture_create_nearest(data, w, h, channels, use_srgb_color_space);
             break;
         }
-        case RLR_TEXTURE_FILTER_LINEAR: {
+        case RLR_RES_TEXTURE_FILTER_LINEAR: {
             texture->texture = rlr_backend()->texture_create_linear(data, w, h, channels, use_srgb_color_space);
             break;
         }
         default:
-        case RLR_TEXTURE_FILTER_LINEAR_MIPMAP: {
+        case RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP: {
             texture->texture = rlr_backend()->texture_create_linear_mipmap(data, w, h, channels, use_srgb_color_space);
             break;
         }
@@ -51,12 +51,12 @@ rlr_texture_t* rlr_texture_load(const char* texture_path, bool use_srgb_color_sp
     return texture;
 err:
     stbi_image_free(data);
-    rlr_texture_free(texture);
+    rlr_res_texture_free(texture);
     return NULL;
 }
 
-rlr_texture_t* rlr_texture_default() {
-    rlr_texture_t* texture = malloc(sizeof(rlr_texture_t));
+rlr_res_texture_t* rlr_res_texture_default() {
+    rlr_res_texture_t* texture = malloc(sizeof(rlr_res_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
@@ -75,12 +75,12 @@ rlr_texture_t* rlr_texture_default() {
 
     return texture;
 err:
-    rlr_texture_free(texture);
+    rlr_res_texture_free(texture);
     return NULL;
 }
 
-rlr_texture_t* rlr_texture_load_cgltf_base(cgltf_texture* tex) {
-    rlr_texture_t* texture = malloc(sizeof(rlr_texture_t));
+rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
+    rlr_res_texture_t* texture = malloc(sizeof(rlr_res_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
@@ -138,15 +138,15 @@ rlr_texture_t* rlr_texture_load_cgltf_base(cgltf_texture* tex) {
     return texture;
 err:
     stbi_image_free(data);
-    rlr_texture_free(texture);
+    rlr_res_texture_free(texture);
     return NULL;
 }
 
-void rlr_texture_bind(rlr_texture_t* texture, uint8_t texture_slot) {
+void rlr_res_texture_bind(rlr_res_texture_t* texture, uint8_t texture_slot) {
     _rlr_raw()->backend->texture_bind(texture->texture, RLR_BACKEND_TEXTURE_2D, texture_slot);
 }
 
-void rlr_texture_free(rlr_texture_t* texture) {
+void rlr_res_texture_free(rlr_res_texture_t* texture) {
     if(texture) {
         _rlr_raw()->backend->texture_free(texture->texture);
     }

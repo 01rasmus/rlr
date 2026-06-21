@@ -8,8 +8,8 @@
     for(int64_t i = 0; i < sizeof(ARRAY) / sizeof(ARRAY[0]); i++) \
         stbi_image_free(ARRAY[i]);
 
-rlr_cube_map_t* rlr_cube_map_load(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back) {
-    rlr_cube_map_t* cm = NULL;
+rlr_res_cube_map_t* rlr_res_cube_map_load(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back) {
+    rlr_res_cube_map_t* cm = NULL;
     uint8_t* texture_data[6] = {0};
     const char* texture_locations[6] = {
         right,
@@ -20,7 +20,7 @@ rlr_cube_map_t* rlr_cube_map_load(const char* right, const char* left, const cha
         back
     };
 
-    cm = malloc(sizeof(rlr_cube_map_t));
+    cm = malloc(sizeof(rlr_res_cube_map_t));
     if(!cm) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
@@ -57,15 +57,15 @@ rlr_cube_map_t* rlr_cube_map_load(const char* right, const char* left, const cha
     return cm;
 err:
     FREE_TEXTURE_DATA(texture_data);
-    rlr_cube_map_free(cm);
+    rlr_res_cube_map_free(cm);
     return NULL;
 }
 
-void rlr_cube_map_bind(rlr_cube_map_t* cm, uint8_t texture_slot) {
+void rlr_res_cube_map_bind(rlr_res_cube_map_t* cm, uint8_t texture_slot) {
     rlr_backend()->texture_bind(cm->texture, RLR_BACKEND_TEXTURE_CUBE_MAP, texture_slot);
 }
 
-void rlr_cube_map_free(rlr_cube_map_t* cm) {
+void rlr_res_cube_map_free(rlr_res_cube_map_t* cm) {
     if(!cm) {
         return;
     }

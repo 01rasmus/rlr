@@ -3,16 +3,16 @@
 #include "math/rect.h"
 #include "backends/backend.h"
 
-typedef struct rlr_shader_t rlr_shader_t;
-typedef struct rlr_texture_t rlr_texture_t;
-typedef struct rlr_uniform_t rlr_uniform_t;
+typedef struct rlr_res_shader_t rlr_res_shader_t;
+typedef struct rlr_res_texture_t rlr_res_texture_t;
+typedef struct rlr_res_uniform_t rlr_res_uniform_t;
 
 typedef struct rlr_obj_label_t rlr_obj_label_t;
 typedef struct rlr_obj_sprite_t rlr_obj_sprite_t;
 
 typedef struct rlr_pipline_ui_draw_command_t {
-    rlr_shader_t* shader;
-    rlr_texture_t* texture;
+    rlr_res_shader_t* shader;
+    rlr_res_texture_t* texture;
     rlr_rect_t scissor;
     rlr_handle_t vao;
     rlr_handle_t instance_vbo;
@@ -21,9 +21,9 @@ typedef struct rlr_pipline_ui_draw_command_t {
 } rlr_pipline_ui_draw_command_t;
 
 typedef struct rlr_pipeline_ui_t {
-    rlr_shader_t* shader_text;
-    rlr_shader_t* shader_sprite;
-    rlr_uniform_t* ubo_screen_size;
+    rlr_res_shader_t* shader_text;
+    rlr_res_shader_t* shader_sprite;
+    rlr_res_uniform_t* ubo_screen_size;
     rlr_obj_label_t* obj_labels;
     rlr_obj_sprite_t* obj_sprites;
 

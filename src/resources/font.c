@@ -7,7 +7,7 @@
 #include "rlr.h"
 
 void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, void* user) {
-    rlr_font_t* font = (rlr_font_t*)user;
+    rlr_res_font_t* font = (rlr_res_font_t*)user;
 
     char* end = NULL;
     uint32_t unicode = strtoul(columns[0], &end, 10);
@@ -62,7 +62,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
         return;
     }
 
-    rlr_font_glyph_t glyph = (rlr_font_glyph_t) {
+    rlr_res_font_glyph_t glyph = (rlr_res_font_glyph_t) {
         .key = unicode,
         .advance = advance,
         .plane_bottom = plane_bound_bottom,
@@ -78,8 +78,8 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
     hmputs(font->glyphs, glyph);
 }
 
-rlr_font_t* rlr_font_create(const char* csv_path, const char* texture_atlas_path, float px_range) {
-    rlr_font_t* font = malloc(sizeof(rlr_font_t));
+rlr_res_font_t* rlr_res_font_create(const char* csv_path, const char* texture_atlas_path, float px_range) {
+    rlr_res_font_t* font = malloc(sizeof(rlr_res_font_t));
     if(!font) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
@@ -95,7 +95,7 @@ rlr_font_t* rlr_font_create(const char* csv_path, const char* texture_atlas_path
     font->glyphs = NULL;
 
     //msdf textures need to use normal linear filtering (dont use mipmap filtering)
-    font->texture = rlr_texture_load(texture_atlas_path, false, RLR_TEXTURE_FILTER_LINEAR);
+    font->texture = rlr_res_texture_load(texture_atlas_path, false, RLR_RES_TEXTURE_FILTER_LINEAR);
     if(!font->texture) {
         font->texture = _rlr_raw()->texture_white;
     }
@@ -108,21 +108,21 @@ rlr_font_t* rlr_font_create(const char* csv_path, const char* texture_atlas_path
     return font;
 err:
     free(csv);
-    rlr_font_free(font);
+    rlr_res_font_free(font);
     return NULL;
 }
 
-rlr_font_glyph_t* rlr_font_glyph_get(rlr_font_t* font, uint32_t unicode) {
+rlr_res_font_glyph_t* rlr_res_font_glyph_get(rlr_res_font_t* font, uint32_t unicode) {
     return hmgetp_null(font->glyphs, unicode);
 }
 
-int32_t rlr_font_glyph_count(rlr_font_t* font) {
+int32_t rlr_res_font_glyph_count(rlr_res_font_t* font) {
     return hmlen(font->glyphs);
 }
 
-void rlr_font_free(rlr_font_t* font) {
+void rlr_res_font_free(rlr_res_font_t* font) {
     if(font) {
-        rlr_texture_free(font->texture);
+        rlr_res_texture_free(font->texture);
         hmfree(font->glyphs);
     }
     free(font);

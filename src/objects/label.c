@@ -14,8 +14,8 @@ typedef struct rlr_obj_label_vertex_t {
 
 static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* text) {
     rlr_obj_label_vertex_t* vertices = NULL;
-    rlr_font_glyph_t* space_glyph = rlr_font_glyph_get(label->font, ' ');
-    rlr_font_glyph_t* unknown_glyph = rlr_font_glyph_get(label->font, '?');
+    rlr_res_font_glyph_t* space_glyph = rlr_res_font_glyph_get(label->font, ' ');
+    rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_glyph_get(label->font, '?');
     float x = label->x;
     float y = label->y + label->size;
     float space_width = space_glyph ? ((space_glyph->advance * label->size)) : label->size;
@@ -45,7 +45,7 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
             continue;
         }
 
-        rlr_font_glyph_t* glyph = rlr_font_glyph_get(label->font, unicode);
+        rlr_res_font_glyph_t* glyph = rlr_res_font_glyph_get(label->font, unicode);
         if(!glyph) {
             if(!unknown_glyph) {
                 continue;
@@ -92,7 +92,7 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
     arrfree(vertices);
 }
 
-rlr_obj_label_t* rlr_obj_label_create(float x, float y, float size, const char* text, rlr_font_t* font) {
+rlr_obj_label_t* rlr_obj_label_create(float x, float y, float size, const char* text, rlr_res_font_t* font) {
     rlr_obj_label_t* label = rlr_pipeline_ui_alloc_label();
 
     label->font = font;

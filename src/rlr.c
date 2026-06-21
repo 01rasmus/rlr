@@ -3,7 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <stb_ds.h>
 #include "backends/backend.h"
-#include "resources/model_static.h"
+#include "resources/static_model.h"
 #include "resources/cube_map.h"
 #include "resources/uniform.h"
 #include "resources/shader.h"
@@ -50,8 +50,59 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         float reflectiveness;
     } material;
 
-    const vec3 light_pos = vec3(0, 5000.0, 0);
+    struct PointLight {
+        vec3 position;
+        vec3 color;
+    };
+
+    const int LIGHT_COUNT = 8;
+    const PointLight point_lights[LIGHT_COUNT] = PointLight[](
+        PointLight(vec3(1.0, 1.0, 1.0), vec3(1.0, 0.0, 0.0)),
+        PointLight(vec3(2.0, 1.0, 1.0), vec3(1.0, 1.0, 0.0)),
+        PointLight(vec3(3.0, 1.0, 1.0), vec3(1.0, 0.0, 1.0)),
+        PointLight(vec3(4.0, 1.0, 1.0), vec3(1.0, 1.0, 1.0)),
+        PointLight(vec3(5.0, 1.0, 1.0), vec3(0.0, 1.0, 1.0)),
+        PointLight(vec3(-1.0, 1.0, 1.0), vec3(0.0, 0.0, 1.0)),
+        PointLight(vec3(-2.0, 1.0, 1.0), vec3(0.0, 1.0, 0.0)),
+        PointLight(vec3(-3.0, 1.0, 1.0), vec3(0.0, 0.0, 0.0))
+    );
+
+    const vec3 light_dir = normalize(vec3(-0.4, -1.0, -0.3));
     const vec3 ambient_color = vec3(0.2, 0.5, 0.4);
+
+    vec3 point_light(vec3 light_pos, vec3 light_col, vec3 normal, vec3 V, vec3 diffuse_col) {
+        vec3 to_light = light_pos - frag_vert_pos;
+
+        float distance = length(to_light);
+        vec3 L = to_light / distance;
+        vec3 H = normalize(L + V);
+
+        float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
+
+        float diff = max(dot(normal, L), 0.0);
+
+        vec3 diffuse =
+            diffuse_col *
+            light_col *
+            diff *
+            attenuation;
+
+        float spec = 0.0;
+        if(diff > 0.0) {
+            spec = pow(
+                max(dot(normal, H), 0.0),
+                material.shininess
+            );
+        }
+
+        vec3 specular =
+            light_col *
+            spec *
+            material.specular_strength *
+            attenuation;
+
+        return diffuse + specular;
+    }
 
     void main() {
         // out_color = texture(tex, frag_uv);
@@ -63,7 +114,7 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         vec3 diffuse_color = tex_color.rgb * material.color.rgb;
 
         vec3 N = normalize(frag_normal);
-        vec3 L = normalize(light_pos - frag_vert_pos);
+        vec3 L = normalize(-light_dir);
         vec3 V = normalize(model.camera_pos - frag_vert_pos);
         vec3 H = normalize(L + V);
 
@@ -82,6 +133,11 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         vec3 specular = spec_color * spec * material.specular_strength;
 
         vec3 lit_color = ambient + diffuse + specular;
+
+        for(int i = 0; i < LIGHT_COUNT; i++) {
+            lit_color += point_light(point_lights[i].position, point_lights[i].color, N, V, diffuse_color);
+        }
+
         vec3 final_rgb = mix(lit_color, reflected_color, material.reflectiveness);
         out_color = vec4(final_rgb, tex_color.a * material.color.a);
     }
@@ -169,7 +225,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     rlr_backend()->viewport_set(0, 0, window_width, window_height);
 
     //setup default resources
-    _rlr->texture_white = rlr_texture_default();
+    _rlr->texture_white = rlr_res_texture_default();
 
     //setup pipelines
     if(!rlr_pipeline_ui_init()) {
@@ -180,9 +236,9 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     }
     rlr_pipeline_ui_viewport_set(window_width, window_height);
 
-    _rlr->test = rlr_model_static_create("assets/plane.glb");
-    //_rlr->test_cube_map = rlr_cube_map_load("assets/skybox/right.jpg", "assets/skybox/left.jpg", "assets/skybox/top.jpg", "assets/skybox/bottom.jpg", "assets/skybox/front.jpg", "assets/skybox/back.jpg");
-    _rlr->test_cube_map = rlr_cube_map_load(
+    _rlr->test = rlr_res_static_model_load("assets/plane.glb");
+    //_rlr->test_cube_map = rlr_res_cube_map_load("assets/skybox/right.jpg", "assets/skybox/left.jpg", "assets/skybox/top.jpg", "assets/skybox/bottom.jpg", "assets/skybox/front.jpg", "assets/skybox/back.jpg");
+    _rlr->test_cube_map = rlr_res_cube_map_load(
         "assets/s/px.png",
         "assets/s/nx.png",
         "assets/s/py.png",
@@ -190,16 +246,16 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         "assets/s/pz.png",
         "assets/s/nz.png"
     );
-    rlr_cube_map_bind(_rlr->test_cube_map, 4);
+    rlr_res_cube_map_bind(_rlr->test_cube_map, 4);
 
-    _rlr->shader_model = rlr_shader_create(model_vertex, model_fragment);
-    rlr_shader_bind_uniform_slot(_rlr->shader_model, "ubo_model", 1);
-    rlr_shader_bind_uniform_slot(_rlr->shader_model, "ubo_material", 2);
-    rlr_shader_bind_texture_slot(_rlr->shader_model, "tex", 0);
-    rlr_shader_bind_texture_slot(_rlr->shader_model, "cube_map", 4);
+    _rlr->shader_model = rlr_res_shader_create(model_vertex, model_fragment);
+    rlr_res_shader_bind_uniform_slot(_rlr->shader_model, "ubo_model", 1);
+    rlr_res_shader_bind_uniform_slot(_rlr->shader_model, "ubo_material", 2);
+    rlr_res_shader_bind_texture_slot(_rlr->shader_model, "tex", 0);
+    rlr_res_shader_bind_texture_slot(_rlr->shader_model, "cube_map", 4);
 
-    _rlr->ubo_material = rlr_uniform_create_dynamic(sizeof(rlr_material_t));
-    rlr_uniform_bind(_rlr->ubo_material, 2);
+    _rlr->ubo_material = rlr_res_uniform_create_dynamic(sizeof(rlr_res_material_t));
+    rlr_res_uniform_bind(_rlr->ubo_material, 2);
 
     rlr_vec3_t cam_pos = rlr_vec3_mulf(rlr_vec3(-0.05, 0.1, -0.1), 7);
     rlr_vec3_t scene_center = rlr_vec3(0, 0, 0);
@@ -212,9 +268,9 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         .camera_pos = cam_pos,
     };
 
-    _rlr->ubo_model = rlr_uniform_create_dynamic(sizeof(uniform_model_t));
-    rlr_uniform_update(_rlr->ubo_model, 0, &ubo_model, sizeof(uniform_model_t));
-    rlr_uniform_bind(_rlr->ubo_model, 1);
+    _rlr->ubo_model = rlr_res_uniform_create_dynamic(sizeof(uniform_model_t));
+    rlr_res_uniform_update(_rlr->ubo_model, 0, &ubo_model, sizeof(uniform_model_t));
+    rlr_res_uniform_bind(_rlr->ubo_model, 1);
 
     return;
 err:
@@ -232,10 +288,10 @@ void rlr_free() {
     rlr_pipeline_stencil_free();
 
     //free resources
-    rlr_texture_free(_rlr->texture_white);
-    rlr_uniform_free(_rlr->ubo_material);
-    rlr_uniform_free(_rlr->ubo_model);
-    rlr_shader_free(_rlr->shader_model);
+    rlr_res_texture_free(_rlr->texture_white);
+    rlr_res_uniform_free(_rlr->ubo_material);
+    rlr_res_uniform_free(_rlr->ubo_model);
+    rlr_res_shader_free(_rlr->shader_model);
 
     //free backend API and window
     if(_rlr->backend) {
@@ -276,15 +332,15 @@ bool rlr_draw() {
     rlr_pipeline_stencil_draw();
 
     //render test monkey
-    rlr_shader_use(_rlr->shader_model);
+    rlr_res_shader_use(_rlr->shader_model);
     rlr_backend()->depth_testing_set(true);
     for(int64_t i = 0; i < arrlen(_rlr->test->meshes); i++) {
-        rlr_mesh_static_t* mesh = &_rlr->test->meshes[i];
-        rlr_uniform_update(_rlr->ubo_material, 0, &mesh->material, sizeof(rlr_material_t));
+        rlr_res_static_mesh_t* mesh = &_rlr->test->meshes[i];
+        rlr_res_uniform_update(_rlr->ubo_material, 0, &mesh->material, sizeof(rlr_res_material_t));
         if(mesh->texture_base) {
-            rlr_texture_bind(mesh->texture_base, 0);
+            rlr_res_texture_bind(mesh->texture_base, 0);
         } else {
-            rlr_texture_bind(_rlr->texture_white, 0);
+            rlr_res_texture_bind(_rlr->texture_white, 0);
         }
         rlr_backend()->vertex_array_bind(mesh->vao);
         rlr_backend()->draw_elements(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32);

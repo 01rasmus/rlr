@@ -1,11 +1,11 @@
 #pragma once
 #include "backends/backend.h"
 
-typedef struct rlr_shader_t rlr_shader_t;
+typedef struct rlr_res_shader_t rlr_res_shader_t;
 typedef struct rlr_obj_model_occluder_t rlr_obj_model_occluder_t;
 
 typedef struct rlr_pipeline_stencil_t {
-    rlr_shader_t* shader;
+    rlr_res_shader_t* shader;
     rlr_handle_t vao;
     rlr_handle_t vbo;
     rlr_handle_t instance_vbo;

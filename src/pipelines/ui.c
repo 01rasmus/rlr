@@ -127,21 +127,21 @@ static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
 bool rlr_pipeline_ui_init() {
     rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
     (*pu) = (rlr_pipeline_ui_t){0};
-    pu->shader_sprite = rlr_shader_create(sprite_vertex, basic_fragment);
-    pu->shader_text = rlr_shader_create(mtsdf_vertex, mtsdf_fragment);
+    pu->shader_sprite = rlr_res_shader_create(sprite_vertex, basic_fragment);
+    pu->shader_text = rlr_res_shader_create(mtsdf_vertex, mtsdf_fragment);
     if(!pu->shader_sprite || !pu->shader_text) {
         goto err;
     }
-    rlr_shader_bind_uniform_slot(pu->shader_sprite, "inv_screen_size", 0);
-    rlr_shader_bind_uniform_slot(pu->shader_text, "inv_screen_size", 0);
+    rlr_res_shader_bind_uniform_slot(pu->shader_sprite, "inv_screen_size", 0);
+    rlr_res_shader_bind_uniform_slot(pu->shader_text, "inv_screen_size", 0);
 
     pu->quad_vbo = rlr_backend()->buffer_create();
     if(!pu->quad_vbo) {
         goto err;
     }
 
-    pu->ubo_screen_size = rlr_uniform_create_dynamic(sizeof(rlr_uniform_screen_size_t));
-    rlr_uniform_bind(pu->ubo_screen_size, 0);
+    pu->ubo_screen_size = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_screen_size_t));
+    rlr_res_uniform_bind(pu->ubo_screen_size, 0);
 
     rlr_backend()->buffer_bind(pu->quad_vbo, RLR_BACKEND_BUFFER_ARRAY);
     rlr_backend()->buffer_update(RLR_BACKEND_BUFFER_ARRAY, sizeof(quad_vertices), quad_vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
@@ -183,7 +183,7 @@ static void rlr_pipeline_ui_rebuild_commands() {
 
     qsort(pu->obj_sprites, arrlenu(pu->obj_sprites), sizeof(rlr_obj_sprite_t), rlr_pipeline_ui_sorter_sprite);
     int64_t current_command = 0;
-    rlr_texture_t* current_texture = NULL;
+    rlr_res_texture_t* current_texture = NULL;
 
     for(int64_t i = 0; i < arrlen(pu->obj_sprites); i++) {
         rlr_obj_sprite_t* sprite = &pu->obj_sprites[i];
@@ -244,19 +244,19 @@ void rlr_pipeline_ui_draw() {
 
     rlr_backend()->depth_testing_set(false);
     for(uint64_t i = 0; i < pu->command_count; i++) {
-        rlr_shader_use(pu->commands[i].shader);
-        rlr_texture_bind(pu->commands[i].texture, 0);
+        rlr_res_shader_use(pu->commands[i].shader);
+        rlr_res_texture_bind(pu->commands[i].texture, 0);
         rlr_backend()->vertex_array_bind(pu->commands[i].vao);
         rlr_backend()->draw_array_instanced(0, 6, pu->commands[i].instance_count);
     }
 
-    rlr_shader_use(pu->shader_text);
+    rlr_res_shader_use(pu->shader_text);
     for(int64_t i = 0; i < arrlen(pu->obj_labels); i++) {
         rlr_obj_label_t* label = &pu->obj_labels[i];
         if(!label->visible) {
             continue;
         }
-        rlr_texture_bind(label->font->texture, 0);
+        rlr_res_texture_bind(label->font->texture, 0);
         rlr_backend()->vertex_array_bind(label->vao);
         rlr_backend()->draw_array(0, label->vertex_count);
     }
@@ -273,7 +273,7 @@ void rlr_pipeline_ui_viewport_set(float width, float height) {
         .screen_width = (float)width,
         .screen_height = (float)height
     };
-    rlr_uniform_update(pu->ubo_screen_size, 0, &data, sizeof(rlr_uniform_screen_size_t));
+    rlr_res_uniform_update(pu->ubo_screen_size, 0, &data, sizeof(rlr_uniform_screen_size_t));
 }
 
 void rlr_pipeline_ui_free() {
@@ -282,9 +282,9 @@ void rlr_pipeline_ui_free() {
         return;
     }
 
-    rlr_shader_free(pu->shader_text);
-    rlr_shader_free(pu->shader_sprite);
-    rlr_uniform_free(pu->ubo_screen_size);
+    rlr_res_shader_free(pu->shader_text);
+    rlr_res_shader_free(pu->shader_sprite);
+    rlr_res_uniform_free(pu->ubo_screen_size);
 
     for(int64_t i = 0; i < arrlen(pu->obj_labels); i++) {
         rlr_obj_label_free(&pu->obj_labels[i]);

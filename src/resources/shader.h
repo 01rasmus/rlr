@@ -7,21 +7,12 @@
 #define RLR_SHADER_INLINE(SRC)        "#version 330 core\n" #SRC
 //#define RLR_SHADER_INLINE(SRC)        "#version 300 es\nprecision highp float;\nprecision highp int;\n" #SRC
 
-typedef enum rlr_shader_uniform_type {
-    RLR_SHADER_UNIFORM_BOOL,
-    RLR_SHADER_UNIFORM_INT,
-    RLR_SHADER_UNIFORM_FLOAT,
-    RLR_SHADER_UNIFORM_VEC2,
-    RLR_SHADER_UNIFORM_VEC3,
-    RLR_SHADER_UNIFORM_MAT4X4,
-} rlr_shader_uniform_type;
-
-typedef struct rlr_shader_t {
+typedef struct rlr_res_shader_t {
     rlr_handle_t shader;
-} rlr_shader_t;
+} rlr_res_shader_t;
 
-rlr_shader_t* rlr_shader_create(const char* vertex, const char* fragment);
-void rlr_shader_bind_uniform_slot(rlr_shader_t* shader, const char* block_var_name, uint8_t uniform_slot);
-void rlr_shader_bind_texture_slot(rlr_shader_t* shader, const char* texture_var_name, uint8_t uniform_slot);
-void rlr_shader_use(rlr_shader_t* shader);
-void rlr_shader_free(rlr_shader_t* shader);
+rlr_res_shader_t* rlr_res_shader_create(const char* vertex, const char* fragment);
+void rlr_res_shader_bind_uniform_slot(rlr_res_shader_t* shader, const char* block_var_name, uint8_t uniform_slot);
+void rlr_res_shader_bind_texture_slot(rlr_res_shader_t* shader, const char* texture_var_name, uint8_t uniform_slot);
+void rlr_res_shader_use(rlr_res_shader_t* shader);
+void rlr_res_shader_free(rlr_res_shader_t* shader);

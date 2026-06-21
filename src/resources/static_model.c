@@ -4,7 +4,7 @@
 #include "math/vec.h"
 #include "texture.h"
 #include "error.h"
-#include "model_static.h"
+#include "static_model.h"
 #include "rlr.h"
 
 typedef struct rlr_model_static_vertex_t {
@@ -13,11 +13,11 @@ typedef struct rlr_model_static_vertex_t {
     rlr_vec2_t uv;
 } rlr_model_static_vertex_t;
 
-rlr_model_static_t* rlr_model_static_create(const char* glb_model_location) {
-    rlr_model_static_t* model = NULL;
+rlr_res_static_model_t* rlr_res_static_model_load(const char* glb_model_location) {
+    rlr_res_static_model_t* model = NULL;
     rlr_model_static_vertex_t* vertices = NULL;
     uint32_t* indices = NULL;
-    model = malloc(sizeof(rlr_model_static_t));
+    model = malloc(sizeof(rlr_res_static_model_t));
     if(!model) {
         goto err;
     }
@@ -129,8 +129,8 @@ rlr_model_static_t* rlr_model_static_create(const char* glb_model_location) {
             }
 
             //create mesh
-            arrpush(model->meshes, (rlr_mesh_static_t){0});
-            rlr_mesh_static_t* mesh = &arrlast(model->meshes);
+            arrpush(model->meshes, (rlr_res_static_mesh_t){0});
+            rlr_res_static_mesh_t* mesh = &arrlast(model->meshes);
             mesh->vao = rlr_backend()->vertex_array_create();
             mesh->vbo = rlr_backend()->buffer_create();
             mesh->ebo = rlr_backend()->buffer_create();
@@ -153,7 +153,7 @@ rlr_model_static_t* rlr_model_static_create(const char* glb_model_location) {
             //material
             cgltf_material* material = primitive->material;
             if(material) {
-                mesh->texture_base = rlr_texture_load_cgltf_base(material->pbr_metallic_roughness.base_color_texture.texture);
+                mesh->texture_base = rlr_res_texture_load_cgltf_base(material->pbr_metallic_roughness.base_color_texture.texture);
                 float roughness = material->pbr_metallic_roughness.roughness_factor;
                 memcpy(mesh->material.color, material->pbr_metallic_roughness.base_color_factor, sizeof(float) * 4);
                 mesh->material.shininess = 4.0 + powf(1.0 - roughness, 2.0) * 124.0;
@@ -178,17 +178,17 @@ err:
     cgltf_free(data);
     arrfree(vertices);
     arrfree(indices);
-    rlr_model_static_free(model);
+    rlr_res_static_model_free(model);
     return NULL;
 }
 
-void rlr_model_static_free(rlr_model_static_t* model) {
+void rlr_res_static_model_free(rlr_res_static_model_t* model) {
     if(!model) {
         return;
     }
 
     for(int64_t i = 0; i < arrlen(model->meshes); i++) {
-        rlr_mesh_static_t* mesh = &model->meshes[i];
+        rlr_res_static_mesh_t* mesh = &model->meshes[i];
         rlr_backend()->buffer_free(mesh->ebo);
         rlr_backend()->buffer_free(mesh->vbo);
         rlr_backend()->vertex_array_free(mesh->vao);
