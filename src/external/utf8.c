@@ -1,0 +1,3 @@
+#define UTF8_H_IMPLEMENTATION
+#include <utf8.h>
+#undef UTF8_H_IMPLEMENTATION

@@ -24,7 +24,7 @@ add_subdirectory(${LIB_DIR}/glfw)
 
 # source
 file(GLOB_RECURSE RL_RENDER_SRC "${SRC_DIR}/*.c")
-set(SRC ${RL_RENDER_SRC} ${LIB_DIR}/lib.c)
+set(SRC ${RL_RENDER_SRC})
 
 # binaries
 set(EXECUTABLE "rlr_exec")
