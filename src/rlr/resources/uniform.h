@@ -1,10 +1,9 @@
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
-#include "internal/backends/backend.h"
 
 typedef struct rlr_res_uniform_t {
-    rlr_handle_t buffer;
+    uint64_t buffer;
     uint64_t max_size;
     bool is_static;
     uint8_t slot;

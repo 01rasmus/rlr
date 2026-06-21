@@ -1,5 +1,4 @@
 #pragma once
-#include "internal/backends/backend.h"
 
 typedef struct rlr_res_texture_t rlr_res_texture_t;
 
@@ -13,9 +12,9 @@ typedef struct rlr_res_material_t {
 typedef struct rlr_res_static_mesh_t {
     rlr_res_texture_t* texture_base;
     rlr_res_material_t material;
-    rlr_handle_t vao;
-    rlr_handle_t vbo;
-    rlr_handle_t ebo;
+    uint64_t vao;
+    uint64_t vbo;
+    uint64_t ebo;
     uint64_t index_count;
 } rlr_res_static_mesh_t;
 

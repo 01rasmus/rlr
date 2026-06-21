@@ -6,9 +6,9 @@ typedef struct rlr_obj_model_occluder_t rlr_obj_model_occluder_t;
 
 typedef struct rlr_pipeline_stencil_t {
     rlr_res_shader_t* shader;
-    rlr_handle_t vao;
-    rlr_handle_t vbo;
-    rlr_handle_t instance_vbo;
+    uint64_t vao;
+    uint64_t vbo;
+    uint64_t instance_vbo;
     uint64_t instance_count;
     rlr_obj_model_occluder_t* obj_model_occluders;
     bool is_dirty;

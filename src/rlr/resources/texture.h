@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <cgltf.h>
-#include "internal/backends/backend.h"
 
 typedef enum rlr_res_texture_filter_t {
     RLR_RES_TEXTURE_FILTER_NEAREST = 0,
@@ -11,7 +10,7 @@ typedef enum rlr_res_texture_filter_t {
 } rlr_res_texture_filter_t;
 
 typedef struct rlr_res_texture_t {
-    rlr_handle_t texture;
+    uint64_t texture;
     float width;
     float height;
 } rlr_res_texture_t;

@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef uintptr_t rlr_handle_t;
 typedef void (*rlr_backend_proc_t)(void);
 typedef rlr_backend_proc_t (*rlr_backend_loader_t)(const char*);
 
@@ -67,21 +66,21 @@ typedef enum rlr_backend_type_t {
 } rlr_backend_type_t;
 
 #define RLR_BACKEND_FUNCTIONS(X) \
-    X(rlr_handle_t, create_vertex_array,            ()) \
-    X(rlr_handle_t, create_texture,                 (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
-    X(rlr_handle_t, create_buffer,                  ()) \
-    X(rlr_handle_t, create_linear_texture,          (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
-    X(rlr_handle_t, create_linear_mipmap_texture,   (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
-    X(rlr_handle_t, create_nearest_texture,         (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
-    X(rlr_handle_t, create_cube_map_texture,        (uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height, int32_t channels)) \
-    X(rlr_handle_t, create_shader,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
-    X(void,         bind_vertex_array,              (rlr_handle_t vao)) \
-    X(void,         bind_buffer,                    (rlr_handle_t buffer, rlr_backend_buffer_target_t target)) \
-    X(void,         bind_texture,                   (rlr_handle_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot)) \
-    X(void,         bind_shader,                    (rlr_handle_t shader)) \
-    X(void,         bind_shader_uniform_block,      (rlr_handle_t shader, const char* uniform_block_name, uint32_t uniform_block_slot)) \
-    X(void,         bind_shader_texture_slot,       (rlr_handle_t shader, const char* texture_var_name, uint32_t texture_slot)) \
-    X(void,         bind_uniform_buffer,            (rlr_handle_t ubo, uint32_t uniform_block_slot)) \
+    X(uint64_t, create_vertex_array,            ()) \
+    X(uint64_t, create_texture,                 (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
+    X(uint64_t, create_buffer,                  ()) \
+    X(uint64_t, create_linear_texture,          (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
+    X(uint64_t, create_linear_mipmap_texture,   (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
+    X(uint64_t, create_nearest_texture,         (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
+    X(uint64_t, create_cube_map_texture,        (uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height, int32_t channels)) \
+    X(uint64_t, create_shader,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
+    X(void,         bind_vertex_array,              (uint64_t vao)) \
+    X(void,         bind_buffer,                    (uint64_t buffer, rlr_backend_buffer_target_t target)) \
+    X(void,         bind_texture,                   (uint64_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot)) \
+    X(void,         bind_shader,                    (uint64_t shader)) \
+    X(void,         bind_shader_uniform_block,      (uint64_t shader, const char* uniform_block_name, uint32_t uniform_block_slot)) \
+    X(void,         bind_shader_texture_slot,       (uint64_t shader, const char* texture_var_name, uint32_t texture_slot)) \
+    X(void,         bind_uniform_buffer,            (uint64_t ubo, uint32_t uniform_block_slot)) \
     X(void,         set_vertex_array_attrib,        (rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset)) \
     X(void,         set_viewport,                   (int32_t x, int32_t y, int32_t width, int32_t height)) \
     X(void,         set_scissor_test,               (bool use_scissor_test)) \
@@ -103,10 +102,10 @@ typedef enum rlr_backend_type_t {
     X(void,         update_buffer,                  (rlr_backend_buffer_target_t target, uint64_t size, const void* data, rlr_backend_buffer_usage_t update_type)) \
     X(uint64_t,     get_draw_call_count,            ()) \
     X(void,         reset_statistics,               ()) \
-    X(void,         free_vertex_array,              (rlr_handle_t vao)) \
-    X(void,         free_buffer,                    (rlr_handle_t buffer)) \
-    X(void,         free_texture,                   (rlr_handle_t texture)) \
-    X(void,         free_shader,                    (rlr_handle_t shader)) \
+    X(void,         free_vertex_array,              (uint64_t vao)) \
+    X(void,         free_buffer,                    (uint64_t buffer)) \
+    X(void,         free_texture,                   (uint64_t texture)) \
+    X(void,         free_shader,                    (uint64_t shader)) \
     X(void,         free_backend,                   ())
 
 typedef struct rlr_backend_t {

@@ -1,8 +1,7 @@
 #pragma once
-#include "internal/backends/backend.h"
 
 typedef struct rlr_res_cube_map_t {
-    rlr_handle_t texture;
+    uint64_t texture;
 } rlr_res_cube_map_t;
 
 rlr_res_cube_map_t* rlr_res_cube_map_load(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back);

@@ -66,8 +66,8 @@ static glad_context_t* gl = NULL;
 static uint64_t statistic_draw_call_count = 0;
 
 static float current_height = 0.0;
-static rlr_handle_t current_textures[16] = {0};
-static rlr_handle_t current_shader = 0;
+static uint64_t current_textures[16] = {0};
+static uint64_t current_shader = 0;
 
 static bool texture_filter_uses_mipmaps(int32_t filter) {
     switch(filter) {
@@ -109,7 +109,7 @@ static int32_t texture_format(int32_t channels) {
     }
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_texture)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t) {
+uint64_t GL_TEMPLATE_PREFIX(create_texture)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
@@ -137,22 +137,22 @@ rlr_handle_t GL_TEMPLATE_PREFIX(create_texture)(uint8_t* color_data, uint32_t wi
     gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
     gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
     gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
-    return (rlr_handle_t)texture;
+    return (uint64_t)texture;
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_linear_texture)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
+uint64_t GL_TEMPLATE_PREFIX(create_linear_texture)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
     return GL_TEMPLATE_PREFIX(create_texture)(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_linear_mipmap_texture)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
+uint64_t GL_TEMPLATE_PREFIX(create_linear_mipmap_texture)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
     return GL_TEMPLATE_PREFIX(create_texture)(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_nearest_texture)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
+uint64_t GL_TEMPLATE_PREFIX(create_nearest_texture)(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
     return GL_TEMPLATE_PREFIX(create_texture)(color_data, width, height, channels, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_cube_map_texture)(uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height, int32_t channels) {
+uint64_t GL_TEMPLATE_PREFIX(create_cube_map_texture)(uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height, int32_t channels) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
@@ -189,7 +189,7 @@ rlr_handle_t GL_TEMPLATE_PREFIX(create_cube_map_texture)(uint8_t* right, uint8_t
     return texture;
 }
 
-void GL_TEMPLATE_PREFIX(bind_texture)(rlr_handle_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot) {
+void GL_TEMPLATE_PREFIX(bind_texture)(uint64_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot) {
     if(current_textures[texture_slot] == texture) {
         return;
     }
@@ -198,7 +198,7 @@ void GL_TEMPLATE_PREFIX(bind_texture)(rlr_handle_t texture, rlr_backend_texture_
     current_textures[texture_slot] = texture;
 }
 
-void GL_TEMPLATE_PREFIX(free_texture)(rlr_handle_t texture) {
+void GL_TEMPLATE_PREFIX(free_texture)(uint64_t texture) {
     uint32_t tex = (uint32_t)texture;
     gl->DeleteTextures(1, &tex);
 }
@@ -233,7 +233,7 @@ static bool _rlr_shader_program_link_error(uint32_t program_id, char* error_str,
     return true;
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size) {
+uint64_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size) {
     uint32_t vid = 0;
     uint32_t fid = 0;
 
@@ -284,7 +284,7 @@ rlr_handle_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const 
         gl->DetachShader(program, fid);
         gl->DeleteShader(fid);
     }
-    return (rlr_handle_t)program;
+    return (uint64_t)program;
 err:
     if(vid) {
         gl->DeleteShader(vid);
@@ -295,11 +295,11 @@ err:
     return 0;
 }
 
-void GL_TEMPLATE_PREFIX(free_shader)(rlr_handle_t shader) {
-    gl->DeleteProgram((rlr_handle_t)shader);
+void GL_TEMPLATE_PREFIX(free_shader)(uint64_t shader) {
+    gl->DeleteProgram((uint64_t)shader);
 }
 
-void GL_TEMPLATE_PREFIX(bind_shader)(rlr_handle_t shader) {
+void GL_TEMPLATE_PREFIX(bind_shader)(uint64_t shader) {
     if(shader == current_shader) {
         return;
     }
@@ -307,7 +307,7 @@ void GL_TEMPLATE_PREFIX(bind_shader)(rlr_handle_t shader) {
     gl->UseProgram((uint32_t)shader);
 }
 
-void GL_TEMPLATE_PREFIX(bind_shader_uniform_block)(rlr_handle_t shader, const char* uniform_block_name, uint32_t slot) {
+void GL_TEMPLATE_PREFIX(bind_shader_uniform_block)(uint64_t shader, const char* uniform_block_name, uint32_t slot) {
     GL_TEMPLATE_PREFIX(bind_shader)(shader);
     int32_t block_index = gl->GetUniformBlockIndex((uint32_t)shader, uniform_block_name);
     if(block_index == GL_INVALID_INDEX) {
@@ -317,7 +317,7 @@ void GL_TEMPLATE_PREFIX(bind_shader_uniform_block)(rlr_handle_t shader, const ch
     gl->UniformBlockBinding((uint32_t)shader, block_index, slot);
 }
 
-void GL_TEMPLATE_PREFIX(bind_shader_texture_slot)(rlr_handle_t shader, const char* texture_var_name, uint32_t texture_slot) {
+void GL_TEMPLATE_PREFIX(bind_shader_texture_slot)(uint64_t shader, const char* texture_var_name, uint32_t texture_slot) {
     GL_TEMPLATE_PREFIX(bind_shader)(shader);
     int32_t location = gl->GetUniformLocation((uint32_t)shader, texture_var_name);
     if(location == GL_INVALID_INDEX) {
@@ -327,7 +327,7 @@ void GL_TEMPLATE_PREFIX(bind_shader_texture_slot)(rlr_handle_t shader, const cha
     gl->Uniform1i(location, texture_slot);
 }
 
-void GL_TEMPLATE_PREFIX(bind_uniform_buffer)(rlr_handle_t buffer, uint32_t slot) {
+void GL_TEMPLATE_PREFIX(bind_uniform_buffer)(uint64_t buffer, uint32_t slot) {
     gl->BindBufferBase(GL_UNIFORM_BUFFER, slot, (uint32_t)buffer);
 }
 
@@ -352,13 +352,13 @@ void GL_TEMPLATE_PREFIX(set_depth_mask)(bool z) {
 }
 
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_vertex_array)() {
-    rlr_handle_t handle = 0;
+uint64_t GL_TEMPLATE_PREFIX(create_vertex_array)() {
+    uint64_t handle = 0;
     gl->GenVertexArrays(1, (uint32_t*)&handle);
     return handle;
 }
 
-void GL_TEMPLATE_PREFIX(bind_vertex_array)(rlr_handle_t vao) {
+void GL_TEMPLATE_PREFIX(bind_vertex_array)(uint64_t vao) {
     gl->BindVertexArray((uint32_t)vao);
 }
 
@@ -368,18 +368,18 @@ void GL_TEMPLATE_PREFIX(set_vertex_array_attrib)(rlr_backend_vertex_array_attrib
     gl->VertexAttribDivisor(index, attrib_type);
 }
 
-void GL_TEMPLATE_PREFIX(free_vertex_array)(rlr_handle_t vao) {
-    rlr_handle_t handles[] = { vao };
+void GL_TEMPLATE_PREFIX(free_vertex_array)(uint64_t vao) {
+    uint64_t handles[] = { vao };
     gl->DeleteVertexArrays(1, (uint32_t*)handles);
 }
 
-rlr_handle_t GL_TEMPLATE_PREFIX(create_buffer)() {
-    rlr_handle_t handle = 0;
+uint64_t GL_TEMPLATE_PREFIX(create_buffer)() {
+    uint64_t handle = 0;
     gl->GenBuffers(1, (uint32_t*)&handle);
     return handle;
 }
 
-void GL_TEMPLATE_PREFIX(bind_buffer)(rlr_handle_t buffer, rlr_backend_buffer_target_t target) {
+void GL_TEMPLATE_PREFIX(bind_buffer)(uint64_t buffer, rlr_backend_buffer_target_t target) {
     gl->BindBuffer(target, buffer);
 }
 
@@ -387,8 +387,8 @@ void GL_TEMPLATE_PREFIX(update_buffer)(rlr_backend_buffer_target_t target, uint6
     gl->BufferData(target, size, data, usage_type);
 }
 
-void GL_TEMPLATE_PREFIX(free_buffer)(rlr_handle_t buffer) {
-    rlr_handle_t handles[1] = { buffer };
+void GL_TEMPLATE_PREFIX(free_buffer)(uint64_t buffer) {
+    uint64_t handles[1] = { buffer };
     gl->DeleteBuffers(1, (uint32_t*)handles);
 }
 
