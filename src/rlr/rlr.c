@@ -196,7 +196,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     // glfwWindowHint(GLFW_SAMPLES, 8);
 
-    _rlr->window = glfwCreateWindow(window_width, window_height, title, glfwGetPrimaryMonitor(), NULL);
+    _rlr->window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
     if(!_rlr->window) {
         rlr_error_set(RLR_ERR_WINDOW_CREATION);
         goto err;

@@ -82,6 +82,7 @@ typedef enum rlr_backend_type_t {
     X(void,         bind_shader_texture_slot,       (uint64_t shader, const char* texture_var_name, uint32_t texture_slot)) \
     X(void,         bind_uniform_buffer,            (uint64_t ubo, uint32_t uniform_block_slot)) \
     X(void,         set_vertex_array_attrib,        (rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset)) \
+    X(void,         set_vertex_array_attribi,       (rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, uint32_t stride, uintptr_t vertex_offset)) \
     X(void,         set_viewport,                   (int32_t x, int32_t y, int32_t width, int32_t height)) \
     X(void,         set_scissor_test,               (bool use_scissor_test)) \
     X(void,         set_scissor,                    (int32_t x, int32_t y, int32_t width, int32_t height)) \

@@ -368,6 +368,12 @@ void GL_TEMPLATE_PREFIX(set_vertex_array_attrib)(rlr_backend_vertex_array_attrib
     gl->VertexAttribDivisor(index, attrib_type);
 }
 
+void GL_TEMPLATE_PREFIX(set_vertex_array_attribi)(rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, uint32_t stride, uintptr_t vertex_offset) {
+    gl->VertexAttribIPointer(index, count, type, stride, (void*)vertex_offset);
+    gl->EnableVertexAttribArray(index);
+    gl->VertexAttribDivisor(index, attrib_type);
+}
+
 void GL_TEMPLATE_PREFIX(free_vertex_array)(uint64_t vao) {
     uint64_t handles[] = { vao };
     gl->DeleteVertexArrays(1, (uint32_t*)handles);

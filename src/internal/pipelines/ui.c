@@ -54,7 +54,7 @@ static const char sprite_vertex[] = RLR_SHADER_INLINE(
     layout (location = 2) in vec2 rect_size;
     layout (location = 3) in vec2 uv;
     layout (location = 4) in vec2 uv_size;
-    layout (location = 5) in vec2 screen_anchor;
+    layout (location = 5) in int screen_anchor;
 
     layout(std140) uniform inv_screen_size {
         float inv_x;
@@ -66,10 +66,22 @@ static const char sprite_vertex[] = RLR_SHADER_INLINE(
     out vec2 frag_uv;
     out vec3 frag_color;
 
+    const vec2 screen_anchor_vecs[9] = vec2[](
+        vec2(0.0, 0.0),
+        vec2(0.5, 0.0),
+        vec2(1.0, 0.0),
+        vec2(0.0, 0.5),
+        vec2(0.5, 0.5),
+        vec2(1.0, 0.5),
+        vec2(0.0, 1.0),
+        vec2(0.5, 1.0),
+        vec2(1.0, 1.0)
+    );
+
     void main() {
         frag_uv = vec2(uv.x + pos.x * uv_size.x, uv.y + pos.y * uv_size.y);
-        float x = (rect_pos.x + screen_anchor.x * ui_data.screen_width) + pos.x * rect_size.x;
-        float y = (rect_pos.y + screen_anchor.y * ui_data.screen_height) + pos.y * rect_size.y;
+        float x = (rect_pos.x + screen_anchor_vecs[screen_anchor].x * ui_data.screen_width) + pos.x * rect_size.x;
+        float y = (rect_pos.y + screen_anchor_vecs[screen_anchor].y * ui_data.screen_height) + pos.y * rect_size.y;
         gl_Position = vec4(x * ui_data.inv_x * 2.0 - 1.0, 1.0 - y * ui_data.inv_y * 2.0, 0.0, 1.0);
     }
 );
@@ -82,6 +94,8 @@ static const char mtsdf_vertex[] = RLR_SHADER_INLINE(
     layout(std140) uniform inv_screen_size {
         float inv_x;
         float inv_y;
+        float screen_width;
+        float screen_height;
     } ui_data;
 
     out vec2 frag_uv;
@@ -101,7 +115,7 @@ typedef struct rlr_instance_data_ui_t {
     rlr_vec2_t size;
     rlr_vec2_t uv;
     rlr_vec2_t uv_size;
-    rlr_vec2_t screen_anchor;
+    uint8_t screen_anchor;
 } rlr_instance_data_ui_t;
 
 typedef struct rlr_uniform_screen_size_t {
@@ -165,7 +179,7 @@ static rlr_pipline_ui_draw_command_t rlr_pipeline_ui_new_command() {
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, size));
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv));
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv_size));
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, screen_anchor));
+    rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 1, RLR_BACKEND_BUFFER_TYPE_U8, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, screen_anchor));
     return command;
 }
 
@@ -205,7 +219,6 @@ static void rlr_pipeline_ui_rebuild_commands() {
             arrsetlen(instance_data, 0);
         }
 
-        rlr_vec2_t screen_anchor_vec = rlr_anchor_vec(sprite->screen_anchor);
         rlr_vec2_t local_anchor_vec = rlr_anchor_vec(sprite->local_anchor);
         float width = sprite->rectangle.width;
         float height = sprite->rectangle.height;
@@ -214,7 +227,7 @@ static void rlr_pipeline_ui_rebuild_commands() {
             .size = rlr_vec2(width, height),
             .uv = rlr_vec2(sprite->uv.x, sprite->uv.y),
             .uv_size = rlr_vec2(sprite->uv.width - sprite->uv.x, sprite->uv.height - sprite->uv.y),
-            .screen_anchor = screen_anchor_vec,
+            .screen_anchor = sprite->screen_anchor,
         };
         arrpush(instance_data, data);
     }
