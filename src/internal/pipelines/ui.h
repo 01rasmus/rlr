@@ -3,6 +3,8 @@
 #include "internal/backends/backend.h"
 #include "rlr/math/rect.h"
 
+#define RLR_PIPELINE_UI    (&rlr()->pipeline_ui)
+
 typedef struct rlr_res_shader_t rlr_res_shader_t;
 typedef struct rlr_res_texture_t rlr_res_texture_t;
 typedef struct rlr_res_uniform_t rlr_res_uniform_t;
@@ -23,7 +25,6 @@ typedef struct rlr_pipline_ui_draw_command_t {
 typedef struct rlr_pipeline_ui_t {
     rlr_res_shader_t* shader_text;
     rlr_res_shader_t* shader_sprite;
-    rlr_res_uniform_t* ubo_screen_size;
     rlr_obj_label_t* obj_labels;
     rlr_obj_sprite_t* obj_sprites;
 
@@ -34,11 +35,9 @@ typedef struct rlr_pipeline_ui_t {
     bool is_dirty;
 } rlr_pipeline_ui_t;
 
-bool rlr_pipeline_ui_init(rlr_pipeline_ui_t* pu);
-void rlr_pipeline_ui_draw(rlr_pipeline_ui_t* pu);
-void rlr_pipeline_ui_deinit(rlr_pipeline_ui_t* pu);
-
-void rlr_pipeline_ui_set_viewport(float width, float height);
+bool rlr_pipeline_ui_init();
+void rlr_pipeline_ui_draw();
+void rlr_pipeline_ui_deinit();
 
 rlr_obj_label_t* rlr_pipeline_ui_alloc_label();
 rlr_obj_sprite_t* rlr_pipeline_ui_alloc_sprite();

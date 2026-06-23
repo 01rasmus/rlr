@@ -1,20 +1,11 @@
 #include <stddef.h>
 #include <stb_ds.h>
-#include "internal/rlr.h"
+#include "internal/impl.h"
 #include "rlr/resources/shader.h"
 #include "rlr/objects/model_occluder.h"
 #include "rlr/math/vec.h"
 #include "rlr/rlr.h"
 #include "stencil.h"
-
-static const rlr_vec2_t quad_vertices[6] = {
-    rlr_vec2(1, 1),
-    rlr_vec2(1, 0),
-    rlr_vec2(0, 0),
-    rlr_vec2(0, 1),
-    rlr_vec2(1, 1),
-    rlr_vec2(0, 0)
-};
 
 static const char stencil_vertex[] = RLR_SHADER_INLINE(
     layout (location = 0) in vec2 pos;
@@ -42,7 +33,8 @@ typedef struct rlr_instance_data_stencil_t {
     rlr_vec2_t screen_anchor;
 } rlr_instance_data_stencil_t;
 
-static void rlr_pipeline_stencil_rebuild(rlr_pipeline_stencil_t* ps) {
+static void rlr_pipeline_stencil_rebuild() {
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     rlr_instance_data_stencil_t* instances = NULL;
 
     for(int32_t i = 0; i < arrlen(ps->obj_model_occluders); i++) {
@@ -68,7 +60,8 @@ static void rlr_pipeline_stencil_rebuild(rlr_pipeline_stencil_t* ps) {
     arrfree(instances);
 }
 
-bool rlr_pipeline_stencil_init(rlr_pipeline_stencil_t* ps) {
+bool rlr_pipeline_stencil_init() {
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     (*ps) = (rlr_pipeline_stencil_t){0};
 
     ps->is_dirty = true;
@@ -83,11 +76,11 @@ bool rlr_pipeline_stencil_init(rlr_pipeline_stencil_t* ps) {
     if(!ps->shader) {
         goto err;
     }
-    rlr_res_shader_bind_uniform_slot(ps->shader, "inv_screen_size", 0);
+    rlr_res_shader_bind_uniform_slot(ps->shader, "inv_screen_size", RLR_INTERNAL_UBO_UI);
 
     rlr_backend()->bind_vertex_array(ps->vao);
     rlr_backend()->bind_buffer(ps->vbo, RLR_BACKEND_BUFFER_ARRAY);
-    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(quad_vertices), quad_vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
+    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_quad_vertices), rlr_quad_vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_vec2_t), 0);
     rlr_backend()->bind_buffer(ps->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_stencil_t), offsetof(rlr_instance_data_stencil_t, pos));
@@ -95,11 +88,12 @@ bool rlr_pipeline_stencil_init(rlr_pipeline_stencil_t* ps) {
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_stencil_t), offsetof(rlr_instance_data_stencil_t, screen_anchor));
     return true;
 err:
-    rlr_pipeline_stencil_deinit(ps);
+    rlr_pipeline_stencil_deinit();
     return false;
 }
 
-void rlr_pipeline_stencil_draw(rlr_pipeline_stencil_t* ps) {
+void rlr_pipeline_stencil_draw() {
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     if(ps->is_dirty) {
         rlr_pipeline_stencil_rebuild(ps);
     }
@@ -124,7 +118,8 @@ void rlr_pipeline_stencil_draw(rlr_pipeline_stencil_t* ps) {
     rlr_backend()->set_depth_mask(true);
 }
 
-void rlr_pipeline_stencil_deinit(rlr_pipeline_stencil_t* ps) {
+void rlr_pipeline_stencil_deinit() {
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     if(!ps) {
         return;
     }
@@ -135,7 +130,7 @@ void rlr_pipeline_stencil_deinit(rlr_pipeline_stencil_t* ps) {
 }
 
 rlr_obj_model_occluder_t* rlr_pipeline_stencil_alloc_model_occluder() {
-    rlr_pipeline_stencil_t* ps = rlr_internal_get_stencil_pipeline();
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     arrpush(ps->obj_model_occluders, (rlr_obj_model_occluder_t){0});
     rlr_obj_model_occluder_t* mo = &arrlast(ps->obj_model_occluders);
     mo->index = arrlenu(ps->obj_model_occluders) - 1;
@@ -144,7 +139,7 @@ rlr_obj_model_occluder_t* rlr_pipeline_stencil_alloc_model_occluder() {
 }
 
 void rlr_pipeline_stencil_free_model_occluder(rlr_obj_model_occluder_t* mo) {
-    rlr_pipeline_stencil_t* ps = rlr_internal_get_stencil_pipeline();
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     if(!ps || !mo) {
         return;
     }

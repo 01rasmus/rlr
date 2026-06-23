@@ -2,7 +2,7 @@
 #include <utf8.h>
 #include "internal/backends/backend.h"
 #include "internal/pipelines/ui.h"
-#include "internal/rlr.h"
+#include "internal/impl.h"
 #include "rlr/resources/font.h"
 #include "rlr/math/vec.h"
 #include "rlr/rlr.h"

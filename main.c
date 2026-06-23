@@ -14,7 +14,7 @@ int32_t main() {
 
     rlr_res_font_t* font = NULL;
     rlr_res_font_t* font2 = NULL;
-    rlr_init("rl render", 1024, 768, 0);
+    rlr_init("rl render", 1024, 768, RLR_INIT_FLAG_FULLSCREEN);
 
     font = rlr_res_font_load("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
     font2 = rlr_res_font_load("assets/tinos-small.csv", "assets/tinos-small.png", 8.0);
@@ -26,7 +26,7 @@ int32_t main() {
     rlr_res_texture_t* ability_empty = rlr_res_texture_load("assets/ability_empty_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
     rlr_res_texture_t* hero_unknown = rlr_res_texture_load("assets/unknown_unit_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
 
-    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 20, "0 fps", font);
+    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 16, "", font);
     
     float ui_x = 8;
     float ui_y = -8;
@@ -41,7 +41,7 @@ int32_t main() {
     rlr_obj_model_occluder_create(rlr_rect(-8, -8, 256, 256), RLR_ANCHOR_BOTTOM_RIGHT, RLR_ANCHOR_BOTTOM_RIGHT);
     rlr_obj_model_occluder_create(rlr_rect(0, -32, 360, 96), RLR_ANCHOR_BOTTOM_CENTER, RLR_ANCHOR_BOTTOM_CENTER);
 
-    char text_buffer[4096] = "0 fps";
+    char text_buffer[4096] = "";
     double timer = 0.0;
     bool visible = true;
     while(rlr_update()) {
@@ -51,9 +51,10 @@ int32_t main() {
             snprintf(
                 text_buffer,
                 4096,
-                "fps %lld\ndraw calls %lld\ntotal draw calls %lld\nbackend %s",
+                "fps\t\t\t\t\t\t\t%lld\ndraw calls per second\t\t%lld\ndraw calls per frame\t\t%lld\ntotal draw calls\t\t\t\t%lld\nbackend\t\t\t\t\t%s",
                 second_stats->frame_count,
                 second_stats->draw_call_count,
+                second_stats->draw_call_count / second_stats->frame_count,
                 total_stats->draw_call_count,
                 rlr_get_backend_implementation()
             );

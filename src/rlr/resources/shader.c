@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "internal/rlr.h"
+#include "internal/impl.h"
 #include "rlr/error.h"
 #include "rlr/rlr.h"
 #include "shader.h"

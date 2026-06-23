@@ -2,8 +2,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <stb_ds.h>
+#include "internal/backends/backend_selection.h"
 #include "internal/backends/backend.h"
-#include "internal/core/backend_selection.h"
 #include "rlr/resources/static_model.h"
 #include "rlr/resources/cube_map.h"
 #include "rlr/resources/uniform.h"
@@ -14,21 +14,18 @@
 #include "rlr/math/matrix.h"
 #include "rlr/error.h"
 #include "rlr/rlr.h"
-#include "rlr.h"
-
-typedef struct uniform_model_t {
-    rlr_mat4_t model;
-    rlr_mat4_t mvp;
-    rlr_vec3_t camera_pos;
-} uniform_model_t;
-
-typedef struct uniform_environment_t {
-    rlr_vec3_t light_direction;
-    rlr_vec3_t ambient_light_color;
-    float ambient_light_strength;
-} uniform_environment_t;
+#include "impl.h"
 
 static rlr_t* _rlr = NULL;
+
+rlr_vec2_t rlr_quad_vertices[6] = {
+    rlr_vec2(1, 1),
+    rlr_vec2(1, 0),
+    rlr_vec2(0, 0),
+    rlr_vec2(0, 1),
+    rlr_vec2(1, 1),
+    rlr_vec2(0, 0)
+};
 
 const char model_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
@@ -180,9 +177,6 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     _rlr->backend = NULL;
     _rlr->window = NULL;
 
-    _rlr->framebuffer_width = window_width;
-    _rlr->framebuffer_height = window_height;
-
     _rlr->statistics_interval = (rlr_statistics_t){0};
     _rlr->statistics_total = (rlr_statistics_t){0};
     _rlr->statistics_temp = (rlr_statistics_t){0};
@@ -199,23 +193,38 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         rlr_error_set(RLR_ERR_COULD_NOT_FIND_SUITABLE_BACKEND);
         goto err;
     }
-
     glfwSwapInterval((RLR_INIT_FLAG_VSYNC & flags) == RLR_INIT_FLAG_VSYNC ? 1 : 0);
-    
-    rlr_backend()->set_viewport(0, 0, window_width, window_height);
-    
+
+    //setup uniform buffer objects
+    rlr()->ubos[RLR_INTERNAL_UBO_MODEL]         = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_model_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL]      = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_material_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_ENVIRONMENT]   = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_environment_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_UI]            = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_ui_t));
+    for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {
+        rlr_res_uniform_t* ubo = rlr()->ubos[i];
+        if(!ubo) {
+            goto err;
+        }
+        rlr_res_uniform_bind(ubo, i);
+    }
+
+    //setup pipelines
+    static const rlr_pipeline_init_function_t pipeline_init_functions[2] = {
+        rlr_pipeline_ui_init,
+        rlr_pipeline_stencil_init
+    };
+    for(size_t i = 0; i < sizeof(pipeline_init_functions) / sizeof(pipeline_init_functions[0]); i++) {
+        rlr_pipeline_init_function_t pipeline_init = pipeline_init_functions[i];
+        if(!pipeline_init()) {
+            goto err;
+        }
+    }
+
     //setup default resources
     _rlr->texture_white = rlr_res_texture_default();
 
-    //setup pipelines
-    if(!rlr_pipeline_ui_init(&_rlr->pipeline_ui)) {
-        goto err;
-    }
-    if(!rlr_pipeline_stencil_init(&_rlr->pipeline_stencil)) {
-        goto err;
-    }
-    rlr_pipeline_ui_set_viewport(window_width, window_height);
-
+    // todo: remove
+    // testing
     _rlr->test = rlr_res_static_model_load("assets/plane.glb");
     //_rlr->test_cube_map = rlr_res_cube_map_load("assets/skybox/right.jpg", "assets/skybox/left.jpg", "assets/skybox/top.jpg", "assets/skybox/bottom.jpg", "assets/skybox/front.jpg", "assets/skybox/back.jpg");
     _rlr->test_cube_map = rlr_res_cube_map_load(
@@ -229,33 +238,35 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     rlr_res_cube_map_bind(_rlr->test_cube_map, 4);
 
     _rlr->shader_model = rlr_res_shader_create(model_vertex, model_fragment);
-    rlr_res_shader_bind_uniform_slot(_rlr->shader_model, "ubo_model", 1);
-    rlr_res_shader_bind_uniform_slot(_rlr->shader_model, "ubo_material", 2);
+    rlr_res_shader_bind_uniform_slot(_rlr->shader_model, "ubo_model", RLR_INTERNAL_UBO_MODEL);
+    rlr_res_shader_bind_uniform_slot(_rlr->shader_model, "ubo_material", RLR_INTERNAL_UBO_MATERIAL);
     rlr_res_shader_bind_texture_slot(_rlr->shader_model, "tex", 0);
     rlr_res_shader_bind_texture_slot(_rlr->shader_model, "cube_map", 4);
-
-    _rlr->ubo_material = rlr_res_uniform_create_dynamic(sizeof(rlr_res_material_t));
-    rlr_res_uniform_bind(_rlr->ubo_material, 2);
 
     rlr_vec3_t cam_pos = rlr_vec3_mulf(rlr_vec3(-0.05, 0.1, -0.1), 7);
     rlr_vec3_t scene_center = rlr_vec3(0, 0, 0);
     rlr_vec3_t up = rlr_vec3(0, 1, 0);
     rlr_mat4_t projection = rlr_mat4_perspective(1, (float)window_width / (float)window_height, 0.001, 100.0);
     rlr_mat4_t view = rlr_mat4_look_at(&cam_pos, &scene_center, &up);
-    uniform_model_t ubo_model = {
+    rlr_uniform_model_t ubo_model = {
         .mvp = rlr_mat4_mul(&projection, &view),
         .model = rlr_mat4_ident,
         .camera_pos = cam_pos,
     };
 
-    _rlr->ubo_model = rlr_res_uniform_create_dynamic(sizeof(uniform_model_t));
-    rlr_res_uniform_update(_rlr->ubo_model, 0, &ubo_model, sizeof(uniform_model_t));
-    rlr_res_uniform_bind(_rlr->ubo_model, 1);
-
+    rlr_res_uniform_update(_rlr->ubos[RLR_INTERNAL_UBO_MODEL], 0, &ubo_model, sizeof(rlr_uniform_model_t));
     return;
 err:
     rlr_free();
     return;
+}
+
+rlr_t* rlr() {
+    return _rlr;
+}
+
+rlr_backend_t* rlr_backend() {
+    return _rlr->backend;
 }
 
 rlr_statistics_t* rlr_get_total_statistics() {
@@ -266,40 +277,12 @@ rlr_statistics_t* rlr_get_statistics() {
     return &_rlr->statistics_interval;
 }
 
+rlr_res_texture_t* rlr_internal_get_white_texture() {
+    return _rlr->texture_white;
+}
+
 const char* rlr_get_backend_implementation() {
     return rlr_backend()->get_implementation();
-}
-
-void rlr_free() {
-    if(!_rlr) {
-        return;
-    }
-
-    //free pipelines
-    rlr_pipeline_ui_deinit(&_rlr->pipeline_ui);
-    rlr_pipeline_stencil_deinit(&_rlr->pipeline_stencil);
-
-    //free resources
-    rlr_res_texture_free(_rlr->texture_white);
-    rlr_res_uniform_free(_rlr->ubo_material);
-    rlr_res_uniform_free(_rlr->ubo_model);
-    rlr_res_shader_free(_rlr->shader_model);
-
-    //free backend API and window
-    if(_rlr->backend) {
-        rlr_backend()->free_backend();
-        free(_rlr->backend);
-    }
-    if(_rlr->window) {
-        glfwDestroyWindow(_rlr->window);
-    }
-    free(_rlr);
-    glfwTerminate();
-    _rlr = NULL;
-}
-
-double rlr_get_time() {
-    return glfwGetTime();
 }
 
 bool rlr_update() {
@@ -313,7 +296,13 @@ bool rlr_update() {
     int32_t height = 0;
     glfwGetFramebufferSize(_rlr->window, &width, &height);
     if(width != _rlr->framebuffer_width || height != _rlr->framebuffer_height) {
-        rlr_pipeline_ui_set_viewport(width, height);
+        rlr_uniform_ui_t ui_uniform = (rlr_uniform_ui_t){
+            .inv_x = 1.0 / (float)width,
+            .inv_y = 1.0 / (float)height,
+            .screen_width = (float)width,
+            .screen_height = (float)height
+        };
+        rlr_res_uniform_update(_rlr->ubos[RLR_INTERNAL_UBO_UI], 0, &ui_uniform, sizeof(rlr_uniform_ui_t));
         rlr_backend()->set_viewport(0, 0, width, height);
     }
 
@@ -321,14 +310,14 @@ bool rlr_update() {
     rlr_backend()->set_clear_stencil(0);
     rlr_backend()->clear(RLR_BACKEND_CLEAR_BIT_COLOR | RLR_BACKEND_CLEAR_BIT_DEPTH | RLR_BACKEND_CLEAR_BIT_STENCIL);
 
-    rlr_pipeline_stencil_draw(&_rlr->pipeline_stencil);
+    rlr_pipeline_stencil_draw();
 
     //render test monkey
     rlr_res_shader_bind(_rlr->shader_model);
     rlr_backend()->set_depth_test(true);
     for(int64_t i = 0; i < arrlen(_rlr->test->meshes); i++) {
         rlr_res_static_mesh_t* mesh = &_rlr->test->meshes[i];
-        rlr_res_uniform_update(_rlr->ubo_material, 0, &mesh->material, sizeof(rlr_res_material_t));
+        rlr_res_uniform_update(_rlr->ubos[RLR_INTERNAL_UBO_MATERIAL], 0, &mesh->material, sizeof(rlr_uniform_material_t));
         if(mesh->texture_base) {
             rlr_res_texture_bind(mesh->texture_base, 0);
         } else {
@@ -338,7 +327,7 @@ bool rlr_update() {
         rlr_backend()->draw_elements(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32);
     }
 
-    rlr_pipeline_ui_draw(&_rlr->pipeline_ui);
+    rlr_pipeline_ui_draw();
 
     //statistics
     double current_time = glfwGetTime();
@@ -365,18 +354,33 @@ bool rlr_update() {
     return true;
 }
 
-rlr_res_texture_t* rlr_internal_get_white_texture() {
-    return _rlr->texture_white;
-}
+void rlr_free() {
+    if(!_rlr) {
+        return;
+    }
 
-rlr_pipeline_stencil_t* rlr_internal_get_stencil_pipeline() {
-    return &_rlr->pipeline_stencil;
-}
+    //free pipelines
+    rlr_pipeline_ui_deinit();
+    rlr_pipeline_stencil_deinit();
 
-rlr_pipeline_ui_t* rlr_internal_get_ui_pipeline() {
-    return &_rlr->pipeline_ui;
-}
+    //free resources
+    rlr_res_shader_free(_rlr->shader_model);
+    rlr_res_texture_free(_rlr->texture_white);
 
-rlr_backend_t* rlr_backend() {
-    return _rlr->backend;
+    //free ubos
+    for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {
+        rlr_res_uniform_free(rlr()->ubos[i]);
+    }
+
+    //free backend API and window
+    if(_rlr->backend) {
+        rlr_backend()->free_backend();
+        free(_rlr->backend);
+    }
+    if(_rlr->window) {
+        glfwDestroyWindow(_rlr->window);
+    }
+    free(_rlr);
+    glfwTerminate();
+    _rlr = NULL;
 }

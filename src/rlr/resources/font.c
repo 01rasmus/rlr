@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stb_ds.h>
-#include "internal/rlr.h"
+#include "internal/impl.h"
 #include "rlr/io/csv.h"
 #include "rlr/io/str.h"
 #include "rlr/error.h"

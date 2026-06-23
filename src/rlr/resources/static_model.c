@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <cgltf.h>
 #include <stb_ds.h>
-#include "internal/rlr.h"
+#include "internal/impl.h"
 #include "rlr/resources/texture.h"
 #include "rlr/math/vec.h"
 #include "rlr/error.h"
