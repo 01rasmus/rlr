@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "internal/rlr.h"
 #include "rlr/error.h"
 #include "rlr/rlr.h"
 #include "shader.h"
@@ -13,7 +14,7 @@ rlr_res_shader_t* rlr_res_create_shader(const char* vertex_string, const char* f
     }
     
     char error_str[RLR_SHADER_ERROR_LENGTH];
-    shader->shader = _rlr_raw()->backend->create_shader(vertex_string, fragment_string, error_str, RLR_SHADER_ERROR_LENGTH);
+    shader->shader = rlr_backend()->create_shader(vertex_string, fragment_string, error_str, RLR_SHADER_ERROR_LENGTH);
     if(!shader->shader) {
         rlr_error_setf(RLR_ERR_BACKEND_SHADER_COMPILATION, "%s", error_str);
         goto err;
@@ -33,12 +34,12 @@ void rlr_res_bind_shader_texture_slot(rlr_res_shader_t* shader, const char* text
 }
 
 void rlr_res_bind_shader(rlr_res_shader_t* shader) {
-    _rlr_raw()->backend->bind_shader(shader->shader);
+    rlr_backend()->bind_shader(shader->shader);
 }
 
 void rlr_res_free_shader(rlr_res_shader_t* shader) {
     if(shader) {
-        _rlr_raw()->backend->free_shader(shader->shader);
+        rlr_backend()->free_shader(shader->shader);
     }
     free(shader);
 }

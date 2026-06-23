@@ -14,9 +14,9 @@ typedef struct rlr_pipeline_stencil_t {
     bool is_dirty;
 } rlr_pipeline_stencil_t;
 
-bool rlr_pipeline_stencil_init();
-void rlr_pipeline_stencil_draw();
-void rlr_pipeline_stencil_free();
+bool rlr_pipeline_stencil_init(rlr_pipeline_stencil_t* ps);
+void rlr_pipeline_stencil_draw(rlr_pipeline_stencil_t* ps);
+void rlr_pipeline_stencil_deinit(rlr_pipeline_stencil_t* ps);
 
 rlr_obj_model_occluder_t* rlr_pipeline_stencil_alloc_model_occluder();
 void rlr_pipeline_stencil_free_model_occluder(rlr_obj_model_occluder_t* mo);

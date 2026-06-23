@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stb_image.h>
+#include "internal/rlr.h"
 #include "rlr/error.h"
 #include "rlr/rlr.h"
 #include "texture.h"
@@ -143,12 +144,12 @@ err:
 }
 
 void rlr_res_bind_texture(rlr_res_texture_t* texture, uint8_t texture_slot) {
-    _rlr_raw()->backend->bind_texture(texture->texture, RLR_BACKEND_TEXTURE_2D, texture_slot);
+    rlr_backend()->bind_texture(texture->texture, RLR_BACKEND_TEXTURE_2D, texture_slot);
 }
 
 void rlr_res_free_texture(rlr_res_texture_t* texture) {
     if(texture) {
-        _rlr_raw()->backend->free_texture(texture->texture);
+        rlr_backend()->free_texture(texture->texture);
     }
     free(texture);
 }

@@ -5,6 +5,7 @@
 #include "rlr/resources/font.h"
 #include "rlr/objects/label.h"
 #include "rlr/objects/sprite.h"
+#include "internal/rlr.h"
 #include "rlr/rlr.h"
 #include "ui.h"
 
@@ -138,8 +139,7 @@ static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
     return 0;
 }
 
-bool rlr_pipeline_ui_init() {
-    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+bool rlr_pipeline_ui_init(rlr_pipeline_ui_t* pu) {
     (*pu) = (rlr_pipeline_ui_t){0};
     pu->shader_sprite = rlr_res_create_shader(sprite_vertex, basic_fragment);
     pu->shader_text = rlr_res_create_shader(mtsdf_vertex, mtsdf_fragment);
@@ -165,9 +165,7 @@ err:
     return false;
 }
 
-static rlr_pipline_ui_draw_command_t rlr_pipeline_ui_new_command() {
-    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
-
+static rlr_pipline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_pipeline_ui_t* pu) {
     rlr_pipline_ui_draw_command_t command = {0};
     command.vao = rlr_backend()->create_vertex_array();
     command.instance_vbo = rlr_backend()->create_buffer();
@@ -183,13 +181,11 @@ static rlr_pipline_ui_draw_command_t rlr_pipeline_ui_new_command() {
     return command;
 }
 
-static void rlr_pipeline_ui_rebuild_commands() {
-    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
-
+static void rlr_pipeline_ui_rebuild_commands(rlr_pipeline_ui_t* pu) {
     uint64_t needed_commands = arrlenu(pu->obj_sprites);
     uint64_t commands_available = arrlenu(pu->commands);
     while(needed_commands > commands_available) {
-        arrpush(pu->commands, rlr_pipeline_ui_new_command());
+        arrpush(pu->commands, rlr_pipeline_ui_new_command(pu));
         commands_available++;
     }
 
@@ -246,10 +242,9 @@ static void rlr_pipeline_ui_rebuild_commands() {
     arrfree(instance_data);
 }
 
-void rlr_pipeline_ui_draw() {
-    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+void rlr_pipeline_ui_draw(rlr_pipeline_ui_t* pu) {
     if(pu->is_dirty) {
-        rlr_pipeline_ui_rebuild_commands();
+        rlr_pipeline_ui_rebuild_commands(pu);
     }
 
     rlr_backend()->set_stencil_test(false);
@@ -278,7 +273,7 @@ void rlr_pipeline_ui_draw() {
 }
 
 void rlr_pipeline_ui_set_viewport(float width, float height) {
-    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+    rlr_pipeline_ui_t* pu = rlr_internal_get_ui_pipeline();
 
     rlr_uniform_screen_size_t data = {
         .inv_x = 1.0 / (float)width,
@@ -289,8 +284,7 @@ void rlr_pipeline_ui_set_viewport(float width, float height) {
     rlr_res_uniform_update(pu->ubo_screen_size, 0, &data, sizeof(rlr_uniform_screen_size_t));
 }
 
-void rlr_pipeline_ui_free() {
-    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+void rlr_pipeline_ui_deinit(rlr_pipeline_ui_t* pu) {
     if(!pu) {
         return;
     }
@@ -310,7 +304,7 @@ void rlr_pipeline_ui_free() {
 }
 
 rlr_obj_label_t* rlr_pipeline_ui_alloc_label() {
-    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+    rlr_pipeline_ui_t* pu = rlr_internal_get_ui_pipeline();
     arrpush(pu->obj_labels, (rlr_obj_label_t){0});
     rlr_obj_label_t* label = &arrlast(pu->obj_labels);
     label->index = arrlenu(pu->obj_labels) - 1;
@@ -318,7 +312,7 @@ rlr_obj_label_t* rlr_pipeline_ui_alloc_label() {
 }
 
 rlr_obj_sprite_t* rlr_pipeline_ui_alloc_sprite() {
-    rlr_pipeline_ui_t* pu = &_rlr_raw()->pipeline_ui;
+    rlr_pipeline_ui_t* pu = rlr_internal_get_ui_pipeline();
     arrpush(pu->obj_sprites, (rlr_obj_sprite_t){0});
     rlr_obj_sprite_t* sprite = &arrlast(pu->obj_sprites);
     sprite->index = arrlenu(pu->obj_sprites) - 1;

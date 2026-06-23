@@ -484,6 +484,18 @@ void GL_TEMPLATE_PREFIX(free_backend)() {
     gl = NULL;
 }
 
+#ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+static bool validate_backend() {
+    return true;
+}
+#endif
+
+#ifdef GL_IMPLEMENTATION_TEMPLATE_GLES
+static bool validate_backend() {
+    return true;
+}
+#endif
+
 rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     rlr_backend_t* backend = NULL;
     gl = malloc(sizeof(glad_context_t));
@@ -492,6 +504,9 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
         goto err;
     }
     if(GL_LOADER_FUNCTION(gl, proc_loader) == 0) {
+        goto err;
+    }
+    if(!validate_backend()) {
         goto err;
     }
 

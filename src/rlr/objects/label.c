@@ -1,5 +1,8 @@
 #include <stb_ds.h>
 #include <utf8.h>
+#include "internal/backends/backend.h"
+#include "internal/pipelines/ui.h"
+#include "internal/rlr.h"
 #include "rlr/resources/font.h"
 #include "rlr/math/vec.h"
 #include "rlr/rlr.h"
@@ -86,8 +89,8 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
         x += glyph->advance * label->size;
     }
 
-    _rlr_raw()->backend->bind_buffer(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
-    _rlr_raw()->backend->update_buffer(RLR_BACKEND_BUFFER_ARRAY, arrlenu(vertices) * sizeof(rlr_obj_label_vertex_t), vertices, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+    rlr_backend()->bind_buffer(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
+    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, arrlenu(vertices) * sizeof(rlr_obj_label_vertex_t), vertices, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
     label->vertex_count = arrlenu(vertices);
     arrfree(vertices);
 }
@@ -101,19 +104,19 @@ rlr_obj_label_t* rlr_obj_label_create(float x, float y, float size, const char* 
     label->y = y;
     label->color = rlr_vec3(1.0, 0.9, 1.0);
     label->visible = true;
-    label->vao = _rlr_raw()->backend->create_vertex_array();
-    label->vbo = _rlr_raw()->backend->create_buffer();
+    label->vao = rlr_backend()->create_vertex_array();
+    label->vbo = rlr_backend()->create_buffer();
 
     if(!label->vao || !label->vbo) {
         goto err;
     }
     
-    _rlr_raw()->backend->bind_vertex_array(label->vao);
-    _rlr_raw()->backend->bind_buffer(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
-    _rlr_raw()->backend->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, color));
-    _rlr_raw()->backend->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, pos));
-    _rlr_raw()->backend->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, uv));
-    _rlr_raw()->backend->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 3, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, screen_px_range));
+    rlr_backend()->bind_vertex_array(label->vao);
+    rlr_backend()->bind_buffer(label->vbo, RLR_BACKEND_BUFFER_ARRAY);
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, color));
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, pos));
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, uv));
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 3, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, screen_px_range));
     
     rlr_obj_label_upload_vertices(label, text);
     return label;
@@ -131,10 +134,10 @@ void rlr_obj_label_set_text(rlr_obj_label_t* label, const char* text) {
 }
 
 void rlr_obj_label_free(rlr_obj_label_t* label) {
-    if(!_rlr_raw() || !label) {
+    if(!label) {
         return;
     }
-    _rlr_raw()->backend->free_vertex_array(label->vao);
-    _rlr_raw()->backend->free_buffer(label->vbo);
+    rlr_backend()->free_vertex_array(label->vao);
+    rlr_backend()->free_buffer(label->vbo);
     rlr_pipeline_ui_free_label(label);
 }

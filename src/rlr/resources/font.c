@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stb_ds.h>
+#include "internal/rlr.h"
 #include "rlr/io/csv.h"
 #include "rlr/io/str.h"
 #include "rlr/error.h"
@@ -97,7 +98,7 @@ rlr_res_font_t* rlr_res_font_create(const char* csv_path, const char* texture_at
     //msdf textures need to use normal linear filtering (dont use mipmap filtering)
     font->texture = rlr_res_texture_load(texture_atlas_path, false, RLR_RES_TEXTURE_FILTER_LINEAR);
     if(!font->texture) {
-        font->texture = _rlr_raw()->texture_white;
+        font->texture = rlr_internal_get_white_texture();
     }
 
     if(!rlr_io_csv_parse(_rlr_font_csv_callback, csv, 10, ",", font)) {

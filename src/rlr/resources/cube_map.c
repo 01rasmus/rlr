@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stb_image.h>
+#include "internal/rlr.h"
 #include "rlr/error.h"
 #include "rlr/rlr.h"
 #include "cube_map.h"

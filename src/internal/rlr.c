@@ -3,15 +3,16 @@
 #include <GLFW/glfw3.h>
 #include <stb_ds.h>
 #include "internal/backends/backend.h"
-#include "resources/static_model.h"
-#include "resources/cube_map.h"
-#include "resources/uniform.h"
-#include "resources/shader.h"
-#include "resources/font.h"
-#include "objects/label.h"
-#include "objects/sprite.h"
-#include "math/matrix.h"
-#include "error.h"
+#include "rlr/resources/static_model.h"
+#include "rlr/resources/cube_map.h"
+#include "rlr/resources/uniform.h"
+#include "rlr/resources/shader.h"
+#include "rlr/resources/font.h"
+#include "rlr/objects/label.h"
+#include "rlr/objects/sprite.h"
+#include "rlr/math/matrix.h"
+#include "rlr/error.h"
+#include "rlr/rlr.h"
 #include "rlr.h"
 
 typedef struct uniform_model_t {
@@ -180,6 +181,11 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     _rlr->framebuffer_width = window_width;
     _rlr->framebuffer_height = window_height;
 
+    _rlr->statistics_interval = (rlr_statistics_t){0};
+    _rlr->statistics_total = (rlr_statistics_t){0};
+    _rlr->statistics_temp = (rlr_statistics_t){0};
+    _rlr->statistics_timer = 0.0;
+
     if(!glfwInit()) {
         rlr_error_set(RLR_ERR_WINDOW_CREATION);
         goto err;
@@ -196,7 +202,8 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     // glfwWindowHint(GLFW_SAMPLES, 8);
 
-    _rlr->window = glfwCreateWindow(window_width, window_height, title, NULL, NULL);
+    GLFWmonitor* monitor = ((RLR_INIT_FLAG_FULLSCREEN & flags) == RLR_INIT_FLAG_FULLSCREEN) ? glfwGetPrimaryMonitor() : NULL;
+    _rlr->window = glfwCreateWindow(window_width, window_height, title, monitor, NULL);
     if(!_rlr->window) {
         rlr_error_set(RLR_ERR_WINDOW_CREATION);
         goto err;
@@ -228,10 +235,10 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     _rlr->texture_white = rlr_res_texture_default();
 
     //setup pipelines
-    if(!rlr_pipeline_ui_init()) {
+    if(!rlr_pipeline_ui_init(&_rlr->pipeline_ui)) {
         goto err;
     }
-    if(!rlr_pipeline_stencil_init()) {
+    if(!rlr_pipeline_stencil_init(&_rlr->pipeline_stencil)) {
         goto err;
     }
     rlr_pipeline_ui_set_viewport(window_width, window_height);
@@ -278,14 +285,22 @@ err:
     return;
 }
 
+rlr_statistics_t* rlr_get_statistics_total() {
+    return &_rlr->statistics_total;
+}
+
+rlr_statistics_t* rlr_get_statistics() {
+    return &_rlr->statistics_interval;
+}
+
 void rlr_free() {
     if(!_rlr) {
         return;
     }
 
     //free pipelines
-    rlr_pipeline_ui_free();
-    rlr_pipeline_stencil_free();
+    rlr_pipeline_ui_deinit(&_rlr->pipeline_ui);
+    rlr_pipeline_stencil_deinit(&_rlr->pipeline_stencil);
 
     //free resources
     rlr_res_free_texture(_rlr->texture_white);
@@ -306,7 +321,7 @@ void rlr_free() {
     _rlr = NULL;
 }
 
-double rlr_time() {
+double rlr_get_time() {
     return glfwGetTime();
 }
 
@@ -329,7 +344,7 @@ bool rlr_draw() {
     rlr_backend()->set_clear_stencil(0);
     rlr_backend()->clear(RLR_BACKEND_CLEAR_BIT_COLOR | RLR_BACKEND_CLEAR_BIT_DEPTH | RLR_BACKEND_CLEAR_BIT_STENCIL);
 
-    rlr_pipeline_stencil_draw();
+    rlr_pipeline_stencil_draw(&_rlr->pipeline_stencil);
 
     //render test monkey
     rlr_res_bind_shader(_rlr->shader_model);
@@ -346,16 +361,45 @@ bool rlr_draw() {
         rlr_backend()->draw_elements(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32);
     }
 
-    rlr_pipeline_ui_draw();
+    rlr_pipeline_ui_draw(&_rlr->pipeline_ui);
+
+    //statistics
+    double current_time = glfwGetTime();
+    uint64_t draw_calls = rlr_backend()->get_draw_call_count();
+
+    //temp
+    _rlr->statistics_temp.draw_call_count += draw_calls;
+    _rlr->statistics_temp.frame_count++;
+    _rlr->statistics_temp.time = current_time;
+
+    //total
+    _rlr->statistics_total.draw_call_count += draw_calls;
+    _rlr->statistics_total.frame_count++;
+    _rlr->statistics_total.time = current_time;
+
+    if(_rlr->statistics_timer <= current_time) {
+        memcpy(&_rlr->statistics_interval, &_rlr->statistics_temp, sizeof(rlr_statistics_t));
+        _rlr->statistics_temp = (rlr_statistics_t){0};
+        _rlr->statistics_timer += 1.0;
+    }
+    rlr_backend()->reset_statistics();
 
     glfwSwapBuffers(_rlr->window);
     return true;
 }
 
-rlr_backend_t* rlr_backend() {
-    return _rlr->backend;
+rlr_res_texture_t* rlr_internal_get_white_texture() {
+    return _rlr->texture_white;
 }
 
-rlr_t* _rlr_raw() {
-    return _rlr;
+rlr_pipeline_stencil_t* rlr_internal_get_stencil_pipeline() {
+    return &_rlr->pipeline_stencil;
+}
+
+rlr_pipeline_ui_t* rlr_internal_get_ui_pipeline() {
+    return &_rlr->pipeline_ui;
+}
+
+rlr_backend_t* rlr_backend() {
+    return _rlr->backend;
 }

@@ -34,9 +34,9 @@ typedef struct rlr_pipeline_ui_t {
     bool is_dirty;
 } rlr_pipeline_ui_t;
 
-bool rlr_pipeline_ui_init();
-void rlr_pipeline_ui_draw();
-void rlr_pipeline_ui_free();
+bool rlr_pipeline_ui_init(rlr_pipeline_ui_t* pu);
+void rlr_pipeline_ui_draw(rlr_pipeline_ui_t* pu);
+void rlr_pipeline_ui_deinit(rlr_pipeline_ui_t* pu);
 
 void rlr_pipeline_ui_set_viewport(float width, float height);
 

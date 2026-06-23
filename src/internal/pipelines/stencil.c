@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stb_ds.h>
+#include "internal/rlr.h"
 #include "rlr/resources/shader.h"
 #include "rlr/objects/model_occluder.h"
 #include "rlr/math/vec.h"
@@ -41,8 +42,7 @@ typedef struct rlr_instance_data_stencil_t {
     rlr_vec2_t screen_anchor;
 } rlr_instance_data_stencil_t;
 
-static void rlr_pipeline_stencil_rebuild() {
-    rlr_pipeline_stencil_t* ps = &_rlr_raw()->pipeline_stencil;
+static void rlr_pipeline_stencil_rebuild(rlr_pipeline_stencil_t* ps) {
     rlr_instance_data_stencil_t* instances = NULL;
 
     for(int32_t i = 0; i < arrlen(ps->obj_model_occluders); i++) {
@@ -68,8 +68,7 @@ static void rlr_pipeline_stencil_rebuild() {
     arrfree(instances);
 }
 
-bool rlr_pipeline_stencil_init() {
-    rlr_pipeline_stencil_t* ps = &_rlr_raw()->pipeline_stencil;
+bool rlr_pipeline_stencil_init(rlr_pipeline_stencil_t* ps) {
     (*ps) = (rlr_pipeline_stencil_t){0};
 
     ps->is_dirty = true;
@@ -96,15 +95,13 @@ bool rlr_pipeline_stencil_init() {
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_stencil_t), offsetof(rlr_instance_data_stencil_t, screen_anchor));
     return true;
 err:
-    rlr_pipeline_stencil_free();
+    rlr_pipeline_stencil_deinit(ps);
     return false;
 }
 
-void rlr_pipeline_stencil_draw() {
-    rlr_pipeline_stencil_t* ps = &_rlr_raw()->pipeline_stencil;
-
+void rlr_pipeline_stencil_draw(rlr_pipeline_stencil_t* ps) {
     if(ps->is_dirty) {
-        rlr_pipeline_stencil_rebuild();
+        rlr_pipeline_stencil_rebuild(ps);
     }
 
     rlr_backend()->set_stencil_test(true);
@@ -127,8 +124,7 @@ void rlr_pipeline_stencil_draw() {
     rlr_backend()->set_depth_mask(true);
 }
 
-void rlr_pipeline_stencil_free() {
-    rlr_pipeline_stencil_t* ps = &_rlr_raw()->pipeline_stencil;
+void rlr_pipeline_stencil_deinit(rlr_pipeline_stencil_t* ps) {
     if(!ps) {
         return;
     }
@@ -139,7 +135,7 @@ void rlr_pipeline_stencil_free() {
 }
 
 rlr_obj_model_occluder_t* rlr_pipeline_stencil_alloc_model_occluder() {
-    rlr_pipeline_stencil_t* ps = &_rlr_raw()->pipeline_stencil;
+    rlr_pipeline_stencil_t* ps = rlr_internal_get_stencil_pipeline();
     arrpush(ps->obj_model_occluders, (rlr_obj_model_occluder_t){0});
     rlr_obj_model_occluder_t* mo = &arrlast(ps->obj_model_occluders);
     mo->index = arrlenu(ps->obj_model_occluders) - 1;
@@ -148,7 +144,7 @@ rlr_obj_model_occluder_t* rlr_pipeline_stencil_alloc_model_occluder() {
 }
 
 void rlr_pipeline_stencil_free_model_occluder(rlr_obj_model_occluder_t* mo) {
-    rlr_pipeline_stencil_t* ps = &_rlr_raw()->pipeline_stencil;
+    rlr_pipeline_stencil_t* ps = rlr_internal_get_stencil_pipeline();
     if(!ps || !mo) {
         return;
     }

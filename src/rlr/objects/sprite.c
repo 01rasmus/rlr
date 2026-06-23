@@ -1,5 +1,6 @@
 #include <stb_ds.h>
 #include "internal/pipelines/ui.h"
+#include "internal/rlr.h"
 #include "rlr/resources/texture.h"
 #include "rlr/rlr.h"
 #include "sprite.h"
@@ -19,7 +20,7 @@ rlr_obj_sprite_t* rlr_obj_sprite_create_ext(rlr_res_texture_t* texture, rlr_rect
     sprite->layer = layer;
     sprite->rectangle = rectangle;
     sprite->scissor = scissor;
-    sprite->texture = texture == NULL ? _rlr_raw()->texture_white : texture;
+    sprite->texture = texture == NULL ? rlr_internal_get_white_texture() : texture;
     sprite->uv = rlr_rect(
         uv_x,
         uv_y,

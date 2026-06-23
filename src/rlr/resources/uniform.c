@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "internal/rlr.h"
 #include "rlr/error.h"
 #include "rlr/rlr.h"
 #include "uniform.h"
