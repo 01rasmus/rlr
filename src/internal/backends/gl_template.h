@@ -237,6 +237,17 @@ uint64_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const char
     uint32_t vid = 0;
     uint32_t fid = 0;
 
+    //opengl es 3.0 must have a vertex and a fragment shader
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GLES
+    const char* minimum_shader = "#version 300 es\nprecision highp float;\nprecision highp int;\nvoid main() {}";
+    if(!vertex_shader) {
+        vertex_shader = minimum_shader;
+    }
+    if(!fragment_shader) {
+        fragment_shader = minimum_shader;
+    }
+    #endif
+
     int32_t vertex_length[1] = { vertex_shader ? strlen(vertex_shader) : 0 };
     int32_t fragment_length[1] = { fragment_shader ? strlen(fragment_shader) : 0 };
     const char* vertex_strings[1] = { vertex_shader };
@@ -468,6 +479,15 @@ void GL_TEMPLATE_PREFIX(set_stencil_op)(rlr_backend_stencil_op_t fail, rlr_backe
     gl->StencilOp(fail, zfail, zpass);
 }
 
+const char* GL_TEMPLATE_PREFIX(get_implementation)() {
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+    return "OpenGL 3.3";
+    #endif
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GLES
+    return "OpenGL ES 3.0";
+    #endif
+    return "unknown";
+}
 
 uint64_t GL_TEMPLATE_PREFIX(get_draw_call_count)() {
     return statistic_draw_call_count;

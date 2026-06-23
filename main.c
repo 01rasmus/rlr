@@ -44,17 +44,18 @@ int32_t main() {
     char text_buffer[4096] = "0 fps";
     double timer = 0.0;
     bool visible = true;
-    while(rlr_draw()) {
+    while(rlr_update()) {
         rlr_statistics_t* second_stats = rlr_get_statistics();
-        rlr_statistics_t* total_stats = rlr_get_statistics_total();
+        rlr_statistics_t* total_stats = rlr_get_total_statistics();
         if(total_stats->time >= timer) {
             snprintf(
                 text_buffer,
                 4096,
-                "fps %lld\ndraw calls %lld\ntotal draw calls %lld",
+                "fps %lld\ndraw calls %lld\ntotal draw calls %lld\nbackend %s",
                 second_stats->frame_count,
                 second_stats->draw_call_count,
-                total_stats->draw_call_count
+                total_stats->draw_call_count,
+                rlr_get_backend_implementation()
             );
 
             rlr_obj_label_set_text(label, text_buffer);

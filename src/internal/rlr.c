@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <stb_ds.h>
 #include "internal/backends/backend.h"
+#include "internal/core/backend_selection.h"
 #include "rlr/resources/static_model.h"
 #include "rlr/resources/cube_map.h"
 #include "rlr/resources/uniform.h"
@@ -175,6 +176,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         goto err;
     }
 
+    (*_rlr) = (rlr_t){0};
     _rlr->backend = NULL;
     _rlr->window = NULL;
 
@@ -191,46 +193,17 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         goto err;
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_STENCIL_BITS, 8);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    //glfwWindowHint(GLFW_SAMPLES, 16);
-
-    // glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    // glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    // glfwWindowHint(GLFW_SAMPLES, 8);
-
+    //dynamic backend selection
     GLFWmonitor* monitor = ((RLR_INIT_FLAG_FULLSCREEN & flags) == RLR_INIT_FLAG_FULLSCREEN) ? glfwGetPrimaryMonitor() : NULL;
-    _rlr->window = glfwCreateWindow(window_width, window_height, title, monitor, NULL);
-    if(!_rlr->window) {
-        rlr_error_set(RLR_ERR_WINDOW_CREATION);
+    if(!rlr_internal_backend_selection(&_rlr->window, &_rlr->backend, monitor, window_width, window_height, title)) {
+        rlr_error_set(RLR_ERR_COULD_NOT_FIND_SUITABLE_BACKEND);
         goto err;
     }
-    glfwMakeContextCurrent(_rlr->window);
-    glfwSwapInterval(0);
 
-    rlr_backend_t* backend = rlr_backend_gl3((rlr_backend_loader_t)glfwGetProcAddress);
-    _rlr->backend = backend;
-
-    // if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-    //     rlr_error_set(RLR_ERR_CONTEXT_CREATION);
-    //     goto err;
-    // }
-
-    // int32_t major = 0;
-    // int32_t minor = 0;
-    // glGetIntegerv(GL_MAJOR_VERSION, &major); 
-    // glGetIntegerv(GL_MINOR_VERSION, &minor);
-    // bool is_compatible_version = (major == 3 && minor >= 3) || major == 4;
-    // if(!is_compatible_version) {
-    //     rlr_error_setf(RLR_ERR_OPENGL_INCOMPATIBLE_VERSION, "expected atleast OpenGL 3.3, but got OpenGL %d.%d", major, minor);
-    //     goto err;
-    // }
+    glfwSwapInterval((RLR_INIT_FLAG_VSYNC & flags) == RLR_INIT_FLAG_VSYNC ? 1 : 0);
     
     rlr_backend()->set_viewport(0, 0, window_width, window_height);
-
+    
     //setup default resources
     _rlr->texture_white = rlr_res_texture_default();
 
@@ -285,12 +258,16 @@ err:
     return;
 }
 
-rlr_statistics_t* rlr_get_statistics_total() {
+rlr_statistics_t* rlr_get_total_statistics() {
     return &_rlr->statistics_total;
 }
 
 rlr_statistics_t* rlr_get_statistics() {
     return &_rlr->statistics_interval;
+}
+
+const char* rlr_get_backend_implementation() {
+    return rlr_backend()->get_implementation();
 }
 
 void rlr_free() {
@@ -310,7 +287,7 @@ void rlr_free() {
 
     //free backend API and window
     if(_rlr->backend) {
-        _rlr->backend->free_backend();
+        rlr_backend()->free_backend();
         free(_rlr->backend);
     }
     if(_rlr->window) {
@@ -325,7 +302,7 @@ double rlr_get_time() {
     return glfwGetTime();
 }
 
-bool rlr_draw() {
+bool rlr_update() {
     glfwPollEvents();
 
     if(glfwWindowShouldClose(_rlr->window)) {
