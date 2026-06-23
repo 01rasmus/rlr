@@ -24,7 +24,10 @@ static bool rlr_internal_backend_selection_try_gl3(GLFWwindow** window, rlr_back
     }
     return true;
 err:
-    glfwDestroyWindow(*window);
+    glfwMakeContextCurrent(NULL);
+    if(*window) {
+        glfwDestroyWindow(*window);
+    }
     (*window) = NULL;
     (*backend) = NULL;
     return false;
@@ -50,7 +53,10 @@ static bool rlr_internal_backend_selection_try_gles3(GLFWwindow** window, rlr_ba
     }
     return true;
 err:
-    glfwDestroyWindow(*window);
+    glfwMakeContextCurrent(NULL);
+    if(*window) {
+        glfwDestroyWindow(*window);
+    }
     (*window) = NULL;
     (*backend) = NULL;
     return false;
@@ -69,16 +75,10 @@ bool rlr_internal_backend_selection(GLFWwindow** window, rlr_backend_t** backend
     for(size_t i = 0; i < sizeof(backend_selection_functions) / sizeof(backend_selection_functions[0]); i++) {
         rlr_backend_selection_function_t try_backend = backend_selection_functions[i];
         if(try_backend(window, backend, monitor, width, height, title)) {
-            break;
+            glfwShowWindow(*window);
+            return true;
         }
     }
 
-    if(!(*window)) {
-        return false;
-    }
-    if(!(*backend)) {
-        return false;
-    }
-    glfwShowWindow(*window);
-    return true;
+    return false;
 }
