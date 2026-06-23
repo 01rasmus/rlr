@@ -79,7 +79,7 @@ bool rlr_pipeline_stencil_init(rlr_pipeline_stencil_t* ps) {
         goto err;
     }
 
-    ps->shader = rlr_res_create_shader(stencil_vertex, NULL);
+    ps->shader = rlr_res_shader_create(stencil_vertex, NULL);
     if(!ps->shader) {
         goto err;
     }
@@ -112,7 +112,7 @@ void rlr_pipeline_stencil_draw(rlr_pipeline_stencil_t* ps) {
     rlr_backend()->set_stencil_func(RLR_BACKEND_STENCIL_FUNC_ALWAYS, 1, 0xFF);
     rlr_backend()->set_stencil_op(RLR_BACKEND_STENCIL_OP_KEEP, RLR_BACKEND_STENCIL_OP_KEEP, RLR_BACKEND_STENCIL_OP_REPLACE);
 
-    rlr_res_bind_shader(ps->shader);
+    rlr_res_shader_bind(ps->shader);
     rlr_backend()->bind_vertex_array(ps->vao);
     rlr_backend()->draw_arrays_instanced(0, 6, ps->instance_count);
 
@@ -129,7 +129,7 @@ void rlr_pipeline_stencil_deinit(rlr_pipeline_stencil_t* ps) {
         return;
     }
 
-    rlr_res_free_shader(ps->shader);
+    rlr_res_shader_free(ps->shader);
     rlr_backend()->free_vertex_array(ps->vao);
     rlr_backend()->free_buffer(ps->vbo);
 }

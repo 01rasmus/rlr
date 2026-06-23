@@ -141,8 +141,8 @@ static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
 
 bool rlr_pipeline_ui_init(rlr_pipeline_ui_t* pu) {
     (*pu) = (rlr_pipeline_ui_t){0};
-    pu->shader_sprite = rlr_res_create_shader(sprite_vertex, basic_fragment);
-    pu->shader_text = rlr_res_create_shader(mtsdf_vertex, mtsdf_fragment);
+    pu->shader_sprite = rlr_res_shader_create(sprite_vertex, basic_fragment);
+    pu->shader_text = rlr_res_shader_create(mtsdf_vertex, mtsdf_fragment);
     if(!pu->shader_sprite || !pu->shader_text) {
         goto err;
     }
@@ -252,19 +252,19 @@ void rlr_pipeline_ui_draw(rlr_pipeline_ui_t* pu) {
 
     rlr_backend()->set_depth_test(false);
     for(uint64_t i = 0; i < pu->command_count; i++) {
-        rlr_res_bind_shader(pu->commands[i].shader);
-        rlr_res_bind_texture(pu->commands[i].texture, 0);
+        rlr_res_shader_bind(pu->commands[i].shader);
+        rlr_res_texture_bind(pu->commands[i].texture, 0);
         rlr_backend()->bind_vertex_array(pu->commands[i].vao);
         rlr_backend()->draw_arrays_instanced(0, 6, pu->commands[i].instance_count);
     }
 
-    rlr_res_bind_shader(pu->shader_text);
+    rlr_res_shader_bind(pu->shader_text);
     for(int64_t i = 0; i < arrlen(pu->obj_labels); i++) {
         rlr_obj_label_t* label = &pu->obj_labels[i];
         if(!label->visible) {
             continue;
         }
-        rlr_res_bind_texture(label->font->texture, 0);
+        rlr_res_texture_bind(label->font->texture, 0);
         rlr_backend()->bind_vertex_array(label->vao);
         rlr_backend()->draw_arrays(0, label->vertex_count);
     }
@@ -289,8 +289,8 @@ void rlr_pipeline_ui_deinit(rlr_pipeline_ui_t* pu) {
         return;
     }
 
-    rlr_res_free_shader(pu->shader_text);
-    rlr_res_free_shader(pu->shader_sprite);
+    rlr_res_shader_free(pu->shader_text);
+    rlr_res_shader_free(pu->shader_sprite);
     rlr_res_uniform_free(pu->ubo_screen_size);
 
     for(int64_t i = 0; i < arrlen(pu->obj_labels); i++) {

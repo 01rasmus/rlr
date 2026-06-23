@@ -18,5 +18,5 @@ typedef struct rlr_res_texture_t {
 rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter);
 rlr_res_texture_t* rlr_res_texture_default();
 rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex);
-void rlr_res_bind_texture(rlr_res_texture_t* texture, uint8_t texture_slot);
-void rlr_res_free_texture(rlr_res_texture_t* texture);
+void rlr_res_texture_bind(rlr_res_texture_t* texture, uint8_t texture_slot);
+void rlr_res_texture_free(rlr_res_texture_t* texture);

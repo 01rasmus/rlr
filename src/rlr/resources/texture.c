@@ -52,7 +52,7 @@ rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_
     return texture;
 err:
     stbi_image_free(data);
-    rlr_res_free_texture(texture);
+    rlr_res_texture_free(texture);
     return NULL;
 }
 
@@ -76,7 +76,7 @@ rlr_res_texture_t* rlr_res_texture_default() {
 
     return texture;
 err:
-    rlr_res_free_texture(texture);
+    rlr_res_texture_free(texture);
     return NULL;
 }
 
@@ -139,15 +139,15 @@ rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
     return texture;
 err:
     stbi_image_free(data);
-    rlr_res_free_texture(texture);
+    rlr_res_texture_free(texture);
     return NULL;
 }
 
-void rlr_res_bind_texture(rlr_res_texture_t* texture, uint8_t texture_slot) {
+void rlr_res_texture_bind(rlr_res_texture_t* texture, uint8_t texture_slot) {
     rlr_backend()->bind_texture(texture->texture, RLR_BACKEND_TEXTURE_2D, texture_slot);
 }
 
-void rlr_res_free_texture(rlr_res_texture_t* texture) {
+void rlr_res_texture_free(rlr_res_texture_t* texture) {
     if(texture) {
         rlr_backend()->free_texture(texture->texture);
     }

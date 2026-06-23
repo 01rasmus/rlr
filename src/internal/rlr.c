@@ -228,11 +228,11 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     );
     rlr_res_cube_map_bind(_rlr->test_cube_map, 4);
 
-    _rlr->shader_model = rlr_res_create_shader(model_vertex, model_fragment);
+    _rlr->shader_model = rlr_res_shader_create(model_vertex, model_fragment);
     rlr_res_shader_bind_uniform_slot(_rlr->shader_model, "ubo_model", 1);
     rlr_res_shader_bind_uniform_slot(_rlr->shader_model, "ubo_material", 2);
-    rlr_res_bind_shader_texture_slot(_rlr->shader_model, "tex", 0);
-    rlr_res_bind_shader_texture_slot(_rlr->shader_model, "cube_map", 4);
+    rlr_res_shader_bind_texture_slot(_rlr->shader_model, "tex", 0);
+    rlr_res_shader_bind_texture_slot(_rlr->shader_model, "cube_map", 4);
 
     _rlr->ubo_material = rlr_res_uniform_create_dynamic(sizeof(rlr_res_material_t));
     rlr_res_uniform_bind(_rlr->ubo_material, 2);
@@ -280,10 +280,10 @@ void rlr_free() {
     rlr_pipeline_stencil_deinit(&_rlr->pipeline_stencil);
 
     //free resources
-    rlr_res_free_texture(_rlr->texture_white);
+    rlr_res_texture_free(_rlr->texture_white);
     rlr_res_uniform_free(_rlr->ubo_material);
     rlr_res_uniform_free(_rlr->ubo_model);
-    rlr_res_free_shader(_rlr->shader_model);
+    rlr_res_shader_free(_rlr->shader_model);
 
     //free backend API and window
     if(_rlr->backend) {
@@ -324,15 +324,15 @@ bool rlr_update() {
     rlr_pipeline_stencil_draw(&_rlr->pipeline_stencil);
 
     //render test monkey
-    rlr_res_bind_shader(_rlr->shader_model);
+    rlr_res_shader_bind(_rlr->shader_model);
     rlr_backend()->set_depth_test(true);
     for(int64_t i = 0; i < arrlen(_rlr->test->meshes); i++) {
         rlr_res_static_mesh_t* mesh = &_rlr->test->meshes[i];
         rlr_res_uniform_update(_rlr->ubo_material, 0, &mesh->material, sizeof(rlr_res_material_t));
         if(mesh->texture_base) {
-            rlr_res_bind_texture(mesh->texture_base, 0);
+            rlr_res_texture_bind(mesh->texture_base, 0);
         } else {
-            rlr_res_bind_texture(_rlr->texture_white, 0);
+            rlr_res_texture_bind(_rlr->texture_white, 0);
         }
         rlr_backend()->bind_vertex_array(mesh->vao);
         rlr_backend()->draw_elements(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32);

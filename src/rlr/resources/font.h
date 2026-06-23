@@ -31,7 +31,7 @@ typedef struct rlr_res_font_t {
     float px_range;
 } rlr_res_font_t;
 
-rlr_res_font_t* rlr_res_font_create(const char* csv_path, const char* texture_atlas_path, float px_range);
-rlr_res_font_glyph_t* rlr_res_font_glyph_get(rlr_res_font_t* font, uint32_t unicode);
-int32_t rlr_res_font_glyph_count(rlr_res_font_t* font);
+rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atlas_path, float px_range);
+rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_font_t* font, uint32_t unicode);
+int32_t rlr_res_font_get_glyph_count(rlr_res_font_t* font);
 void rlr_res_font_free(rlr_res_font_t* font);

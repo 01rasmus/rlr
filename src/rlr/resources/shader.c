@@ -6,7 +6,7 @@
 #include "rlr/rlr.h"
 #include "shader.h"
 
-rlr_res_shader_t* rlr_res_create_shader(const char* vertex_string, const char* fragment_string) {
+rlr_res_shader_t* rlr_res_shader_create(const char* vertex_string, const char* fragment_string) {
     rlr_res_shader_t* shader = malloc(sizeof(rlr_res_shader_t));
     if(!shader) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -21,7 +21,7 @@ rlr_res_shader_t* rlr_res_create_shader(const char* vertex_string, const char* f
     }
     return shader;
 err:
-    rlr_res_free_shader(shader);
+    rlr_res_shader_free(shader);
     return NULL;
 }
 
@@ -29,15 +29,15 @@ void rlr_res_shader_bind_uniform_slot(rlr_res_shader_t* shader, const char* bloc
     rlr_backend()->bind_shader_uniform_block(shader->shader, block_name, uniform_slot);
 }
 
-void rlr_res_bind_shader_texture_slot(rlr_res_shader_t* shader, const char* texture_var_name, uint8_t texture_slot) {
+void rlr_res_shader_bind_texture_slot(rlr_res_shader_t* shader, const char* texture_var_name, uint8_t texture_slot) {
     rlr_backend()->bind_shader_texture_slot(shader->shader, texture_var_name, texture_slot);
 }
 
-void rlr_res_bind_shader(rlr_res_shader_t* shader) {
+void rlr_res_shader_bind(rlr_res_shader_t* shader) {
     rlr_backend()->bind_shader(shader->shader);
 }
 
-void rlr_res_free_shader(rlr_res_shader_t* shader) {
+void rlr_res_shader_free(rlr_res_shader_t* shader) {
     if(shader) {
         rlr_backend()->free_shader(shader->shader);
     }
