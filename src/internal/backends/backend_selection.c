@@ -4,7 +4,7 @@
 
 typedef bool (*rlr_backend_selection_function_t)(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title);
 
-static bool rlr_internal_backend_selection_try_gl3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title) {
+static bool try_gl3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title) {
     glfwDefaultWindowHints();
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -33,7 +33,7 @@ err:
     return false;
 }
 
-static bool rlr_internal_backend_selection_try_gles3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title) {
+static bool try_gles3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title) {
     glfwDefaultWindowHints();
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
@@ -63,8 +63,8 @@ err:
 }
 
 static rlr_backend_selection_function_t backend_selection_functions[2] = {
-    rlr_internal_backend_selection_try_gl3,
-    rlr_internal_backend_selection_try_gles3,
+    try_gl3,
+    try_gles3,
 };
 
 bool rlr_internal_backend_selection(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title) {
