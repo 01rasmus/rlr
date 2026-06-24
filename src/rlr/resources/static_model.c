@@ -8,12 +8,6 @@
 #include "rlr/rlr.h"
 #include "static_model.h"
 
-typedef struct rlr_model_static_vertex_t {
-    rlr_vec3_t pos;
-    rlr_vec3_t normal;
-    rlr_vec2_t uv;
-} rlr_model_static_vertex_t;
-
 rlr_res_static_model_t* rlr_res_static_model_load(const char* glb_model_location) {
     rlr_res_static_model_t* model = NULL;
     rlr_model_static_vertex_t* vertices = NULL;

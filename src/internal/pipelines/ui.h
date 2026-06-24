@@ -12,7 +12,7 @@ typedef struct rlr_res_uniform_t rlr_res_uniform_t;
 typedef struct rlr_obj_label_t rlr_obj_label_t;
 typedef struct rlr_obj_sprite_t rlr_obj_sprite_t;
 
-typedef struct rlr_pipline_ui_draw_command_t {
+typedef struct rlr_pipeline_ui_draw_command_t {
     rlr_res_shader_t* shader;
     rlr_res_texture_t* texture;
     rlr_rect_t scissor;
@@ -20,7 +20,7 @@ typedef struct rlr_pipline_ui_draw_command_t {
     uint64_t instance_vbo;
     uint32_t instance_count;
     bool should_scissor;
-} rlr_pipline_ui_draw_command_t;
+} rlr_pipeline_ui_draw_command_t;
 
 typedef struct rlr_pipeline_ui_t {
     rlr_res_shader_t* shader_text;
@@ -28,7 +28,7 @@ typedef struct rlr_pipeline_ui_t {
     rlr_obj_label_t* obj_labels;
     rlr_obj_sprite_t* obj_sprites;
 
-    rlr_pipline_ui_draw_command_t* commands;
+    rlr_pipeline_ui_draw_command_t* commands;
     uint64_t command_count;
     uint64_t quad_vbo;
 

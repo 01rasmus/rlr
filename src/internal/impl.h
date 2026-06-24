@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "pipelines/stencil.h"
+#include "pipelines/model.h"
 #include "pipelines/ui.h"
 #include "rlr/math/matrix.h"
 #include "rlr/rlr.h"
@@ -18,14 +19,13 @@ typedef struct rlr_res_static_model_t rlr_res_static_model_t;
 typedef bool (*rlr_pipeline_init_function_t)();
 
 #define RLR_INTERNAL_UBO_COUNT                  4
-#define RLR_INTERNAL_UBO_MODEL                  0
-#define RLR_INTERNAL_UBO_MATERIAL               1
-#define RLR_INTERNAL_UBO_ENVIRONMENT            2
-#define RLR_INTERNAL_UBO_UI                     3
+#define RLR_INTERNAL_UBO_MODEL                  0x0
+#define RLR_INTERNAL_UBO_MATERIAL               0x1
+#define RLR_INTERNAL_UBO_ENVIRONMENT            0x2
+#define RLR_INTERNAL_UBO_UI                     0x3
 
 typedef struct rlr_uniform_model_t {
-    rlr_mat4_t model;
-    rlr_mat4_t mvp;
+    rlr_mat4_t vp;
     rlr_vec3_t camera_pos;
 } rlr_uniform_model_t;
 
@@ -54,11 +54,11 @@ typedef struct rlr_t {
 
     //pipelines
     rlr_pipeline_stencil_t pipeline_stencil;
+    rlr_pipeline_model_t pipeline_model;
     rlr_pipeline_ui_t pipeline_ui;
 
     //built in resources
     rlr_res_texture_t* texture_white;
-    rlr_res_shader_t* shader_model;
     rlr_res_uniform_t* ubos[RLR_INTERNAL_UBO_COUNT];
 
     //statistics
@@ -68,7 +68,6 @@ typedef struct rlr_t {
     double statistics_timer;
 
     //misc (todo: remove and add a new model pipeline)
-    rlr_res_static_model_t* test;
     rlr_res_cube_map_t* test_cube_map;
 } rlr_t;
 

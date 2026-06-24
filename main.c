@@ -2,19 +2,19 @@
 #include <stdio.h>
 #include "src/rlr/rlr.h"
 #include "src/rlr/error.h"
-
 #include "src/rlr/resources/static_model.h"
 #include "src/rlr/resources/shader.h"
 #include "src/rlr/resources/font.h"
 #include "src/rlr/objects/label.h"
 #include "src/rlr/objects/sprite.h"
 #include "src/rlr/objects/model_occluder.h"
+#include "src/rlr/objects/static_model.h"
 
 int32_t main() {
 
     rlr_res_font_t* font = NULL;
     rlr_res_font_t* font2 = NULL;
-    rlr_init("rl render", 1024, 768, RLR_INIT_FLAG_FULLSCREEN);
+    rlr_init("rl render", 1024, 768, 0);
 
     font = rlr_res_font_load("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
     font2 = rlr_res_font_load("assets/tinos-small.csv", "assets/tinos-small.png", 8.0);
@@ -25,6 +25,12 @@ int32_t main() {
     rlr_res_texture_t* ta_ui = rlr_res_texture_load("assets/ui_texture_atlas_large.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
     rlr_res_texture_t* ability_empty = rlr_res_texture_load("assets/ability_empty_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
     rlr_res_texture_t* hero_unknown = rlr_res_texture_load("assets/unknown_unit_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
+    rlr_res_static_model_t* plane = rlr_res_static_model_load("assets/plane.glb");
+    rlr_res_static_model_t* monkey = rlr_res_static_model_load("assets/monkey.glb");
+
+    rlr_vec3_t rot = rlr_vec3(3.14, -0.5, 0);
+    rlr_obj_static_model_t* model = rlr_obj_static_model_create(plane, rlr_vec3(0, 0, 0), rlr_quat_ident, rlr_vec3(1, 1, 1));
+    rlr_obj_static_model_t* model2 = rlr_obj_static_model_create(monkey, rlr_vec3(-0.2, 0.3, -0.3), rlr_quat_from_euler(&rot), rlr_vec3(0.2, 0.2, 0.2));
 
     rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 16, "", font);
     

@@ -1,6 +1,14 @@
 #pragma once
+#include <stdint.h>
+#include "rlr/math/vec.h"
 
 typedef struct rlr_res_texture_t rlr_res_texture_t;
+
+typedef struct rlr_model_static_vertex_t {
+    rlr_vec3_t pos;
+    rlr_vec3_t normal;
+    rlr_vec2_t uv;
+} rlr_model_static_vertex_t;
 
 typedef struct rlr_res_material_t {
     float color[4];

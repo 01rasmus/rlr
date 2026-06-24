@@ -11,6 +11,7 @@ static bool try_gl3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* m
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
+    //glfwWindowHint(GLFW_SAMPLES, 16);
 
     (*window) = glfwCreateWindow(width, height, title, monitor, NULL);
     if(!(*window)) {

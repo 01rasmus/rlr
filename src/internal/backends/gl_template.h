@@ -424,6 +424,11 @@ void GL_TEMPLATE_PREFIX(draw_elements)(uint64_t offset, uint32_t index_count, rl
     statistic_draw_call_count++;
 }
 
+void GL_TEMPLATE_PREFIX(draw_elements_instanced)(uint64_t offset, uint32_t index_count, rlr_backend_type_t type, uint32_t instance_count) {
+    gl->DrawElementsInstanced(GL_TRIANGLES, index_count, type, (void*)offset, instance_count);
+    statistic_draw_call_count++;
+}
+
 void GL_TEMPLATE_PREFIX(set_viewport)(int32_t x, int32_t y, int32_t width, int32_t height) {
     gl->Viewport(x, y, width, height);
     current_height = height;

@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct rlr_backend_t rlr_backend_t;
+typedef uint64_t rlr_res_t;
 
 typedef struct rlr_statistics_t {
     uint64_t draw_call_count;

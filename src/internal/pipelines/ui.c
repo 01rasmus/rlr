@@ -29,7 +29,31 @@ static const char mtsdf_fragment[] = RLR_SHADER_INLINE(
     }
 );
 
-static const char basic_fragment[] = RLR_SHADER_INLINE(
+static const char mtsdf_vertex[] = RLR_SHADER_INLINE(
+    layout (location = 0) in vec3 color;
+    layout (location = 1) in vec2 pos;
+    layout (location = 2) in vec2 uv;
+    layout (location = 3) in float spr;
+    layout(std140) uniform inv_screen_size {
+        float inv_x;
+        float inv_y;
+        float screen_width;
+        float screen_height;
+    } ui_data;
+
+    out vec2 frag_uv;
+    flat out vec3 frag_color;
+    flat out float screen_px_range;
+
+    void main() {
+        frag_uv = uv;
+        frag_color = color;
+        screen_px_range = spr;
+        gl_Position = vec4(pos.x * ui_data.inv_x * 2.0 - 1.0, 1.0 - pos.y * ui_data.inv_y * 2.0, 0.0, 1.0);
+    }
+);
+
+static const char sprite_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
     in vec3 frag_color;
     out vec4 final_color;
@@ -78,30 +102,6 @@ static const char sprite_vertex[] = RLR_SHADER_INLINE(
     }
 );
 
-static const char mtsdf_vertex[] = RLR_SHADER_INLINE(
-    layout (location = 0) in vec3 color;
-    layout (location = 1) in vec2 pos;
-    layout (location = 2) in vec2 uv;
-    layout (location = 3) in float spr;
-    layout(std140) uniform inv_screen_size {
-        float inv_x;
-        float inv_y;
-        float screen_width;
-        float screen_height;
-    } ui_data;
-
-    out vec2 frag_uv;
-    flat out vec3 frag_color;
-    flat out float screen_px_range;
-
-    void main() {
-        frag_uv = uv;
-        frag_color = color;
-        screen_px_range = spr;
-        gl_Position = vec4(pos.x * ui_data.inv_x * 2.0 - 1.0, 1.0 - pos.y * ui_data.inv_y * 2.0, 0.0, 1.0);
-    }
-);
-
 typedef struct rlr_instance_data_ui_t {
     rlr_vec2_t pos;
     rlr_vec2_t size;
@@ -126,7 +126,7 @@ static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
 bool rlr_pipeline_ui_init() {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
     (*pu) = (rlr_pipeline_ui_t){0};
-    pu->shader_sprite = rlr_res_shader_create(sprite_vertex, basic_fragment);
+    pu->shader_sprite = rlr_res_shader_create(sprite_vertex, sprite_fragment);
     pu->shader_text = rlr_res_shader_create(mtsdf_vertex, mtsdf_fragment);
     if(!pu->shader_sprite || !pu->shader_text) {
         goto err;
@@ -147,8 +147,8 @@ err:
     return false;
 }
 
-static rlr_pipline_ui_draw_command_t rlr_pipeline_ui_new_command() {
-    rlr_pipline_ui_draw_command_t command = {0};
+static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command() {
+    rlr_pipeline_ui_draw_command_t command = {0};
     command.vao = rlr_backend()->create_vertex_array();
     command.instance_vbo = rlr_backend()->create_buffer();
     rlr_backend()->bind_vertex_array(command.vao);
@@ -185,7 +185,7 @@ static void rlr_pipeline_ui_rebuild_commands() {
         }
 
         if(current_texture->texture != sprite->texture->texture) {
-            rlr_pipline_ui_draw_command_t* command = &pu->commands[current_command];
+            rlr_pipeline_ui_draw_command_t* command = &pu->commands[current_command];
             command->shader = pu->shader_sprite;
             command->instance_count = arrlenu(instance_data);
             command->should_scissor = false;
@@ -211,7 +211,7 @@ static void rlr_pipeline_ui_rebuild_commands() {
         arrpush(instance_data, data);
     }
     if(arrlenu(instance_data) > 0) {
-        rlr_pipline_ui_draw_command_t* command = &pu->commands[current_command++];
+        rlr_pipeline_ui_draw_command_t* command = &pu->commands[current_command++];
         command->shader = pu->shader_sprite;
         command->instance_count = arrlenu(instance_data);
         command->should_scissor = false;
