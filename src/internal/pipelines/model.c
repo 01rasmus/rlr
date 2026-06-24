@@ -109,9 +109,9 @@ const char model_fragment[] = RLR_SHADER_INLINE(
 
         vec3 lit_color = ambient + diffuse + specular;
 
-        for(int i = 0; i < LIGHT_COUNT; i++) {
-            lit_color += point_light(point_lights[i].position, point_lights[i].color, N, V, diffuse_color);
-        }
+        // for(int i = 0; i < LIGHT_COUNT; i++) {
+        //     lit_color += point_light(point_lights[i].position, point_lights[i].color, N, V, diffuse_color);
+        // }
 
         vec3 final_rgb = mix(lit_color, reflected_color, material.reflectiveness);
         out_color = vec4(final_rgb, tex_color.a * material.color.a * frag_alpha);

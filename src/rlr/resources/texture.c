@@ -67,8 +67,8 @@ rlr_res_texture_t* rlr_res_texture_default() {
     texture->height = 1;
     texture->width = 1;
 
-    uint8_t data[1] = {255};
-    texture->texture = rlr_backend()->create_nearest_texture(data, 1, 1, 1, false);
+    uint8_t data[1] = {255, 255, 255};
+    texture->texture = rlr_backend()->create_nearest_texture(data, 1, 1, 3, false);
     if(texture->texture == 0) {
         rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
         goto err;
