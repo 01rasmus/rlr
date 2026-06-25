@@ -29,8 +29,18 @@ int32_t main() {
     rlr_res_static_model_t* monkey = rlr_res_static_model_load("assets/monkey.glb");
 
     rlr_vec3_t rot = rlr_vec3(3.14, -0.5, 0);
+
+    int32_t amount = 10;
+    float xStart = -1.0;
+    float yStart = -1.0;
+    float interval = 2.0 / (float)amount;
+    for(int32_t y = 0; y < amount; y++) {
+        for(int32_t x = 0; x < amount; x++) {
+            rlr_vec3_t pos = rlr_vec3(xStart + (float)x * interval, 0.05, yStart + (float)y * interval);
+            rlr_obj_static_model_create(monkey, pos, rlr_quat_from_euler(&rot), rlr_vec3(0.05, 0.05, 0.05));
+        }
+    }
     rlr_obj_static_model_t* model = rlr_obj_static_model_create(plane, rlr_vec3(0, 0, 0), rlr_quat_ident, rlr_vec3(1, 1, 1));
-    rlr_obj_static_model_t* model2 = rlr_obj_static_model_create(monkey, rlr_vec3(-0.2, 0.3, -0.3), rlr_quat_from_euler(&rot), rlr_vec3(0.2, 0.2, 0.2));
 
     rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 16, "", font);
     

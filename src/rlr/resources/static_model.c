@@ -123,6 +123,12 @@ rlr_res_static_model_t* rlr_res_static_model_load(const char* glb_model_location
                 arrpush(indices, index);
             }
 
+            printf("mesh %s: vertices=%u indices=%u triangles=%u\n",
+                mesh->name,
+                count_position,
+                primitive->indices->count,
+                primitive->indices->count / 3);
+
             //create mesh
             arrpush(model->meshes, (rlr_res_static_mesh_t){0});
             rlr_res_static_mesh_t* mesh = &arrlast(model->meshes);

@@ -27,7 +27,7 @@ typedef struct rlr_vec3_t {
 #define rlr_vec2_normalize(A)       rlr_vec2_divf((A), rlr_vec2_len((A)))
 #define rlr_vec2_cross(A, B)        ((A).x * (B).y - (A).y * (B).x)
 
-#define rlr_vec3(X, Y, Z)           ((rlr_vec3_t){.x = X, .y = Y, .z = Z})
+#define rlr_vec3(X, Y, Z)           ((rlr_vec3_t){.x = (X), .y = (Y), .z = (Z)})
 #define rlr_vec3_zero               rlr_vec3({.x = 0.0, .y = 0.0, .z = 0.0})
 #define rlr_vec3_add(A, B)          rlr_vec3((A).x + (B).x, (A).y + (B).y, (A).z + (B).z)
 #define rlr_vec3_sub(A, B)          rlr_vec3((A).x - (B).x, (A).y - (B).y, (A).z - (B).z)
