@@ -23,7 +23,7 @@ Defined below are the libraries used in the renderer. It mostly depends on other
 For a computer to run the renderer an OpenGL 3.3, OpenGL ES 3.0 or DirectX 10 compatible graphics card is required.
 
 On linux you need to install some dependencies to build. On debian this command will download all the required packages:<br>
-``sudo apt install libx11-dev libgl1-mesa-dev libxrandr-dev build-essential``
+``sudo apt install cmake gcc pkg-config libgl1-mesa-dev libwayland-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxkbcommon-dev``
 
 ## How to build
 The library can mainly be built in two ways. Either with cmake or make.
