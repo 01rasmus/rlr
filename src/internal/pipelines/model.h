@@ -17,9 +17,7 @@ typedef struct vec4_t {
 } vec4_t;
 
 typedef struct rlr_pipeline_model_instance_t {
-    vec4_t matrix_0;
-    vec4_t matrix_1;
-    vec4_t matrix_2;
+    rlr_affine_mat4x3_t matrix;
     float alpha;
 } rlr_pipeline_model_instance_t;
 

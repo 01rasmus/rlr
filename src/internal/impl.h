@@ -25,7 +25,7 @@ typedef bool (*rlr_pipeline_init_function_t)();
 #define RLR_INTERNAL_UBO_UI                     0x3
 
 typedef struct rlr_uniform_model_t {
-    rlr_mat4_t vp;
+    rlr_mat4x4_t vp;
     rlr_vec3_t camera_pos;
 } rlr_uniform_model_t;
 

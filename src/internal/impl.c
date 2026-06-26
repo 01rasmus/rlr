@@ -159,10 +159,10 @@ bool rlr_update() {
         rlr_vec3_t cam_pos = rlr_vec3_mulf(rlr_vec3(-0.05, 0.1, -0.1), 7);
         rlr_vec3_t scene_center = rlr_vec3(0, 0, 0);
         rlr_vec3_t up = rlr_vec3(0, 1, 0);
-        rlr_mat4_t projection = rlr_mat4_perspective(1, (float)width / (float)height, 0.001, 100.0);
-        rlr_mat4_t view = rlr_mat4_look_at(&cam_pos, &scene_center, &up);
+        rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)width / (float)height, 0.001, 100.0);
+        rlr_mat4x4_t view = rlr_mat4x4_look_at(&cam_pos, &scene_center, &up);
         rlr_uniform_model_t ubo_model = {
-            .vp = rlr_mat4_mul(&projection, &view),
+            .vp = rlr_mat4x4_mul(&projection, &view),
             .camera_pos = cam_pos,
         };
         rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_MODEL], 0, &ubo_model, sizeof(rlr_uniform_model_t));

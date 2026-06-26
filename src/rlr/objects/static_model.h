@@ -12,7 +12,7 @@ typedef struct rlr_obj_static_model_t {
     uint32_t index;
 
     //trs
-    rlr_mat4_t matrix;
+    rlr_mat4x4_t matrix;
     rlr_vec3_t translation;
     rlr_quat_t rotation;
     rlr_vec3_t scale;

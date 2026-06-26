@@ -15,7 +15,7 @@ rlr_obj_static_model_t* rlr_obj_static_model_create(rlr_res_static_model_t* mode
         .translation = translation,
         .rotation = rotation,
         .scale = scale,
-        .matrix = rlr_mat4_trs(&translation, &rotation, &scale),
+        .matrix = rlr_mat4x4_trs(&translation, &rotation, &scale),
         .opaque = true,
         .alpha = 1.0,
     };

@@ -155,10 +155,11 @@ const char model_vertex[] = RLR_SHADER_INLINE(
     layout(location = 0) in vec3 pos;
     layout(location = 1) in vec3 normal;
     layout(location = 2) in vec2 uv;
-    layout(location = 3) in vec4 instance_matrix_0;
-    layout(location = 4) in vec4 instance_matrix_1;
-    layout(location = 5) in vec4 instance_matrix_2;
-    layout(location = 6) in float instance_alpha;
+    layout(location = 3) in vec3 instance_mat_col_0;
+    layout(location = 4) in vec3 instance_mat_col_1;
+    layout(location = 5) in vec3 instance_mat_col_2;
+    layout(location = 6) in vec3 instance_mat_col_3;
+    layout(location = 7) in float instance_alpha;
 
     layout(std140) uniform ubo_model {
         mat4 vp;
@@ -172,10 +173,10 @@ const char model_vertex[] = RLR_SHADER_INLINE(
 
     void main() {
         mat4 instance_matrix = mat4(
-            vec4(instance_matrix_0.xyz, 0.0),
-            vec4(instance_matrix_1.xyz, 0.0),
-            vec4(instance_matrix_2.xyz, 0.0),
-            vec4(instance_matrix_0.w, instance_matrix_1.w, instance_matrix_2.w, 1.0)
+            vec4(instance_mat_col_0, 0.0),
+            vec4(instance_mat_col_1, 0.0),
+            vec4(instance_mat_col_2, 0.0),
+            vec4(instance_mat_col_3, 1.0)
         );
 
         frag_alpha = instance_alpha;
@@ -203,10 +204,11 @@ static rlr_pipeline_model_draw_command_t rlr_pipeline_model_new_command(rlr_res_
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, uv));
     rlr_backend()->bind_buffer(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
     rlr_backend()->bind_buffer(cmd.instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 4, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix_0));
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 4, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix_1));
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 4, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix_2));
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 6, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, alpha));
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix) + sizeof(float) * 3 * 0);
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix) + sizeof(float) * 3 * 1);
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix) + sizeof(float) * 3 * 2);
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 6, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix) + sizeof(float) * 3 * 3);
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 7, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, alpha));
     return cmd;
 }
 
@@ -242,28 +244,11 @@ void rlr_pipeline_model_draw() {
                 rlr_res_static_mesh_t* mesh = &model->model->meshes[s];
                 rlr_pipeline_model_draw_command_t* cmd = rlr_pipeline_model_find_draw_command(mesh, pm->shader_opaque);
 
-                rlr_mat4_t inverse = rlr_mat4_inverse(&model->matrix);
-                rlr_mat4_t normal = rlr_mat4_transpose(&inverse);
+                rlr_mat4x4_t inverse = rlr_mat4x4_inverse(&model->matrix);
+                rlr_mat4x4_t normal = rlr_mat4x4_transpose(&inverse);
 
                 rlr_pipeline_model_instance_t inst = (rlr_pipeline_model_instance_t){
-                    .matrix_0 = (vec4_t){
-                        .x = model->matrix.matrix[0][0],
-                        .y = model->matrix.matrix[0][1],
-                        .z = model->matrix.matrix[0][2],
-                        .w = model->matrix.matrix[3][0]
-                    },
-                    .matrix_1 = (vec4_t){
-                        .x = model->matrix.matrix[1][0],
-                        .y = model->matrix.matrix[1][1],
-                        .z = model->matrix.matrix[1][2],
-                        .w = model->matrix.matrix[3][1]
-                    },
-                    .matrix_2 = (vec4_t){
-                        .x = model->matrix.matrix[2][0],
-                        .y = model->matrix.matrix[2][1],
-                        .z = model->matrix.matrix[2][2],
-                        .w = model->matrix.matrix[3][2]
-                    },
+                    .matrix = rlr_mat4x4_to_affine_mat4x3(&model->matrix),
                     .alpha = model->alpha,
                 };
 
