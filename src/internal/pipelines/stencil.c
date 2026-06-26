@@ -95,7 +95,7 @@ err:
 void rlr_pipeline_stencil_draw() {
     rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     if(ps->is_dirty) {
-        rlr_pipeline_stencil_rebuild(ps);
+        rlr_pipeline_stencil_rebuild();
     }
 
     rlr_backend()->set_stencil_test(true);

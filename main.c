@@ -14,7 +14,7 @@ int32_t main() {
 
     rlr_res_font_t* font = NULL;
     rlr_res_font_t* font2 = NULL;
-    rlr_init("rl render", 1024, 768, RLR_INIT_FLAG_FULLSCREEN);
+    rlr_init("rl render", 1024, 768, 0);
 
     font = rlr_res_font_load("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
     font2 = rlr_res_font_load("assets/tinos-small.csv", "assets/tinos-small.png", 8.0);
@@ -28,7 +28,7 @@ int32_t main() {
     rlr_res_static_model_t* plane = rlr_res_static_model_load("assets/plane.glb");
     rlr_res_static_model_t* monkey = rlr_res_static_model_load("assets/monkey.glb");
 
-    rlr_vec3_t rot = rlr_vec3(3.14, -0.5, 0);
+    rlr_vec3_t rot = rlr_vec3(3.14, -0, 0);
 
     int32_t amount = 10;
     float xStart = -1.0;
@@ -64,15 +64,19 @@ int32_t main() {
         rlr_statistics_t* second_stats = rlr_get_statistics();
         rlr_statistics_t* total_stats = rlr_get_total_statistics();
         if(total_stats->time >= timer) {
+            rlr_vec2_t size = rlr_get_framebuffer_size();
             snprintf(
                 text_buffer,
                 4096,
-                "fps\t\t\t\t\t\t\t%lld\ndraw calls per second\t\t%lld\ndraw calls per frame\t\t%lld\ntotal draw calls\t\t\t\t%lld\nbackend\t\t\t\t\t%s",
+                "fps\t\t\t\t\t\t\t%lld\ndraw calls per second\t\t%lld\ndraw calls per frame\t\t%lld\ntotal draw calls\t\t\t\t%lld\nbackend\t\t\t\t\t%s\nframebuffer size\t\t\t%dx%d\ngpu\t\t\t\t\t\t\t%s",
                 second_stats->frame_count,
                 second_stats->draw_call_count,
                 second_stats->draw_call_count / second_stats->frame_count,
                 total_stats->draw_call_count,
-                rlr_get_backend_implementation()
+                rlr_get_backend_implementation(),
+                (int32_t)size.x,
+                (int32_t)size.y,
+                rlr_get_gpu_name()
             );
 
             rlr_obj_label_set_text(label, text_buffer);

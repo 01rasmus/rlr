@@ -103,6 +103,7 @@ typedef enum rlr_backend_type_t {
     X(void,         clear,                          (rlr_backend_clear_flag_t clear_flags)) \
     X(void,         update_buffer,                  (rlr_backend_buffer_target_t target, uint64_t size, const void* data, rlr_backend_buffer_usage_t update_type)) \
     X(const char*,  get_implementation,             ()) \
+    X(const char*,  get_gpu_name,                   ()) \
     X(uint64_t,     get_draw_call_count,            ()) \
     X(void,         reset_statistics,               ()) \
     X(void,         free_vertex_array,              (uint64_t vao)) \

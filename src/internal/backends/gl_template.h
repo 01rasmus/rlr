@@ -65,6 +65,7 @@ static uint8_t* texture_resize_buffer = NULL;
 static glad_context_t* gl = NULL;
 static uint64_t statistic_draw_call_count = 0;
 
+static char gpu_name[256] = { 0 };
 static float current_height = 0.0;
 static uint64_t current_textures[16] = {0};
 static uint64_t current_shader = 0;
@@ -238,13 +239,24 @@ uint64_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const char
     uint32_t fid = 0;
 
     //opengl es 3.0 must have a vertex and a fragment shader
-    #ifdef GL_IMPLEMENTATION_TEMPLATE_GLES
-    const char* minimum_shader = "#version 300 es\nprecision highp float;\nprecision highp int;\nvoid main() {}";
+    #if defined(GL_IMPLEMENTATION_TEMPLATE_GLES)
+    const char* minimum_shader_es = "#version 300 es\nprecision highp float;\nprecision highp int;\nvoid main() {}";
     if(!vertex_shader) {
-        vertex_shader = minimum_shader;
+        vertex_shader = minimum_shader_es;
     }
     if(!fragment_shader) {
-        fragment_shader = minimum_shader;
+        fragment_shader = minimum_shader_es;
+    }
+    #endif
+
+    //apple needs to have a shader attached to make the stencil work
+    #if defined(GL_IMPLEMENTATION_TEMPLATE_GL) && defined(__APPLE__)
+    const char* minimum_shader_gl = "#version 330 core\nvoid main() {}";
+    if(!vertex_shader) {
+        vertex_shader = minimum_shader_gl;
+    }
+    if(!fragment_shader) {
+        fragment_shader = minimum_shader_gl;
     }
     #endif
 
@@ -494,6 +506,10 @@ const char* GL_TEMPLATE_PREFIX(get_implementation)() {
     return "unknown";
 }
 
+const char* GL_TEMPLATE_PREFIX(get_gpu_name)() {
+    return gpu_name;
+}
+
 uint64_t GL_TEMPLATE_PREFIX(get_draw_call_count)() {
     return statistic_draw_call_count;
 }
@@ -551,6 +567,15 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     #define X(RET, NAME, PARAMS) backend->NAME = GL_TEMPLATE_PREFIX(NAME);
     RLR_BACKEND_FUNCTIONS(X)
     #undef X
+
+    //fill gpu name
+    const char* gpu_vendor = gl->GetString(GL_VENDOR);
+    const char* gpu_renderer = gl->GetString(GL_RENDERER);
+    snprintf(gpu_name, 256, "%s %s", gpu_vendor, gpu_renderer);
+
+    int32_t out = 1337;
+    gl->GetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_STENCIL, GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE, &out);
+    printf("stencil size %d\n", out);
 
     gl->Enable(GL_CULL_FACE);
     gl->CullFace(GL_BACK);

@@ -110,6 +110,10 @@ rlr_backend_t* rlr_backend() {
     return ctx->backend;
 }
 
+rlr_vec2_t rlr_get_framebuffer_size() {
+    return rlr_vec2(ctx->framebuffer_width, ctx->framebuffer_height);
+}
+
 rlr_statistics_t* rlr_get_total_statistics() {
     return &ctx->statistics_total;
 }
@@ -120,6 +124,10 @@ rlr_statistics_t* rlr_get_statistics() {
 
 rlr_res_texture_t* rlr_internal_get_white_texture() {
     return ctx->texture_white;
+}
+
+const char* rlr_get_gpu_name() {
+    return rlr_backend()->get_gpu_name();
 }
 
 const char* rlr_get_backend_implementation() {
@@ -143,6 +151,8 @@ bool rlr_update() {
             .screen_width = (float)width,
             .screen_height = (float)height
         };
+        ctx->framebuffer_width = width;
+        ctx->framebuffer_height = height;
         rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_UI], 0, &ui_uniform, sizeof(rlr_uniform_ui_t));
         rlr_backend()->set_viewport(0, 0, width, height);
 
@@ -160,6 +170,7 @@ bool rlr_update() {
 
     rlr_backend()->set_clear_color(0.1, 0.2, 0.3, 1.0);
     rlr_backend()->set_clear_stencil(0);
+    rlr_backend()->set_stencil_mask(0xff);
     rlr_backend()->clear(RLR_BACKEND_CLEAR_BIT_COLOR | RLR_BACKEND_CLEAR_BIT_DEPTH | RLR_BACKEND_CLEAR_BIT_STENCIL);
 
     rlr_pipeline_stencil_draw();
