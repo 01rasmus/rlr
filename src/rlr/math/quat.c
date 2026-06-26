@@ -1,6 +1,6 @@
 #include "quat.h"
 
-rlr_quat_t rlr_quat_from_euler(rlr_vec3_t* euler) {
+rlr_quat_t rlr_quat_from_euler(const rlr_vec3_t* euler) {
     rlr_quat_t quat;
     quat.w =  cos(euler->x/2.0)*cos(euler->y/2.0)*cos(euler->z/2.0) + sin(euler->x/2.0)*sin(euler->y/2.0)*sin(euler->z/2.0);
     quat.x = -cos(euler->x/2.0)*sin(euler->y/2.0)*cos(euler->z/2.0) - sin(euler->x/2.0)*cos(euler->y/2.0)*sin(euler->z/2.0);
@@ -9,7 +9,7 @@ rlr_quat_t rlr_quat_from_euler(rlr_vec3_t* euler) {
     return quat;
 }
 
-rlr_vec3_t rlr_quat_to_euler(rlr_quat_t* quat) {
+rlr_vec3_t rlr_quat_to_euler(const rlr_quat_t* quat) {
     float sp = -2.0 * (quat->y*quat->z - quat->w*quat->x);
     if(fabsf(sp) > 0.9999) {
         float p = 3.14159265 / 2.0 * sp;
@@ -24,7 +24,7 @@ rlr_vec3_t rlr_quat_to_euler(rlr_quat_t* quat) {
     }
 }
 
-rlr_quat_t rlr_quat_slerp(rlr_quat_t* q1, rlr_quat_t* q2, float t) {
+rlr_quat_t rlr_quat_slerp(const rlr_quat_t* q1, const rlr_quat_t* q2, float t) {
     float cos_half_theta = q1->w * q2->w + q1->x * q2->x + q1->y * q2->y + q1->z * q2->z;
     if(fabsf(cos_half_theta) >= 1.0){
         return rlr_quat(q1->w, q1->x, q1->y, q1->z);
@@ -41,7 +41,7 @@ rlr_quat_t rlr_quat_slerp(rlr_quat_t* q1, rlr_quat_t* q2, float t) {
     return rlr_quat(q1->w * ratio_1 + q2->w * ratio_2, q1->x * ratio_1 + q2->x * ratio_2, q1->y * ratio_1 + q2->y * ratio_2, q1->z * ratio_1 + q2->z * ratio_2);
 }
 
-rlr_quat_t rlr_quat_normalize(rlr_quat_t* quat) {
+rlr_quat_t rlr_quat_normalize(const rlr_quat_t* quat) {
     rlr_quat_t new_quat;
     float norm = sqrt(quat->x*quat->x + quat->y*quat->y + quat->z*quat->z + quat->w*quat->w);
     new_quat.x = quat->w / norm;
