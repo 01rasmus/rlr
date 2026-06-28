@@ -8,7 +8,7 @@
 #include "rlr/rlr.h"
 #include "static_model.h"
 
-rlr_res_static_model_t* rlr_res_static_model_load(const char* glb_model_location) {
+rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_location) {
     rlr_res_static_model_t* model = NULL;
     rlr_model_static_vertex_t* vertices = NULL;
     uint32_t* indices = NULL;
@@ -132,22 +132,17 @@ rlr_res_static_model_t* rlr_res_static_model_load(const char* glb_model_location
             //create mesh
             arrpush(model->meshes, (rlr_res_static_mesh_t){0});
             rlr_res_static_mesh_t* mesh = &arrlast(model->meshes);
-            mesh->vao = rlr_backend()->create_vertex_array();
             mesh->vbo = rlr_backend()->create_buffer();
             mesh->ebo = rlr_backend()->create_buffer();
             mesh->index_count = arrlenu(indices);
-            if(mesh->vao == 0 || mesh->vbo == 0 || mesh->ebo == 0) {
+            if(mesh->vbo == 0 || mesh->ebo == 0) {
                 rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
                 goto err;
             }
 
-            //set vertex array and fill buffers
-            rlr_backend()->bind_vertex_array(mesh->vao);
+            //fill buffers
             rlr_backend()->bind_buffer(mesh->vbo, RLR_BACKEND_BUFFER_ARRAY);
             rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_model_static_vertex_t) * arrlenu(vertices), vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
-            rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, pos));
-            rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, normal));
-            rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, uv));
             rlr_backend()->bind_buffer(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
             rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ELEMENT_ARRAY, sizeof(uint32_t) * arrlenu(indices), indices, RLR_BACKEND_BUFFER_USAGE_STATIC);
 
@@ -192,7 +187,6 @@ void rlr_res_static_model_free(rlr_res_static_model_t* model) {
         rlr_res_static_mesh_t* mesh = &model->meshes[i];
         rlr_backend()->free_buffer(mesh->ebo);
         rlr_backend()->free_buffer(mesh->vbo);
-        rlr_backend()->free_vertex_array(mesh->vao);
     }
     arrfree(model->meshes);
     free(model);

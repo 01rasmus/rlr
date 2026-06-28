@@ -26,8 +26,8 @@ int32_t main() {
     rlr_res_texture_t* ta_ui = rlr_res_texture_load("assets/ui_texture_atlas_large.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
     rlr_res_texture_t* ability_empty = rlr_res_texture_load("assets/ability_empty_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
     rlr_res_texture_t* hero_unknown = rlr_res_texture_load("assets/unknown_unit_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
-    rlr_res_static_model_t* plane = rlr_res_static_model_load("assets/plane.glb");
-    rlr_res_static_model_t* monkey = rlr_res_static_model_load("assets/monkey.glb");
+    rlr_res_static_model_t* plane = rlr_res_static_model_load_glb("assets/plane.glb");
+    rlr_res_static_model_t* monkey = rlr_res_static_model_load_glb("assets/monkey.glb");
 
     rlr_vec3_t rot = rlr_vec3(3.14, -0, 0);
  
