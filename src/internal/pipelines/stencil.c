@@ -7,6 +7,8 @@
 #include "rlr/rlr.h"
 #include "stencil.h"
 
+#define RLR_PIPELINE_STENCIL    (&rlr()->pipeline_stencil)
+
 static const char stencil_vertex[] = RLR_SHADER_INLINE(
     layout (location = 0) in vec2 pos;
     layout (location = 1) in vec2 rect_pos;

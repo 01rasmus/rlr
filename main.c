@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stb_ds.h>
 #include "src/rlr/rlr.h"
 #include "src/rlr/error.h"
 #include "src/rlr/resources/static_model.h"
@@ -29,18 +30,19 @@ int32_t main() {
     rlr_res_static_model_t* monkey = rlr_res_static_model_load("assets/monkey.glb");
 
     rlr_vec3_t rot = rlr_vec3(3.14, -0, 0);
-
+ 
     int32_t amount = 10;
     float xStart = -1.0;
     float yStart = -1.0;
     float interval = 2.0 / (float)amount;
+    rlr_obj_static_model_handle_t* monkey_objects = NULL;
     for(int32_t y = 0; y < amount; y++) {
         for(int32_t x = 0; x < amount; x++) {
             rlr_vec3_t pos = rlr_vec3(xStart + (float)x * interval, 0.05, yStart + (float)y * interval);
-            rlr_obj_static_model_create(monkey, pos, rlr_quat_from_euler(&rot), rlr_vec3(0.05, 0.05, 0.05));
+            arrpush(monkey_objects, rlr_obj_static_model_create(monkey, pos, rlr_quat_from_euler(&rot), rlr_vec3(0.05, 0.05, 0.05)));
         }
     }
-    rlr_obj_static_model_t* model = rlr_obj_static_model_create(plane, rlr_vec3(0, 0, 0), rlr_quat_ident, rlr_vec3(1, 1, 1));
+    rlr_obj_static_model_handle_t model = rlr_obj_static_model_create(plane, rlr_vec3(0, 0, 0), rlr_quat_ident, rlr_vec3(1, 1, 1));
 
     rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 16, "", font);
     
@@ -60,6 +62,8 @@ int32_t main() {
     char text_buffer[4096] = "";
     double timer = 0.0;
     bool visible = true;
+    float rotation = 0.0;
+    double last_time = 0.0;
     while(rlr_update()) {
         rlr_statistics_t* second_stats = rlr_get_statistics();
         rlr_statistics_t* total_stats = rlr_get_total_statistics();
@@ -82,6 +86,14 @@ int32_t main() {
             rlr_obj_label_set_text(label, text_buffer);
             timer += 1.0;
         }
+        
+        double delta = total_stats->time - last_time;
+        last_time = total_stats->time;
+        rotation += 3.1415926535 * delta / 2;
+        for(int64_t i = 0; i < arrlen(monkey_objects); i++) {
+            rlr_obj_static_model_set_trs(monkey_objects[i], NULL, &rlr_quat(cos(rotation / 2), 0, 1 * sin(rotation / 2), 0), NULL);
+        }
+        rlr_obj_static_model_set_trs(model, NULL, &rlr_quat(cos(rotation / 2), 0, 1 * sin(rotation / 2), 0), NULL);
     }
 
 end:

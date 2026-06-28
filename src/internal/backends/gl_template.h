@@ -28,11 +28,22 @@
 #error "Both GL_IMPLEMENTATION_TEMPLATE_GL and GL_IMPLEMENTATION_TEMPLATE_GLES can not be defined at the same time"
 #endif
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stb_image_resize2.h>
+#include "rlr/error.h"
+#include "backend.h"
+
+#define RLR_BUILD_VERSION(MAJOR, MINOR)     (((uint64_t)(MAJOR) << 32) + (uint64_t)(MINOR))
+
 /* OpenGL */
 #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
 #define GL_TEMPLATE_PREFIX(FUNC)    gl3_##FUNC
 #define GL_TEMPLATE_ENTRY           rlr_backend_gl3
 #define GL_LOADER_FUNCTION          gladLoadGLContext
+
+static uint64_t version = RLR_BUILD_VERSION(3, 3);
 
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
@@ -46,18 +57,31 @@ typedef GladGLContext glad_context_t;
 #define GL_TEMPLATE_ENTRY           rlr_backend_gles3
 #define GL_LOADER_FUNCTION          gladLoadGLES2Context
 
+static uint64_t version = RLR_BUILD_VERSION(3, 0);
+
 #define GLAD_GLES2_IMPLEMENTATION
 #include <glad/gles2.h>
 #undef GLAD_GLES2_IMPLEMENTATION
 typedef GladGLES2Context glad_context_t;
 #endif
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stb_image_resize2.h>
-#include "rlr/error.h"
-#include "backend.h"
+// debug
+#define RLR_BACKEND_DEBUG 1
+#if RLR_BACKEND_DEBUG
+#include <stdio.h>
+#define GL_CALL(x)                                              \
+    do {                                                        \
+        while(gl->GetError() != GL_NO_ERROR);                   \
+        x;                                                      \
+        uint32_t err = gl->GetError();                          \
+        if(err != GL_NO_ERROR) {                                \
+            printf("%s:%d: GL error 0x%x when calling %s\n",    \
+                __FILE__, __LINE__, err, #x);                   \
+        }                                                       \
+    } while(0)
+#else
+#define GL_CALL(X) X
+#endif
 
 #define TEXTURE_RESIZE_BUFFER   (4096 * 4096 * 4)
 
@@ -125,19 +149,19 @@ uint64_t GL_TEMPLATE_PREFIX(create_texture)(uint8_t* color_data, uint32_t width,
         int32_t output_w = 64;
         int32_t output_h = 64;
         stbir_resize_uint8_srgb(color_data, width, height, 0, texture_resize_buffer, output_w, output_h, 0, channels);
-        gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, output_w, output_h, 0, format, GL_UNSIGNED_BYTE, texture_resize_buffer);
+        GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, output_w, output_h, 0, format, GL_UNSIGNED_BYTE, texture_resize_buffer));
     } else {
-        gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, color_data);
+        GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, color_data));
     }
 
     if(texture_filter_uses_mipmaps(filter_min)) {
-        gl->GenerateMipmap(GL_TEXTURE_2D);
+        GL_CALL(gl->GenerateMipmap(GL_TEXTURE_2D));
     }
 
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
-    gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t));
     return (uint64_t)texture;
 }
 
@@ -155,11 +179,11 @@ uint64_t GL_TEMPLATE_PREFIX(create_nearest_texture)(uint8_t* color_data, uint32_
 
 uint64_t GL_TEMPLATE_PREFIX(create_cube_map_texture)(uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height, int32_t channels) {
     uint32_t texture = 0;
-    gl->GenTextures(1, &texture);
+    GL_CALL(gl->GenTextures(1, &texture));
     if(texture == 0) {
         return 0;
     }
-    gl->BindTexture(GL_TEXTURE_CUBE_MAP, texture);
+    GL_CALL(gl->BindTexture(GL_TEXTURE_CUBE_MAP, texture));
 
     const uint8_t* texture_data[6] = {
         right,
@@ -178,15 +202,15 @@ uint64_t GL_TEMPLATE_PREFIX(create_cube_map_texture)(uint8_t* right, uint8_t* le
             int32_t output_w = 64;
             int32_t output_h = 64;
             stbir_resize_uint8_linear(texture_data[i], width, height, 0, texture_resize_buffer, output_w, output_h, 0, channels);
-            gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, output_w, output_h, 0, format, GL_UNSIGNED_BYTE, texture_resize_buffer);
+            GL_CALL(gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, output_w, output_h, 0, format, GL_UNSIGNED_BYTE, texture_resize_buffer));
         }
     }
 
-    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
     return texture;
 }
 
@@ -194,42 +218,42 @@ void GL_TEMPLATE_PREFIX(bind_texture)(uint64_t texture, rlr_backend_texture_type
     if(current_textures[texture_slot] == texture) {
         return;
     }
-    gl->ActiveTexture(GL_TEXTURE0 + texture_slot);
-    gl->BindTexture(type, texture);
+    GL_CALL(gl->ActiveTexture(GL_TEXTURE0 + texture_slot));
+    GL_CALL(gl->BindTexture(type, texture));
     current_textures[texture_slot] = texture;
 }
 
 void GL_TEMPLATE_PREFIX(free_texture)(uint64_t texture) {
     uint32_t tex = (uint32_t)texture;
-    gl->DeleteTextures(1, &tex);
+    GL_CALL(gl->DeleteTextures(1, &tex));
 }
 
 static bool _rlr_shader_compilation_error(uint32_t shader_id, char* error_str, size_t error_str_size) {
     int32_t status = 0;
-    gl->GetShaderiv(shader_id, GL_COMPILE_STATUS, &status);
+    GL_CALL(gl->GetShaderiv(shader_id, GL_COMPILE_STATUS, &status));
     if(status == GL_TRUE) {
         return false;
     }
 
     int32_t length = 0;
-    gl->GetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &length);
+    GL_CALL(gl->GetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &length));
     if(length > 0) {
-        gl->GetShaderInfoLog(shader_id, error_str_size, NULL, error_str);
+        GL_CALL(gl->GetShaderInfoLog(shader_id, error_str_size, NULL, error_str));
     }
     return true;
 }
 
 static bool _rlr_shader_program_link_error(uint32_t program_id, char* error_str, size_t error_str_size) {
     int32_t status = 0;
-    gl->GetProgramiv(program_id, GL_LINK_STATUS, &status);
+    GL_CALL(gl->GetProgramiv(program_id, GL_LINK_STATUS, &status));
     if(status == GL_TRUE) {
         return false;
     }
 
     int32_t length = 0;
-    gl->GetProgramiv(program_id, GL_INFO_LOG_LENGTH, &length);
+    GL_CALL(gl->GetProgramiv(program_id, GL_INFO_LOG_LENGTH, &length));
     if (length > 0) {
-        gl->GetProgramInfoLog(program_id, error_str_size, NULL, error_str);
+        GL_CALL(gl->GetProgramInfoLog(program_id, error_str_size, NULL, error_str));
     }
     return true;
 }
@@ -249,7 +273,7 @@ uint64_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const char
     }
     #endif
 
-    //apple needs to have a shader attached to make the stencil work
+    //apple devices need to have a shader attached to make the stencil work
     #if defined(GL_IMPLEMENTATION_TEMPLATE_GL) && defined(__APPLE__)
     const char* minimum_shader_gl = "#version 330 core\nvoid main() {}";
     if(!vertex_shader) {
@@ -268,8 +292,8 @@ uint64_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const char
     //compile vertex shader
     if(vertex_shader) {
         vid = gl->CreateShader(GL_VERTEX_SHADER);
-        gl->ShaderSource(vid, 1, vertex_strings, vertex_length);
-        gl->CompileShader(vid);
+        GL_CALL(gl->ShaderSource(vid, 1, vertex_strings, vertex_length));
+        GL_CALL(gl->CompileShader(vid));
         if(_rlr_shader_compilation_error(vid, error, error_size)) {
             goto err;
         }
@@ -278,8 +302,8 @@ uint64_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const char
     //compile fragment shader
     if(fragment_shader) {
         fid = gl->CreateShader(GL_FRAGMENT_SHADER);
-        gl->ShaderSource(fid, 1, fragment_strings, fragment_length);
-        gl->CompileShader(fid);
+        GL_CALL(gl->ShaderSource(fid, 1, fragment_strings, fragment_length));
+        GL_CALL(gl->CompileShader(fid));
         if(_rlr_shader_compilation_error(fid, error, error_size)) {
             goto err;
         }
@@ -287,12 +311,12 @@ uint64_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const char
 
     //linking to the program
     uint32_t program = gl->CreateProgram();
-    gl->AttachShader(program, vid);
+    GL_CALL(gl->AttachShader(program, vid));
     if(fragment_shader) {
-        gl->AttachShader(program, fid);
+        GL_CALL(gl->AttachShader(program, fid));
     }
     if(vertex_strings) {
-        gl->LinkProgram(program);
+        GL_CALL(gl->LinkProgram(program));
     }
     if(_rlr_shader_program_link_error(program, error, error_size)) {
         goto err;
@@ -300,26 +324,26 @@ uint64_t GL_TEMPLATE_PREFIX(create_shader)(const char* vertex_shader, const char
 
     //finished linking, now we can detach and delete
     if(vertex_shader) {
-        gl->DetachShader(program, vid);
-        gl->DeleteShader(vid);
+        GL_CALL(gl->DetachShader(program, vid));
+        GL_CALL(gl->DeleteShader(vid));
     }
     if(fragment_shader) {
-        gl->DetachShader(program, fid);
-        gl->DeleteShader(fid);
+        GL_CALL(gl->DetachShader(program, fid));
+        GL_CALL(gl->DeleteShader(fid));
     }
     return (uint64_t)program;
 err:
     if(vid) {
-        gl->DeleteShader(vid);
+        GL_CALL(gl->DeleteShader(vid));
     }
     if(fid) {
-        gl->DeleteShader(fid);
+        GL_CALL(gl->DeleteShader(fid));
     }
     return 0;
 }
 
 void GL_TEMPLATE_PREFIX(free_shader)(uint64_t shader) {
-    gl->DeleteProgram((uint64_t)shader);
+    GL_CALL(gl->DeleteProgram((uint64_t)shader));
 }
 
 void GL_TEMPLATE_PREFIX(bind_shader)(uint64_t shader) {
@@ -327,7 +351,7 @@ void GL_TEMPLATE_PREFIX(bind_shader)(uint64_t shader) {
         return;
     }
     current_shader = shader;
-    gl->UseProgram((uint32_t)shader);
+    GL_CALL(gl->UseProgram((uint32_t)shader));
 }
 
 void GL_TEMPLATE_PREFIX(bind_shader_uniform_block)(uint64_t shader, const char* uniform_block_name, uint32_t slot) {
@@ -337,7 +361,7 @@ void GL_TEMPLATE_PREFIX(bind_shader_uniform_block)(uint64_t shader, const char* 
         //ERROR
         return;
     }
-    gl->UniformBlockBinding((uint32_t)shader, block_index, slot);
+    GL_CALL(gl->UniformBlockBinding((uint32_t)shader, block_index, slot));
 }
 
 void GL_TEMPLATE_PREFIX(bind_shader_texture_slot)(uint64_t shader, const char* texture_var_name, uint32_t texture_slot) {
@@ -347,153 +371,153 @@ void GL_TEMPLATE_PREFIX(bind_shader_texture_slot)(uint64_t shader, const char* t
         //ERROR
         return;
     }
-    gl->Uniform1i(location, texture_slot);
+    GL_CALL(gl->Uniform1i(location, texture_slot));
 }
 
 void GL_TEMPLATE_PREFIX(bind_uniform_buffer)(uint64_t buffer, uint32_t slot) {
-    gl->BindBufferBase(GL_UNIFORM_BUFFER, slot, (uint32_t)buffer);
+    GL_CALL(gl->BindBufferBase(GL_UNIFORM_BUFFER, slot, (uint32_t)buffer));
 }
 
 void GL_TEMPLATE_PREFIX(clear)(rlr_backend_clear_flag_t clear_flags) {
-    gl->Clear(clear_flags);
+    GL_CALL(gl->Clear(clear_flags));
 }
 
 void GL_TEMPLATE_PREFIX(set_clear_color)(float r, float g, float b, float a) {
-    gl->ClearColor(r, g, b, a);
+    GL_CALL(gl->ClearColor(r, g, b, a));
 }
 
 void GL_TEMPLATE_PREFIX(set_clear_stencil)(int32_t stencil) {
-    gl->ClearStencil(stencil);
+    GL_CALL(gl->ClearStencil(stencil));
 }
 
 void GL_TEMPLATE_PREFIX(set_color_mask)(bool r, bool g, bool b, bool a) {
-    gl->ColorMask(r, g, b, a);
+    GL_CALL(gl->ColorMask(r, g, b, a));
 }
 
 void GL_TEMPLATE_PREFIX(set_depth_mask)(bool z) {
-    gl->DepthMask(z);
+    GL_CALL(gl->DepthMask(z));
 }
 
 
 uint64_t GL_TEMPLATE_PREFIX(create_vertex_array)() {
     uint64_t handle = 0;
-    gl->GenVertexArrays(1, (uint32_t*)&handle);
+    GL_CALL(gl->GenVertexArrays(1, (uint32_t*)&handle));
     return handle;
 }
 
 void GL_TEMPLATE_PREFIX(bind_vertex_array)(uint64_t vao) {
-    gl->BindVertexArray((uint32_t)vao);
+    GL_CALL(gl->BindVertexArray((uint32_t)vao));
 }
 
 void GL_TEMPLATE_PREFIX(set_vertex_array_attrib)(rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset) {
-    gl->VertexAttribPointer(index, count, type, normalized, stride, (void*)vertex_offset);
-    gl->EnableVertexAttribArray(index);
-    gl->VertexAttribDivisor(index, attrib_type);
+    GL_CALL(gl->VertexAttribPointer(index, count, type, normalized, stride, (void*)vertex_offset));
+    GL_CALL(gl->EnableVertexAttribArray(index));
+    GL_CALL(gl->VertexAttribDivisor(index, attrib_type));
 }
 
 void GL_TEMPLATE_PREFIX(set_vertex_array_attribi)(rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, uint32_t stride, uintptr_t vertex_offset) {
-    gl->VertexAttribIPointer(index, count, type, stride, (void*)vertex_offset);
-    gl->EnableVertexAttribArray(index);
-    gl->VertexAttribDivisor(index, attrib_type);
+    GL_CALL(gl->VertexAttribIPointer(index, count, type, stride, (void*)vertex_offset));
+    GL_CALL(gl->EnableVertexAttribArray(index));
+    GL_CALL(gl->VertexAttribDivisor(index, attrib_type));
 }
 
 void GL_TEMPLATE_PREFIX(free_vertex_array)(uint64_t vao) {
     uint64_t handles[] = { vao };
-    gl->DeleteVertexArrays(1, (uint32_t*)handles);
+    GL_CALL(gl->DeleteVertexArrays(1, (uint32_t*)handles));
 }
 
 uint64_t GL_TEMPLATE_PREFIX(create_buffer)() {
     uint64_t handle = 0;
-    gl->GenBuffers(1, (uint32_t*)&handle);
+    GL_CALL(gl->GenBuffers(1, (uint32_t*)&handle));
     return handle;
 }
 
 void GL_TEMPLATE_PREFIX(bind_buffer)(uint64_t buffer, rlr_backend_buffer_target_t target) {
-    gl->BindBuffer(target, buffer);
+    GL_CALL(gl->BindBuffer(target, buffer));
 }
 
 void GL_TEMPLATE_PREFIX(update_buffer)(rlr_backend_buffer_target_t target, uint64_t size, const void* data, rlr_backend_buffer_usage_t usage_type) {
-    gl->BufferData(target, size, data, usage_type);
+    GL_CALL(gl->BufferData(target, size, data, usage_type));
 }
 
 void GL_TEMPLATE_PREFIX(free_buffer)(uint64_t buffer) {
     uint64_t handles[1] = { buffer };
-    gl->DeleteBuffers(1, (uint32_t*)handles);
+    GL_CALL(gl->DeleteBuffers(1, (uint32_t*)handles));
 }
 
 void GL_TEMPLATE_PREFIX(draw_arrays)(uint64_t offset, uint32_t vertex_count) {
-    gl->DrawArrays(GL_TRIANGLES, offset, vertex_count);
+    GL_CALL(gl->DrawArrays(GL_TRIANGLES, offset, vertex_count));
     statistic_draw_call_count++;
 }
 
 void GL_TEMPLATE_PREFIX(draw_arrays_instanced)(uint64_t offset, uint32_t vertex_count, uint32_t instance_count) {
-    gl->DrawArraysInstanced(GL_TRIANGLES, offset, vertex_count, instance_count);
+    GL_CALL(gl->DrawArraysInstanced(GL_TRIANGLES, offset, vertex_count, instance_count));
     statistic_draw_call_count++;
 }
 
 void GL_TEMPLATE_PREFIX(draw_elements)(uint64_t offset, uint32_t index_count, rlr_backend_type_t type) {
-    gl->DrawElements(GL_TRIANGLES, index_count, type, (void*)offset);
+    GL_CALL(gl->DrawElements(GL_TRIANGLES, index_count, type, (void*)offset));
     statistic_draw_call_count++;
 }
 
 void GL_TEMPLATE_PREFIX(draw_elements_instanced)(uint64_t offset, uint32_t index_count, rlr_backend_type_t type, uint32_t instance_count) {
-    gl->DrawElementsInstanced(GL_TRIANGLES, index_count, type, (void*)offset, instance_count);
+    GL_CALL(gl->DrawElementsInstanced(GL_TRIANGLES, index_count, type, (void*)offset, instance_count));
     statistic_draw_call_count++;
 }
 
 void GL_TEMPLATE_PREFIX(set_viewport)(int32_t x, int32_t y, int32_t width, int32_t height) {
-    gl->Viewport(x, y, width, height);
+    GL_CALL(gl->Viewport(x, y, width, height));
     current_height = height;
 }
 
 void GL_TEMPLATE_PREFIX(set_depth_test)(bool use_depth_test) {
     if(use_depth_test) {
-        gl->Enable(GL_DEPTH_TEST);
-        gl->DepthFunc(GL_LESS);
+        GL_CALL(gl->Enable(GL_DEPTH_TEST));
+        GL_CALL(gl->DepthFunc(GL_LESS));
     } else {
-        gl->Disable(GL_DEPTH_TEST);
+        GL_CALL(gl->Disable(GL_DEPTH_TEST));
     }
 }
 
 void GL_TEMPLATE_PREFIX(set_blending)(bool enabled) {
     if(enabled) {
-        gl->Enable(GL_BLEND);
-        gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        GL_CALL(gl->Enable(GL_BLEND));
+        GL_CALL(gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     } else {
-        gl->Disable(GL_BLEND);
+        GL_CALL(gl->Disable(GL_BLEND));
     }
 }
 
 void GL_TEMPLATE_PREFIX(set_scissor_test)(bool use_scissor_test) {
     if(use_scissor_test) {
-        gl->Enable(GL_SCISSOR_TEST);
+        GL_CALL(gl->Enable(GL_SCISSOR_TEST));
     } else {
-        gl->Disable(GL_SCISSOR_TEST);
+        GL_CALL(gl->Disable(GL_SCISSOR_TEST));
     }
 }
 
 void GL_TEMPLATE_PREFIX(set_scissor)(int32_t x, int32_t y, int32_t width, int32_t height) {
-    gl->Scissor(x, current_height - y - height, width, height);
+    GL_CALL(gl->Scissor(x, current_height - y - height, width, height));
 }
 
 void GL_TEMPLATE_PREFIX(set_stencil_test)(bool use_stencil_test) {
     if(use_stencil_test) {
-        gl->Enable(GL_STENCIL_TEST);
+        GL_CALL(gl->Enable(GL_STENCIL_TEST));
     } else {
-        gl->Disable(GL_STENCIL_TEST);
+        GL_CALL(gl->Disable(GL_STENCIL_TEST));
     }
 }
 
 void GL_TEMPLATE_PREFIX(set_stencil_mask)(uint8_t mask) {
-    gl->StencilMask(mask);
+    GL_CALL(gl->StencilMask(mask));
 }
 
 void GL_TEMPLATE_PREFIX(set_stencil_func)(rlr_backend_stencil_func_t func, uint8_t ref, uint8_t mask) {
-    gl->StencilFunc(func, ref, mask);
+    GL_CALL(gl->StencilFunc(func, ref, mask));
 }
 
 void GL_TEMPLATE_PREFIX(set_stencil_op)(rlr_backend_stencil_op_t fail, rlr_backend_stencil_op_t zfail, rlr_backend_stencil_op_t zpass) {
-    gl->StencilOp(fail, zfail, zpass);
+    GL_CALL(gl->StencilOp(fail, zfail, zpass));
 }
 
 const char* GL_TEMPLATE_PREFIX(get_implementation)() {
@@ -525,17 +549,17 @@ void GL_TEMPLATE_PREFIX(free_backend)() {
     gl = NULL;
 }
 
-#ifdef GL_IMPLEMENTATION_TEMPLATE_GL
 static bool validate_backend() {
-    return true;
-}
-#endif
+    uint32_t major = 0;
+    uint32_t minor = 0;
+    gl->GetIntegerv(GL_MAJOR_VERSION, &major);
+    gl->GetIntegerv(GL_MINOR_VERSION, &minor);
+    if(version > RLR_BUILD_VERSION(major, minor)) {
+        return false;
+    }
 
-#ifdef GL_IMPLEMENTATION_TEMPLATE_GLES
-static bool validate_backend() {
     return true;
 }
-#endif
 
 rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     rlr_backend_t* backend = NULL;
@@ -573,12 +597,8 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     const char* gpu_renderer = gl->GetString(GL_RENDERER);
     snprintf(gpu_name, 256, "%s %s", gpu_vendor, gpu_renderer);
 
-    int32_t out = 1337;
-    gl->GetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_STENCIL, GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE, &out);
-    printf("stencil size %d\n", out);
-
-    gl->Enable(GL_CULL_FACE);
-    gl->CullFace(GL_BACK);
+    GL_CALL(gl->Enable(GL_CULL_FACE));
+    GL_CALL(gl->CullFace(GL_BACK));
     statistic_draw_call_count = 0;
     return backend;
 err:

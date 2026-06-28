@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "error.h"
 
+#ifndef __WIN32
 #define PRINTF_COL_RESET            "\x1B[0m"
 #define PRINTF_COL_BOLD             "\x1B[1m"
 #define PRINTF_COL_BLACK            "\x1B[30m"
@@ -11,6 +12,18 @@
 #define PRINTF_COL_MAGENTA          "\x1B[35m"
 #define PRINTF_COL_CYAN             "\x1B[36m"
 #define PRINTF_COL_WHITE            "\x1B[37m"
+#else
+#define PRINTF_COL_RESET            ""
+#define PRINTF_COL_BOLD             ""
+#define PRINTF_COL_BLACK            ""
+#define PRINTF_COL_RED              ""
+#define PRINTF_COL_GREEN            ""
+#define PRINTF_COL_YELLOW           ""
+#define PRINTF_COL_BLUE             ""
+#define PRINTF_COL_MAGENTA          ""
+#define PRINTF_COL_CYAN             ""
+#define PRINTF_COL_WHITE            ""
+#endif
 
 void _rlr_error_default_callback(rlr_error_t code, const char* file, size_t line, const char* extended);
 

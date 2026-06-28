@@ -8,6 +8,8 @@
 #include "internal/impl.h"
 #include "model.h"
 
+#define RLR_PIPELINE_MODEL    (&rlr()->pipeline_model)
+
 const char simple_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
     out vec4 out_color;
@@ -188,37 +190,49 @@ const char model_vertex[] = RLR_SHADER_INLINE(
     }
 );
 
-static rlr_pipeline_model_draw_command_t rlr_pipeline_model_new_command(rlr_res_static_mesh_t* mesh, rlr_res_shader_t* shader) {
-    rlr_pipeline_model_draw_command_t cmd = {
-        .mesh = mesh,
+static rlr_pipeline_static_model_draw_command_t rlr_pipeline_model_create_static_model_draw_command(rlr_res_static_model_t* model, rlr_res_shader_t* shader, uint64_t new_index) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+
+    rlr_pipeline_static_model_draw_command_t cmd = {
+        .model = model,
         .shader = shader,
         .instances = NULL,
+        .mesh_vaos = NULL,
         .dirty = false,
-        .vao = rlr_backend()->create_vertex_array(),
-        .instance_vbo = rlr_backend()->create_buffer()
+        .generation = pm->generation_counter++,
+        .index = new_index,
+        .instance_vbo = rlr_backend()->create_buffer(),
     };
-    rlr_backend()->bind_vertex_array(cmd.vao);
-    rlr_backend()->bind_buffer(mesh->vbo, RLR_BACKEND_BUFFER_ARRAY);
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, pos));
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, normal));
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, uv));
-    rlr_backend()->bind_buffer(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
-    rlr_backend()->bind_buffer(cmd.instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix) + sizeof(float) * 3 * 0);
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix) + sizeof(float) * 3 * 1);
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix) + sizeof(float) * 3 * 2);
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 6, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, matrix) + sizeof(float) * 3 * 3);
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 7, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_model_instance_t), offsetof(rlr_pipeline_model_instance_t, alpha));
+
+    for(int64_t i = 0; i < arrlen(model->meshes); i++) {
+        rlr_res_static_mesh_t* mesh = &model->meshes[i];
+        uint64_t vao = rlr_backend()->create_vertex_array();
+        arrpush(cmd.mesh_vaos, vao);
+        rlr_backend()->bind_vertex_array(vao);
+        rlr_backend()->bind_buffer(mesh->vbo, RLR_BACKEND_BUFFER_ARRAY);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, pos));
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, normal));
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, uv));
+        rlr_backend()->bind_buffer(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
+        rlr_backend()->bind_buffer(cmd.instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, matrix) + sizeof(float) * 3 * 0);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, matrix) + sizeof(float) * 3 * 1);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, matrix) + sizeof(float) * 3 * 2);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 6, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, matrix) + sizeof(float) * 3 * 3);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 7, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, alpha));
+    }
+
     return cmd;
 }
 
 bool rlr_pipeline_model_init() {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
 
-    pm->commands = NULL;
-    pm->obj_models = NULL;
+    pm->opaque_static_model_commands = NULL;
+    pm->obj_static_models = rlr_sparse_gen_allocator_create(sizeof(rlr_obj_static_model_t));
     pm->shader_transparent = NULL;
     pm->shader_opaque = rlr_res_shader_create(model_vertex, model_fragment);
+    pm->generation_counter = 0;
     if(!pm->shader_opaque) {
         goto err;
     }
@@ -226,7 +240,6 @@ bool rlr_pipeline_model_init() {
     rlr_res_shader_bind_uniform_slot(pm->shader_opaque, "ubo_material", RLR_INTERNAL_UBO_MATERIAL);
     rlr_res_shader_bind_texture_slot(pm->shader_opaque, "tex", 0);
     rlr_res_shader_bind_texture_slot(pm->shader_opaque, "cube_map", 4);
-
     return true;
 err:
     rlr_pipeline_model_deinit();
@@ -236,50 +249,33 @@ err:
 void rlr_pipeline_model_draw() {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
 
-    if(arrlen(pm->commands) == 0) {
-        for(int32_t i = 0; i < arrlen(pm->obj_models); i++) {
-            rlr_obj_static_model_t* model = &pm->obj_models[i];
-
-            for(int32_t s = 0; s < arrlen(model->model->meshes); s++) {
-                rlr_res_static_mesh_t* mesh = &model->model->meshes[s];
-                rlr_pipeline_model_draw_command_t* cmd = rlr_pipeline_model_find_draw_command(mesh, pm->shader_opaque);
-
-                rlr_mat4x4_t inverse = rlr_mat4x4_inverse(&model->matrix);
-                rlr_mat4x4_t normal = rlr_mat4x4_transpose(&inverse);
-
-                rlr_pipeline_model_instance_t inst = (rlr_pipeline_model_instance_t){
-                    .matrix = rlr_mat4x4_to_affine_mat4x3(&model->matrix),
-                    .alpha = model->alpha,
-                };
-
-                arrpush(cmd->instances, inst);
-                cmd->dirty = true;
-            }
-        }
-    }
-
     //reupload command instance vbos that are dirty
-    for(int64_t i = 0; i < arrlen(pm->commands); i++) {
-        rlr_pipeline_model_draw_command_t* cmd = &pm->commands[i];
+    for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
+        rlr_pipeline_static_model_draw_command_t* cmd = &pm->opaque_static_model_commands[i];
         if(cmd->dirty) {
             rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_model_instance_t) * arrlenu(cmd->instances), cmd->instances, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_static_model_instance_t) * arrlenu(cmd->instances), cmd->instances, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
             cmd->dirty = false;
         }
     }
 
     //draw
-    for(int64_t i = 0; i < arrlen(pm->commands); i++) {
-        rlr_pipeline_model_draw_command_t* command = &pm->commands[i];
-        rlr_res_shader_bind(command->shader);
-        rlr_res_uniform_update(rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL], 0, &command->mesh->material, sizeof(rlr_uniform_material_t));
-        if(command->mesh->texture_base) {
-            rlr_res_texture_bind(command->mesh->texture_base, 0);
-        } else {
-            rlr_res_texture_bind(rlr()->texture_white, 0);
+    for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
+        rlr_pipeline_static_model_draw_command_t* command = &pm->opaque_static_model_commands[i];
+        rlr_res_shader_bind(pm->shader_opaque);
+        
+        for(int64_t j = 0; j < arrlen(command->mesh_vaos); j++) {
+            rlr_res_static_mesh_t* mesh = &command->model->meshes[j];
+            rlr_res_uniform_update(rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL], 0, &mesh->material, sizeof(rlr_uniform_material_t));
+            if(mesh->texture_base) {
+                rlr_res_texture_bind(mesh->texture_base, 0);
+            } else {
+                rlr_res_texture_bind(rlr()->texture_white, 0);
+            }
+
+            rlr_backend()->bind_vertex_array(command->mesh_vaos[j]);
+            rlr_backend()->draw_elements_instanced(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32, arrlenu(command->instances));
         }
-        rlr_backend()->bind_vertex_array(command->vao);
-        rlr_backend()->draw_elements_instanced(0, command->mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32, arrlenu(command->instances));
     }
 }
 
@@ -289,35 +285,58 @@ void rlr_pipeline_model_deinit() {
         return;
     }
 
-    arrfree(pm->commands);
+    arrfree(pm->opaque_static_model_commands);
     rlr_res_shader_free(pm->shader_opaque);
     rlr_res_shader_free(pm->shader_transparent);
 }
 
-rlr_pipeline_model_draw_command_t* rlr_pipeline_model_find_draw_command(rlr_res_static_mesh_t* mesh, rlr_res_shader_t* shader) {
+rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_draw_command(rlr_res_static_model_t* model, rlr_res_shader_t* shader) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
 
     //todo: use binary search instead
-    for(int64_t i = 0; i < arrlen(pm->commands); i++) {
-        rlr_pipeline_model_draw_command_t* cmd = &pm->commands[i];
-        if(cmd->mesh == mesh && cmd->shader == shader) {
+    for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
+        rlr_pipeline_static_model_draw_command_t* cmd = &pm->opaque_static_model_commands[i];
+        if(cmd->model == model && cmd->shader == shader) {
             return cmd;
         }
     }
 
-    rlr_pipeline_model_draw_command_t new_command = rlr_pipeline_model_new_command(mesh, shader);
-    arrpush(pm->commands, new_command);
-    return &arrlast(pm->commands);
+    arrpush(pm->opaque_static_model_commands, rlr_pipeline_model_create_static_model_draw_command(model, shader, arrlen(pm->opaque_static_model_commands)));
+    return &arrlast(pm->opaque_static_model_commands);
 }
 
-rlr_obj_static_model_t* rlr_pipeline_model_alloc_static_model() {
+uint32_t rlr_pipeline_model_add_static_model_instance(rlr_pipeline_static_model_draw_command_t* command, rlr_pipeline_static_model_instance_t data) {
+    arrpush(command->instances, data);
+    command->dirty = true;
+    return arrlen(command->instances) - 1;
+}
+
+void rlr_pipeline_model_update_static_model_instance(uint32_t cmd_index, uint32_t cmd_generation, uint32_t instance_index, rlr_pipeline_static_model_instance_t data) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
-    arrpush(pm->obj_models, (rlr_obj_static_model_t){0});
-    rlr_obj_static_model_t* sm = &arrlast(pm->obj_models);
-    sm->index = arrlenu(pm->obj_models) - 1;
-    return sm;
+
+    if(cmd_index > arrlenu(pm->opaque_static_model_commands) - 1) {
+        return;
+    }
+    rlr_pipeline_static_model_draw_command_t* cmd = &pm->opaque_static_model_commands[cmd_index];
+    if(cmd->generation != cmd_generation) {
+        return;
+    }
+
+    cmd->instances[instance_index] = data;
+    cmd->dirty = true;
 }
 
-void rlr_pipeline_model_free_static_model(rlr_obj_static_model_t* sm) {
+rlr_sparse_gen_allocator_handle_t rlr_pipeline_model_alloc_static_model() {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+    return rlr_sparse_gen_allocator_alloc(pm->obj_static_models);
+}
 
+rlr_obj_static_model_t* rlr_pipeline_model_get_static_model(rlr_sparse_gen_allocator_handle_t handle) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+    return rlr_sparse_gen_allocator_get(pm->obj_static_models, handle);
+}
+
+void rlr_pipeline_model_free_static_model(rlr_sparse_gen_allocator_handle_t handle) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+    rlr_sparse_gen_allocator_dealloc(pm->obj_static_models, handle);
 }

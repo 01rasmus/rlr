@@ -9,6 +9,8 @@
 #include "rlr/rlr.h"
 #include "ui.h"
 
+#define RLR_PIPELINE_UI    (&rlr()->pipeline_ui)
+
 static const char mtsdf_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
     flat in vec3 frag_color;

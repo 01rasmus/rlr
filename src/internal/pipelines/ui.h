@@ -3,8 +3,6 @@
 #include "internal/backends/backend.h"
 #include "rlr/math/rect.h"
 
-#define RLR_PIPELINE_UI    (&rlr()->pipeline_ui)
-
 typedef struct rlr_res_shader_t rlr_res_shader_t;
 typedef struct rlr_res_texture_t rlr_res_texture_t;
 typedef struct rlr_res_uniform_t rlr_res_uniform_t;
