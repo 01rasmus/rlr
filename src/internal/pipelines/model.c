@@ -27,7 +27,6 @@ const char simple_vertex[] = RLR_SHADER_INLINE(
     layout(location = 3) in vec4 instance_matrix_0;
     layout(location = 4) in vec4 instance_matrix_1;
     layout(location = 5) in vec4 instance_matrix_2;
-    layout(location = 6) in float instance_alpha;
 
     layout(std140) uniform ubo_model {
         mat4 vp;
@@ -52,7 +51,6 @@ const char model_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
     in vec3 frag_normal;
     in vec3 frag_vert_pos;
-    flat in float frag_alpha;
     out vec4 out_color;
 
     uniform sampler2D tex;
@@ -149,11 +147,11 @@ const char model_fragment[] = RLR_SHADER_INLINE(
         // }
 
         vec3 final_rgb = mix(lit_color, reflected_color, material.reflectiveness);
-        out_color = vec4(final_rgb, tex_color.a * material.color.a * frag_alpha);
+        out_color = vec4(final_rgb, tex_color.a * material.color.a);
     }
 );
 
-const char model_vertex[] = RLR_SHADER_INLINE(
+const char static_model_vertex[] = RLR_SHADER_INLINE(
     layout(location = 0) in vec3 pos;
     layout(location = 1) in vec3 normal;
     layout(location = 2) in vec2 uv;
@@ -161,7 +159,6 @@ const char model_vertex[] = RLR_SHADER_INLINE(
     layout(location = 4) in vec3 instance_mat_col_1;
     layout(location = 5) in vec3 instance_mat_col_2;
     layout(location = 6) in vec3 instance_mat_col_3;
-    layout(location = 7) in float instance_alpha;
 
     layout(std140) uniform ubo_model {
         mat4 vp;
@@ -171,7 +168,6 @@ const char model_vertex[] = RLR_SHADER_INLINE(
     out vec2 frag_uv;
     out vec3 frag_normal;
     out vec3 frag_vert_pos;
-    flat out float frag_alpha;
 
     void main() {
         mat4 instance_matrix = mat4(
@@ -181,10 +177,89 @@ const char model_vertex[] = RLR_SHADER_INLINE(
             vec4(instance_mat_col_3, 1.0)
         );
 
-        frag_alpha = instance_alpha;
         vec4 world_pos = instance_matrix * vec4(pos, 1.0);
         frag_vert_pos = world_pos.xyz;
         frag_normal = mat3(transpose(inverse(instance_matrix))) * normal;
+        frag_uv = uv;
+        gl_Position = model.vp * world_pos;
+    }
+);
+
+const char animated_model_vertex[] = RLR_SHADER_INLINE(
+    layout(location = 0) in vec3 pos;
+    layout(location = 1) in vec3 normal;
+    layout(location = 2) in vec2 uv;
+    layout(location = 3) in uvec4 joints;
+    layout(location = 4) in uvec4 weights;
+    layout(location = 5) in vec3 instance_mat_col_0;
+    layout(location = 6) in vec3 instance_mat_col_1;
+    layout(location = 7) in vec3 instance_mat_col_2;
+    layout(location = 8) in vec3 instance_mat_col_3;
+    layout(location = 9) in uint pose_a_offset;
+    layout(location = 10) in uint pose_b_offset;
+    layout(location = 11) in float pose_lerp;
+
+    layout(std140) uniform ubo_model {
+        mat4 vp;
+        vec3 camera_pos;
+    } model;
+
+    uniform sampler2D poses;
+
+    out vec2 frag_uv;
+    out vec3 frag_normal;
+    out vec3 frag_vert_pos;
+
+    mat4 fetch_pose(uint matrix_index, uint tex_w) {
+        uint texel_index = matrix_index * 4u;
+        uint x = texel_index % tex_w;
+        uint y = texel_index / tex_w;
+
+        vec3 c0 = texelFetch(poses, ivec2(x + 0u, y), 0).xyz;
+        vec3 c1 = texelFetch(poses, ivec2(x + 1u, y), 0).xyz;
+        vec3 c2 = texelFetch(poses, ivec2(x + 2u, y), 0).xyz;
+        vec3 c3 = texelFetch(poses, ivec2(x + 3u, y), 0).xyz;
+
+        return mat4(
+            vec4(c0, 0.0),
+            vec4(c1, 0.0),
+            vec4(c2, 0.0),
+            vec4(c3, 1.0)
+        );
+    }
+
+    mat4 fetch_blended_joint(uint joint_index, uint tex_w) {
+        mat4 a = fetch_pose(pose_a_offset + joint_index, tex_w);
+        mat4 b = fetch_pose(pose_b_offset + joint_index, tex_w);
+        return a * (1.0 - pose_lerp) + b * pose_lerp;
+    }
+
+    void main() {
+        mat4 instance_matrix = mat4(
+            vec4(instance_mat_col_0, 0.0),
+            vec4(instance_mat_col_1, 0.0),
+            vec4(instance_mat_col_2, 0.0),
+            vec4(instance_mat_col_3, 1.0)
+        );
+
+        vec4 w = vec4(
+            float(weights[0]) / 255.0,
+            float(weights[1]) / 255.0,
+            float(weights[2]) / 255.0,
+            float(weights[3]) / 255.0
+        );
+
+        uint tex_w = uint(textureSize(poses, 0).x);
+        mat4 skin = 
+              (fetch_blended_joint(joints.x, tex_w) * w.x)
+            + (fetch_blended_joint(joints.y, tex_w) * w.y)
+            + (fetch_blended_joint(joints.z, tex_w) * w.z)
+            + (fetch_blended_joint(joints.w, tex_w) * w.w);
+
+        vec4 skinned_pos = skin * vec4(pos, 1.0);
+        vec4 world_pos = instance_matrix * skinned_pos;
+        frag_vert_pos = world_pos.xyz;
+        frag_normal = mat3(transpose(inverse(instance_matrix))) * (skin * vec4(normal, 0)).xyz;
         frag_uv = uv;
         gl_Position = model.vp * world_pos;
     }
@@ -230,16 +305,23 @@ bool rlr_pipeline_model_init() {
 
     pm->opaque_static_model_commands = NULL;
     pm->obj_static_models = rlr_sparse_gen_allocator_create(sizeof(rlr_obj_static_model_t));
-    pm->shader_transparent = NULL;
-    pm->shader_opaque = rlr_res_shader_create(model_vertex, model_fragment);
+    pm->shader_opaque_static_model = rlr_res_shader_create(static_model_vertex, model_fragment);
+    pm->shader_opaque_animated_model = rlr_res_shader_create(animated_model_vertex, model_fragment);
     pm->generation_counter = 0;
-    if(!pm->shader_opaque) {
+    if(!pm->shader_opaque_static_model) {
         goto err;
     }
-    rlr_res_shader_bind_uniform_slot(pm->shader_opaque, "ubo_model", RLR_INTERNAL_UBO_MODEL);
-    rlr_res_shader_bind_uniform_slot(pm->shader_opaque, "ubo_material", RLR_INTERNAL_UBO_MATERIAL);
-    rlr_res_shader_bind_texture_slot(pm->shader_opaque, "tex", 0);
-    rlr_res_shader_bind_texture_slot(pm->shader_opaque, "cube_map", 4);
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_static_model, "ubo_model", RLR_INTERNAL_UBO_MODEL);
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_static_model, "ubo_material", RLR_INTERNAL_UBO_MATERIAL);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_static_model, "tex", 0);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_static_model, "cube_map", 4);
+
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model, "ubo_model", RLR_INTERNAL_UBO_MODEL);
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model, "ubo_material", RLR_INTERNAL_UBO_MATERIAL);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model, "tex", 0);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model, "cube_map", 4);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model, "poses", 1);
+
     return true;
 err:
     rlr_pipeline_model_deinit();
@@ -262,7 +344,7 @@ void rlr_pipeline_model_draw() {
     //draw
     for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
         rlr_pipeline_static_model_draw_command_t* command = &pm->opaque_static_model_commands[i];
-        rlr_res_shader_bind(pm->shader_opaque);
+        rlr_res_shader_bind(pm->shader_opaque_static_model);
         
         for(int64_t j = 0; j < arrlen(command->mesh_vaos); j++) {
             rlr_res_static_mesh_t* mesh = &command->model->meshes[j];
@@ -286,8 +368,8 @@ void rlr_pipeline_model_deinit() {
     }
 
     arrfree(pm->opaque_static_model_commands);
-    rlr_res_shader_free(pm->shader_opaque);
-    rlr_res_shader_free(pm->shader_transparent);
+    rlr_res_shader_free(pm->shader_opaque_static_model);
+    rlr_res_shader_free(pm->shader_opaque_animated_model);
 }
 
 rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_draw_command(rlr_res_static_model_t* model, rlr_res_shader_t* shader) {

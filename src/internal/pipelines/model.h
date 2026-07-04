@@ -13,6 +13,14 @@ typedef struct rlr_pipeline_static_model_instance_t {
     float alpha;
 } rlr_pipeline_static_model_instance_t;
 
+typedef struct rlr_pipeline_animated_model_instance_t {
+    rlr_affine_mat4x3_t matrix;
+    float alpha;
+    uint32_t pose_a_offset;
+    uint32_t pose_b_offset;
+    float lerp;
+} rlr_pipeline_animated_model_instance_t;
+
 typedef struct rlr_pipeline_static_model_draw_command_t {
     rlr_res_static_model_t* model;
     rlr_res_shader_t* shader;
@@ -26,8 +34,9 @@ typedef struct rlr_pipeline_static_model_draw_command_t {
 
 typedef struct rlr_pipeline_model_t {
     rlr_sparse_gen_allocator_t* obj_static_models;
-    rlr_res_shader_t* shader_opaque;
-    rlr_res_shader_t* shader_transparent;
+    rlr_res_shader_t* shader_opaque_static_model;
+    rlr_res_shader_t* shader_opaque_animated_model;
+
     uint32_t generation_counter;
 
     rlr_pipeline_static_model_draw_command_t* opaque_static_model_commands;

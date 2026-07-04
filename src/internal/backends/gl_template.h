@@ -219,7 +219,11 @@ static uint64_t gl_create_animation_texture(rlr_affine_mat4x3_t* matrices, uint3
         return 0;
     }
 
-    uint32_t texel_count = matrix_count * 3;
+    if(texture % 4 != 0) {
+        return 0;
+    }
+
+    uint32_t texel_count = matrix_count * 4;
     uint32_t height = (texel_count + width - 1) / width;
 
     GL_CALL(gl->BindTexture(GL_TEXTURE_2D, texture));
@@ -230,7 +234,7 @@ static uint64_t gl_create_animation_texture(rlr_affine_mat4x3_t* matrices, uint3
     GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     GL_CALL(gl->PixelStorei(GL_UNPACK_ALIGNMENT, 4));
 
-    GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, matrices));
+    GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, matrices));
 
     return texture;
 }
