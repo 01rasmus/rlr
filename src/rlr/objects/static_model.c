@@ -28,7 +28,7 @@ rlr_obj_static_model_handle_t rlr_obj_static_model_create(rlr_res_static_model_t
     };
     rlr_mat4x4_t trs = rlr_mat4x4_trs(&translation, &rotation, &scale);
     rlr_affine_mat4x3_t affine = rlr_mat4x4_to_affine_mat4x3(&trs);
-    rlr_pipeline_static_model_instance_t instance = { .matrix = affine, .alpha = 1.0 };
+    rlr_pipeline_static_model_instance_t instance = {.matrix = affine};
     obj->instance_index = rlr_pipeline_model_add_static_model_instance(cmd, instance);
     return handle;
 err:
@@ -62,7 +62,7 @@ void rlr_obj_static_model_set_trs(rlr_obj_static_model_handle_t handle, const rl
 
     rlr_mat4x4_t trs = rlr_mat4x4_trs(&model->translation, &model->rotation, &model->scale);
     rlr_affine_mat4x3_t affine = rlr_mat4x4_to_affine_mat4x3(&trs);
-    rlr_pipeline_model_update_static_model_instance(model->cmd_index, model->cmd_generation, model->instance_index, (rlr_pipeline_static_model_instance_t){.matrix = affine, .alpha = 1.0 });
+    rlr_pipeline_model_update_static_model_instance(model->cmd_index, model->cmd_generation, model->instance_index, (rlr_pipeline_static_model_instance_t){.matrix = affine});
 }
 
 void rlr_obj_static_model_free(rlr_obj_static_model_handle_t handle) {

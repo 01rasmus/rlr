@@ -10,12 +10,10 @@ typedef struct rlr_obj_static_model_t rlr_obj_static_model_t;
 
 typedef struct rlr_pipeline_static_model_instance_t {
     rlr_affine_mat4x3_t matrix;
-    float alpha;
 } rlr_pipeline_static_model_instance_t;
 
 typedef struct rlr_pipeline_animated_model_instance_t {
     rlr_affine_mat4x3_t matrix;
-    float alpha;
     uint32_t pose_a_offset;
     uint32_t pose_b_offset;
     float lerp;

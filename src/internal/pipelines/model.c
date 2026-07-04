@@ -294,7 +294,6 @@ static rlr_pipeline_static_model_draw_command_t rlr_pipeline_model_create_static
         rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, matrix) + sizeof(float) * 3 * 1);
         rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, matrix) + sizeof(float) * 3 * 2);
         rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 6, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, matrix) + sizeof(float) * 3 * 3);
-        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 7, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, alpha));
     }
 
     return cmd;
