@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include <stb_ds.h>
+#include "external/rlr_stb_ds.h"
 #include "internal/impl.h"
 #include "rlr/resources/shader.h"
 #include "rlr/objects/model_occluder.h"

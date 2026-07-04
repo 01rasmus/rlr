@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stb_ds.h>
+#include "external/rlr_stb_ds.h"
 #include "sparse_gen_allocator.h"
 
 #define SLOT_COUNT(ALLOC)                   (arrlenu(ALLOC->data) / RLR_SPARSE_GEN_ALLOCATOR_ENTRY_SIZE(ALLOC))
@@ -21,10 +21,6 @@ rlr_sparse_gen_allocator_t* rlr_sparse_gen_allocator_create(uint64_t element_siz
 err:
     rlr_sparse_gen_allocator_free(allocator);
     return NULL;
-}
-
-bool rlr_sparse_gen_allocator_exist(rlr_sparse_gen_allocator_t* allocator, rlr_sparse_gen_allocator_handle_t handle) {
-    return rlr_sparse_gen_allocator_get(allocator, handle) != NULL;
 }
 
 rlr_sparse_gen_allocator_handle_t rlr_sparse_gen_allocator_alloc(rlr_sparse_gen_allocator_t* allocator) {
@@ -55,7 +51,7 @@ rlr_sparse_gen_allocator_handle_t rlr_sparse_gen_allocator_alloc(rlr_sparse_gen_
 }
 
 bool rlr_sparse_gen_allocator_dealloc(rlr_sparse_gen_allocator_t* allocator, rlr_sparse_gen_allocator_handle_t handle) {
-    if(handle.index > SLOT_COUNT(allocator) - 1) {
+    if(handle.index >= SLOT_COUNT(allocator)) {
         return false;
     }
     rlr_sparse_gen_allocator_handle_t* active_handle = RLR_SPARSE_GEN_ALLOCATOR_GET_ACTIVE_HANDLE(allocator, handle.index);

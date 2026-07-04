@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stb_ds.h>
+#include "external/rlr_stb_ds.h"
 #include "internal/pipelines/model.h"
 #include "rlr/math/matrix.h"
 #include "static_model.h"

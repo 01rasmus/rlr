@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stb_ds.h>
+#include "external/rlr_stb_ds.h"
 #include "rlr/objects/static_model.h"
 #include "rlr/resources/static_model.h"
 #include "rlr/resources/uniform.h"
@@ -210,9 +210,9 @@ static rlr_pipeline_static_model_draw_command_t rlr_pipeline_model_create_static
         arrpush(cmd.mesh_vaos, vao);
         rlr_backend()->bind_vertex_array(vao);
         rlr_backend()->bind_buffer(mesh->vbo, RLR_BACKEND_BUFFER_ARRAY);
-        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, pos));
-        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, normal));
-        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_model_static_vertex_t), offsetof(rlr_model_static_vertex_t, uv));
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_static_model_vertex_t), offsetof(rlr_static_model_vertex_t, pos));
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_static_model_vertex_t), offsetof(rlr_static_model_vertex_t, normal));
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_static_model_vertex_t), offsetof(rlr_static_model_vertex_t, uv));
         rlr_backend()->bind_buffer(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
         rlr_backend()->bind_buffer(cmd.instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
         rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_static_model_instance_t), offsetof(rlr_pipeline_static_model_instance_t, matrix) + sizeof(float) * 3 * 0);
@@ -266,7 +266,7 @@ void rlr_pipeline_model_draw() {
         
         for(int64_t j = 0; j < arrlen(command->mesh_vaos); j++) {
             rlr_res_static_mesh_t* mesh = &command->model->meshes[j];
-            rlr_res_uniform_update(rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL], 0, &mesh->material, sizeof(rlr_uniform_material_t));
+            rlr_res_uniform_bind(mesh->material_ubo, RLR_INTERNAL_UBO_MATERIAL);
             if(mesh->texture_base) {
                 rlr_res_texture_bind(mesh->texture_base, 0);
             } else {
@@ -333,7 +333,7 @@ rlr_sparse_gen_allocator_handle_t rlr_pipeline_model_alloc_static_model() {
 
 rlr_obj_static_model_t* rlr_pipeline_model_get_static_model(rlr_sparse_gen_allocator_handle_t handle) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
-    return rlr_sparse_gen_allocator_get(pm->obj_static_models, handle);
+    return rlr_sparse_gen_allocator_get_unchecked(pm->obj_static_models, handle);
 }
 
 void rlr_pipeline_model_free_static_model(rlr_sparse_gen_allocator_handle_t handle) {

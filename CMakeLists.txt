@@ -40,5 +40,8 @@ target_include_directories(${EXECUTABLE} PRIVATE ${LIB_DIR} ${SRC_DIR} ${LIB_DIR
 target_link_libraries(${LIBRARY} glfw ${OPENGL_LIBS})
 target_link_libraries(${EXECUTABLE} ${LIBRARY})
 
-target_compile_options(${LIBRARY} PRIVATE -O3)
-target_compile_options(${EXECUTABLE} PRIVATE -O3)
+target_compile_options(${LIBRARY} PRIVATE -O3 -pg)
+target_compile_options(${EXECUTABLE} PRIVATE -O3 -pg)
+
+target_link_options(${LIBRARY} PRIVATE -pg)
+target_link_options(${EXECUTABLE} PRIVATE -pg)

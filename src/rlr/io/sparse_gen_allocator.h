@@ -19,14 +19,13 @@ typedef struct rlr_sparse_gen_allocator_t {
 } rlr_sparse_gen_allocator_t;
 
 rlr_sparse_gen_allocator_t* rlr_sparse_gen_allocator_create(uint64_t element_size);
-bool rlr_sparse_gen_allocator_exist(rlr_sparse_gen_allocator_t* allocator, rlr_sparse_gen_allocator_handle_t handle);
 rlr_sparse_gen_allocator_handle_t rlr_sparse_gen_allocator_alloc(rlr_sparse_gen_allocator_t* allocator);
 
 /* returns false whenever the deallocation fails, which can happen if the handle has an older generation than the current one */
 bool rlr_sparse_gen_allocator_dealloc(rlr_sparse_gen_allocator_t* allocator, rlr_sparse_gen_allocator_handle_t handle);
 void rlr_sparse_gen_allocator_free(rlr_sparse_gen_allocator_t* allocator);
 
-inline void* rlr_sparse_gen_allocator_get(rlr_sparse_gen_allocator_t* allocator, rlr_sparse_gen_allocator_handle_t handle) {
+static inline void* rlr_sparse_gen_allocator_get_unchecked(rlr_sparse_gen_allocator_t* allocator, rlr_sparse_gen_allocator_handle_t handle) {
     rlr_sparse_gen_allocator_handle_t* active = RLR_SPARSE_GEN_ALLOCATOR_GET_ACTIVE_HANDLE(allocator, handle.index);
     uintptr_t valid_gen = active->generation == handle.generation;
     return (void*)((uintptr_t)(active + 1) * valid_gen);

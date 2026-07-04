@@ -3,7 +3,7 @@
 #include "backend_selection.h"
 
 typedef bool (*rlr_backend_selection_function_t)(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title);
-#include <stdio.h>
+
 static bool try_gl3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title) {
     glfwDefaultWindowHints();
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -13,7 +13,7 @@ static bool try_gl3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* m
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_DEPTH_BITS, 24);
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
-    glfwWindowHint(GLFW_SAMPLES, 0);
+    glfwWindowHint(GLFW_SAMPLES, 16);
 
     (*window) = glfwCreateWindow(width, height, title, monitor, NULL);
     if(!(*window)) {

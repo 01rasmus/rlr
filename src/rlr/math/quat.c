@@ -44,9 +44,9 @@ rlr_quat_t rlr_quat_slerp(const rlr_quat_t* q1, const rlr_quat_t* q2, float t) {
 rlr_quat_t rlr_quat_normalize(const rlr_quat_t* quat) {
     rlr_quat_t new_quat;
     float norm = sqrt(quat->x*quat->x + quat->y*quat->y + quat->z*quat->z + quat->w*quat->w);
-    new_quat.x = quat->w / norm;
-    new_quat.y = quat->x / norm;
-    new_quat.z = quat->y / norm;
-    new_quat.w = quat->z / norm;
+    new_quat.x = quat->x / norm;
+    new_quat.y = quat->y / norm;
+    new_quat.z = quat->z / norm;
+    new_quat.w = quat->w / norm;
     return new_quat;
 }

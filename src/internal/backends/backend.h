@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
+#include "rlr/math/matrix.h"
 
 typedef void (*rlr_backend_proc_t)(void);
 typedef rlr_backend_proc_t (*rlr_backend_loader_t)(const char*);
@@ -73,6 +74,7 @@ typedef enum rlr_backend_type_t {
     X(uint64_t,     create_linear_mipmap_texture,   (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
     X(uint64_t,     create_nearest_texture,         (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
     X(uint64_t,     create_cube_map_texture,        (uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height, int32_t channels)) \
+    X(uint64_t,     create_animation_texture,       (rlr_affine_mat4x3_t* matrices, uint32_t matrix_count, uint32_t width)) \
     X(uint64_t,     create_shader,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
     X(void,         bind_vertex_array,              (uint64_t vao)) \
     X(void,         bind_buffer,                    (uint64_t buffer, rlr_backend_buffer_target_t target)) \
@@ -104,6 +106,7 @@ typedef enum rlr_backend_type_t {
     X(void,         update_buffer,                  (rlr_backend_buffer_target_t target, uint64_t size, const void* data, rlr_backend_buffer_usage_t update_type)) \
     X(const char*,  get_implementation,             ()) \
     X(const char*,  get_gpu_name,                   ()) \
+    X(const char*,  get_context_version,            ()) \
     X(uint64_t,     get_draw_call_count,            ()) \
     X(void,         reset_statistics,               ()) \
     X(void,         free_vertex_array,              (uint64_t vao)) \

@@ -2,4 +2,5 @@ build*/
 assets/
 bin/
 .DS_Store
+*.out
 *.sh

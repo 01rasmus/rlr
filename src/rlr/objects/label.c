@@ -1,4 +1,4 @@
-#include <stb_ds.h>
+#include "external/rlr_stb_ds.h"
 #include <utf8.h>
 #include "internal/backends/backend.h"
 #include "internal/pipelines/ui.h"

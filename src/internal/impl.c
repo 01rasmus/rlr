@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <stb_ds.h>
+#include <string.h>
+#include "external/rlr_stb_ds.h"
 #include "internal/backends/backend_selection.h"
 #include "internal/backends/backend.h"
 #include "rlr/resources/static_model.h"
+#include "rlr/resources/model_shared.h"
 #include "rlr/resources/cube_map.h"
 #include "rlr/resources/uniform.h"
 #include "rlr/resources/shader.h"
@@ -27,7 +29,7 @@ rlr_vec2_t rlr_quad_vertices[6] = {
     rlr_vec2(0, 0)
 };
 
-void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags) {
+void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags) {
     ctx = malloc(sizeof(rlr_t));
     if(!ctx) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
@@ -128,6 +130,10 @@ rlr_res_texture_t* rlr_internal_get_white_texture() {
 
 const char* rlr_get_gpu_name() {
     return rlr_backend()->get_gpu_name();
+}
+
+const char* rlr_get_backend_context() {
+    return rlr_backend()->get_context_version();
 }
 
 const char* rlr_get_backend_implementation() {

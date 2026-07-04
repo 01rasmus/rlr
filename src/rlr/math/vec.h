@@ -28,7 +28,7 @@ typedef struct rlr_vec3_t {
 #define rlr_vec2_cross(A, B)        ((A).x * (B).y - (A).y * (B).x)
 
 #define rlr_vec3(X, Y, Z)           ((rlr_vec3_t){.x = (X), .y = (Y), .z = (Z)})
-#define rlr_vec3_zero               rlr_vec3({.x = 0.0, .y = 0.0, .z = 0.0})
+#define rlr_vec3_zero               ((rlr_vec3_t){.x = 0.0, .y = 0.0, .z = 0.0})
 #define rlr_vec3_add(A, B)          rlr_vec3((A).x + (B).x, (A).y + (B).y, (A).z + (B).z)
 #define rlr_vec3_sub(A, B)          rlr_vec3((A).x - (B).x, (A).y - (B).y, (A).z - (B).z)
 #define rlr_vec3_mul(A, B)          rlr_vec3((A).x * (B).x, (A).y * (B).y, (A).z * (B).z)
@@ -41,3 +41,4 @@ typedef struct rlr_vec3_t {
 #define rlr_vec3_len(A)             sqrtf((A).x * (A).x + (A).y * (A).y + (A).z * (A).z)
 #define rlr_vec3_normalize(A)       rlr_vec3_divf((A), rlr_vec3_len((A)))
 #define rlr_vec3_cross(A, B)        rlr_vec3((A).y * (B).z - (A).z * (B).y, (A).z * (B).x - (A).x * (B).z, (A).x * (B).y - (A).y * (B).x)
+#define rlr_vec3_lerp(A, B, AMOUNT) rlr_vec3((A).x + (AMOUNT) * ((B).x - (A).x), (A).y + (AMOUNT) * ((B).y - (A).y), (A).z + (AMOUNT) * ((B).z - (A).z))

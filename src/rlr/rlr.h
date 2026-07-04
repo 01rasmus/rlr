@@ -14,8 +14,9 @@ typedef enum rlr_init_flags_t {
     RLR_INIT_FLAG_VSYNC = 0x2,
 } rlr_init_flags_t;
 
-void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, uint64_t flags);
+void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags);
 const char* rlr_get_backend_implementation();
+const char* rlr_get_backend_context();
 const char* rlr_get_gpu_name();
 rlr_vec2_t rlr_get_framebuffer_size();
 rlr_statistics_t* rlr_get_total_statistics();

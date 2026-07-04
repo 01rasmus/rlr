@@ -1,4 +1,4 @@
-#include <stb_ds.h>
+#include "external/rlr_stb_ds.h"
 #include "internal/pipelines/ui.h"
 #include "internal/impl.h"
 #include "rlr/resources/texture.h"

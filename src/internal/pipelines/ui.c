@@ -1,4 +1,4 @@
-#include <stb_ds.h>
+#include "external/rlr_stb_ds.h"
 #include "rlr/resources/texture.h"
 #include "rlr/resources/uniform.h"
 #include "rlr/resources/shader.h"

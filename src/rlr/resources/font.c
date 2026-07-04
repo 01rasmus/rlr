@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stb_ds.h>
+#include "external/rlr_stb_ds.h"
 #include "internal/impl.h"
 #include "rlr/io/csv.h"
 #include "rlr/io/str.h"
@@ -58,7 +58,6 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
     }
     float atlas_bound_top = strtof(columns[9], &end);
     if(*end != 0) {
-        printf("LASD %f %s\n", atlas_bound_top, columns[9]);
         rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 10, \"%s\" was not a valid float", row, columns[9]);
         return;
     }

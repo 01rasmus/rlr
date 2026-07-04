@@ -1,16 +1,19 @@
 #include <stdlib.h>
 #include <cgltf.h>
-#include <stb_ds.h>
+#include "external/rlr_stb_ds.h"
 #include "internal/impl.h"
+#include "rlr/resources/model_shared.h"
 #include "rlr/resources/texture.h"
+#include "rlr/resources/uniform.h"
 #include "rlr/math/vec.h"
 #include "rlr/error.h"
 #include "rlr/rlr.h"
 #include "static_model.h"
 
 rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_location) {
+    cgltf_data* data = NULL;
     rlr_res_static_model_t* model = NULL;
-    rlr_model_static_vertex_t* vertices = NULL;
+    rlr_static_model_vertex_t* vertices = NULL;
     uint32_t* indices = NULL;
     model = malloc(sizeof(rlr_res_static_model_t));
     if(!model) {
@@ -18,26 +21,8 @@ rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_loca
     }
 
     model->meshes = NULL;
-
-    cgltf_options options = {0};
-    cgltf_data* data = NULL;
-    cgltf_result result = cgltf_parse_file(&options, glb_model_location, &data);
-    if(result != cgltf_result_success) {
-        rlr_error_set(RLR_ERR_MODEL_FAILED_TO_LOAD);
-        goto err;
-    }
-    if(data->file_type != cgltf_file_type_glb) {
-        rlr_error_set(RLR_ERR_MODEL_IS_NOT_GLB);
-        goto err;
-    }
-    result = cgltf_load_buffers(&options, data, glb_model_location);
-    if(result != cgltf_result_success) {
-        rlr_error_set(RLR_ERR_MODEL_IS_NOT_GLB);
-        goto err;
-    }
-    result = cgltf_validate(data);
-    if(result != cgltf_result_success) {
-        rlr_error_set(RLR_ERR_MODEL_IS_NOT_GLB);
+    data = rlr_res_model_load_glb(glb_model_location);
+    if(!data) {
         goto err;
     }
 
@@ -109,7 +94,7 @@ rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_loca
                     cgltf_accessor_read_float(accessor_uv, v, uv, 2);
                 }
 
-                rlr_model_static_vertex_t vertex = {
+                rlr_static_model_vertex_t vertex = {
                     .pos = rlr_vec3(pos[0], pos[1], pos[2]),
                     .normal = rlr_vec3(norm[0], norm[1], norm[2]),
                     .uv = rlr_vec2(uv[0], uv[1]),
@@ -132,6 +117,7 @@ rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_loca
             //create mesh
             arrpush(model->meshes, (rlr_res_static_mesh_t){0});
             rlr_res_static_mesh_t* mesh = &arrlast(model->meshes);
+            mesh->material_ubo = NULL;
             mesh->vbo = rlr_backend()->create_buffer();
             mesh->ebo = rlr_backend()->create_buffer();
             mesh->index_count = arrlenu(indices);
@@ -142,26 +128,13 @@ rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_loca
 
             //fill buffers
             rlr_backend()->bind_buffer(mesh->vbo, RLR_BACKEND_BUFFER_ARRAY);
-            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_model_static_vertex_t) * arrlenu(vertices), vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
+            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_static_model_vertex_t) * arrlenu(vertices), vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
             rlr_backend()->bind_buffer(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
             rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ELEMENT_ARRAY, sizeof(uint32_t) * arrlenu(indices), indices, RLR_BACKEND_BUFFER_USAGE_STATIC);
 
             //material
-            cgltf_material* material = primitive->material;
-            if(material) {
-                mesh->texture_base = rlr_res_texture_load_cgltf_base(material->pbr_metallic_roughness.base_color_texture.texture);
-                float roughness = material->pbr_metallic_roughness.roughness_factor;
-                memcpy(mesh->material.color, material->pbr_metallic_roughness.base_color_factor, sizeof(float) * 4);
-                mesh->material.shininess = 4.0 + powf(1.0 - roughness, 2.0) * 124.0;
-                mesh->material.specular_strength = 0.05 + (1.0 - roughness) * 0.45;
-                mesh->material.reflectiveness = (1.0 - roughness) * 0.25;
-                printf("%p\n", material->pbr_metallic_roughness.metallic_roughness_texture.texture);
-            } else {
-                float def_color[4] = { 1.0, 1.0, 1.0, 1.0 };
-                memcpy(mesh->material.color, def_color, sizeof(float) * 4);
-                mesh->material.shininess = 32.0;
-                mesh->material.specular_strength = 0.2;
-                mesh->material.reflectiveness = 0.0;
+            if(!rlr_res_model_parse_cgltf_material(primitive->material, &mesh->material_ubo, &mesh->texture_base)) {
+                goto err;
             }
         }
     }
@@ -187,6 +160,8 @@ void rlr_res_static_model_free(rlr_res_static_model_t* model) {
         rlr_res_static_mesh_t* mesh = &model->meshes[i];
         rlr_backend()->free_buffer(mesh->ebo);
         rlr_backend()->free_buffer(mesh->vbo);
+        rlr_res_texture_free(mesh->texture_base);
+        rlr_res_uniform_free(mesh->material_ubo);
     }
     arrfree(model->meshes);
     free(model);
