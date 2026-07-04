@@ -1,7 +1,7 @@
 <h1 align="center">RL Render 👾</h1>
 <p align="center">A simplistic graphics renderer</p>
 
-## Featuresr
+## Features
 - **Multiple Backends**<br>
 The renderer chooses either ___OpenGL 3.3___ or ___OpenGL ES 3.0___ at runtime depending on which of these two are supported by the system. This is fully dynamic.
 - **Custom Shader Language**<br>
