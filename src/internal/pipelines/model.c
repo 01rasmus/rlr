@@ -17,8 +17,15 @@ const char simple_fragment[] = RLR_SHADER_INLINE(
     out vec4 out_color;
     uniform sampler2D tex;
 
+    layout(std140) uniform ubo_material {
+        vec4 color;
+        float shininess;
+        float specular_strength;
+        float reflectiveness;
+    } material;
+
     void main() {
-        out_color = texture(tex, frag_uv);
+        out_color = texture(tex, frag_uv) * material.color;
     }
 );
 
@@ -385,13 +392,14 @@ void rlr_pipeline_model_draw() {
     }
 
     //draw
-    for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
-        rlr_pipeline_static_model_draw_command_t* command = &pm->opaque_static_model_commands[i];
-        rlr_res_shader_bind(pm->shader_opaque_static_model);
+    for(int64_t i = 0; i < arrlen(pm->opaque_animated_model_commands); i++) {
+        rlr_pipeline_animated_model_draw_command_t* command = &pm->opaque_animated_model_commands[i];
+        rlr_res_shader_bind(pm->shader_opaque_animated_model);
         
         for(int64_t j = 0; j < arrlen(command->mesh_vaos); j++) {
-            rlr_res_static_mesh_t* mesh = &command->model->meshes[j];
+            rlr_res_animated_mesh_t* mesh = &command->model->meshes[j];
             rlr_res_uniform_bind(mesh->material_ubo, RLR_INTERNAL_UBO_MATERIAL);
+            rlr_backend()->bind_texture(command->model->animations.animation_texture, RLR_BACKEND_TEXTURE_2D, 1);
             if(mesh->texture_base) {
                 rlr_res_texture_bind(mesh->texture_base, 0);
             } else {
@@ -402,14 +410,13 @@ void rlr_pipeline_model_draw() {
             rlr_backend()->draw_elements_instanced(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32, arrlenu(command->instances));
         }
     }
-    for(int64_t i = 0; i < arrlen(pm->opaque_animated_model_commands); i++) {
-        rlr_pipeline_animated_model_draw_command_t* command = &pm->opaque_animated_model_commands[i];
-        rlr_res_shader_bind(pm->shader_opaque_animated_model);
+    for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
+        rlr_pipeline_static_model_draw_command_t* command = &pm->opaque_static_model_commands[i];
+        rlr_res_shader_bind(pm->shader_opaque_static_model);
         
         for(int64_t j = 0; j < arrlen(command->mesh_vaos); j++) {
-            rlr_res_animated_mesh_t* mesh = &command->model->meshes[j];
+            rlr_res_static_mesh_t* mesh = &command->model->meshes[j];
             rlr_res_uniform_bind(mesh->material_ubo, RLR_INTERNAL_UBO_MATERIAL);
-            rlr_backend()->bind_texture(command->model->animations.animation_texture, RLR_BACKEND_TEXTURE_2D, 1);
             if(mesh->texture_base) {
                 rlr_res_texture_bind(mesh->texture_base, 0);
             } else {

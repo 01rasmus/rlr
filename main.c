@@ -17,7 +17,7 @@ int32_t main() {
 
     rlr_res_font_t* font = NULL;
     rlr_res_font_t* font2 = NULL;
-    rlr_init("rl render", 1024, 768, RLR_INIT_FLAG_VSYNC);
+    rlr_init("rl render", 1024, 768, RLR_INIT_FLAG_FULLSCREEN);
 
     font = rlr_res_font_load("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
     font2 = rlr_res_font_load("assets/tinos-small.csv", "assets/tinos-small.png", 8.0);
@@ -30,7 +30,7 @@ int32_t main() {
     rlr_res_texture_t* hero_unknown = rlr_res_texture_load("assets/unknown_unit_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
     rlr_res_static_model_t* plane = rlr_res_static_model_load_glb("assets/plane.glb");
     rlr_res_static_model_t* monkey = rlr_res_static_model_load_glb("assets/move_arrow.glb");
-    rlr_res_animated_model_t* move_indicator = rlr_res_animated_model_load_glb("assets/move_arrow.glb");
+    rlr_res_animated_model_t* move_indicator = rlr_res_animated_model_load_glb("assets/Fox.glb");
 
     rlr_vec3_t rot = rlr_vec3(3.14, -0, 0);
  
@@ -46,7 +46,7 @@ int32_t main() {
     //     }
     // }
     rlr_obj_static_model_handle_t model = rlr_obj_static_model_create(plane, rlr_vec3(0, 0, 0), rlr_quat_ident, rlr_vec3(1, 1, 1));
-    rlr_obj_animated_model_handle_t move_obj = rlr_obj_animated_model_create(move_indicator, rlr_vec3(0, 0.05, 0), rlr_quat_ident, rlr_vec3(0.0075, 0.0075, 0.0075));
+    rlr_obj_animated_model_handle_t move_obj = rlr_obj_animated_model_create(move_indicator, rlr_vec3(0, 0.05, 0), rlr_quat_from_euler(&rlr_vec3(3.14, 0, 0)), rlr_vec3(0.0025, 0.0025, 0.0025));
 
     rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 12, "", font);
     

@@ -3,6 +3,7 @@
 #include "rlr/resources/texture.h"
 #include "rlr/resources/uniform.h"
 #include "rlr/error.h"
+#include "internal/impl.h"
 #include "model_shared.h"
 
 cgltf_data* rlr_res_model_load_glb(const char* filename) {
@@ -43,10 +44,6 @@ bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_unifor
     rlr_res_material_t mat;
     if(material) {
         tex = rlr_res_texture_load_cgltf_base(material->pbr_metallic_roughness.base_color_texture.texture);
-        if(!tex) {
-            goto err;
-        }
-
         float roughness = material->pbr_metallic_roughness.roughness_factor;
         memcpy(mat.color, material->pbr_metallic_roughness.base_color_factor, sizeof(float) * 4);
         mat.shininess = 4.0 + powf(1.0 - roughness, 2.0) * 124.0;

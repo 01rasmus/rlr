@@ -101,18 +101,18 @@ void rlr_obj_animated_model_update_animation(rlr_obj_animated_model_handle_t obj
     rlr_mat4x4_t trs = rlr_mat4x4_trs(&model->translation, &model->rotation, &model->scale);
     rlr_affine_mat4x3_t affine = rlr_mat4x4_to_affine_mat4x3(&trs);
 
-    while(time > 1.25) {
-        time -= 1.25;
+    while(time >= 1.158333) {
+        time -= 1.158333;
     }
 
-    float fps = 15.0;
+    float fps = 30.0;
     float frame_interval = 1.0 / fps;
-    float joints_per_pose = 5.0;
-    float start_pose = 5.0;
+    float joints_per_pose = 24;
+    float start_pose = 3072;
 
     float current_pose = time / frame_interval;
-    uint32_t current_pose_upper = (1 + ceilf(current_pose)) * 5;
-    uint32_t current_pose_below = (1 + floorf(current_pose)) * 5;
+    uint32_t current_pose_upper = start_pose + (ceilf(current_pose)) * joints_per_pose;
+    uint32_t current_pose_below = start_pose + (floorf(current_pose)) * joints_per_pose;
     float alpha = current_pose - floorf(current_pose);
 
     //printf("Pose data:\n\ttime=%f\n\tpose a=%d\n\tpose b=%d\n\tlerp=%f\n\n", time, current_pose_below, current_pose_upper, alpha);

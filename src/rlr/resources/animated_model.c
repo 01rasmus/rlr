@@ -14,6 +14,8 @@
 #include <stdio.h>
 
 typedef struct animation_frame_joint_t {
+    bool is_matrix;
+    rlr_mat4x4_t matrix;
     rlr_vec3_t t;
     rlr_quat_t r;
     rlr_vec3_t s;
@@ -40,28 +42,25 @@ static float animation_duration(cgltf_animation* animation) {
 static void reset_frames(animation_frame_joint_t* poses, cgltf_node* nodes, uint32_t count) {
     for(uint32_t i = 0; i < count; i++) {
         cgltf_node* node = &nodes[i];
-        animation_frame_joint_t* final = &poses[i];
+
+        poses[i].t = rlr_vec3_zero;
+        poses[i].r = rlr_quat_ident;
+        poses[i].s = rlr_vec3(1.0, 1.0, 1.0);
 
         if(node->has_matrix) {
-            printf("has matrix\n");
-        }
-
-        if(node->has_translation) {
-            final->t = rlr_vec3(node->translation[0], node->translation[1], node->translation[2]);
+            memcpy(poses[i].matrix.matrix, node->matrix, sizeof(node->matrix));
+            poses[i].is_matrix = true;
         } else {
-            final->t = rlr_vec3_zero;
-        }
-
-        if(node->has_rotation) {
-            final->r = rlr_quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]);
-        } else {
-            final->r = rlr_quat_ident;
-        }
-
-        if(node->has_scale) {
-            final->s = rlr_vec3(node->scale[0], node->scale[1], node->scale[2]);
-        } else {
-            final->s = rlr_vec3(1.0, 1.0, 1.0);
+            poses[i].is_matrix = false;
+            if(node->has_translation) {
+                poses[i].t = rlr_vec3(node->translation[0], node->translation[1], node->translation[2]);
+            }
+            if(node->has_rotation) {
+                poses[i].r = rlr_quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]);
+            }
+            if(node->has_scale) {
+                poses[i].s = rlr_vec3(node->scale[0], node->scale[1], node->scale[2]);
+            }
         }
     }
 }
@@ -190,7 +189,7 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     rlr_mat4x4_t* matrices = NULL;
 
     if(model->skins_count != 1) {
-        printf("err: more than 1 skin detected..\n");
+        printf("err: more than 1 skin detected.. %d\n", model->skins_count);
         return (rlr_res_animations_t){0};
     }
     cgltf_skin* skin = &model->skins[0];
@@ -202,20 +201,24 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     animation_frame_joint_t* poses = malloc(sizeof(animation_frame_joint_t) * node_count);
     rlr_mat4x4_t* local_matrices = malloc(sizeof(rlr_mat4x4_t) * node_count);
     rlr_mat4x4_t* global_matrices = malloc(sizeof(rlr_mat4x4_t) * node_count);
-
+    
     //make identity pose(which is used for meshes that don't have any weights and joints)
     for(int32_t i = 0; i < model->skins[0].joints_count; i++) {
         arrpush(animation_matrices, rlr_mat4x4_ident);
     }
-
+    
     cgltf_node* mesh_node = find_mesh_node_for_skin(model, skin);
     uint32_t mesh_node_index = mesh_node - model->nodes;
-
+    
     for(int64_t i = 0; i < model->animations_count; i++) {
         cgltf_animation* animation = &model->animations[i];
         rlr_res_animation_meta_t anim_meta = {0};
-        strncpy(anim_meta.name, animation->name, RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH - 1);
-        anim_meta.name[RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH - 1] = '\0';
+        if(animation->name) {
+            strncpy(anim_meta.name, animation->name, RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH - 1);
+            anim_meta.name[RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH - 1] = '\0';
+        } else {
+            strncpy(anim_meta.name, "unknown animation", RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH - 1);
+        }
         anim_meta.fps = fps;
         anim_meta.duration = animation_duration(animation);
         anim_meta.pose_offset = arrlenu(animation_matrices);
@@ -238,14 +241,17 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
                 switch(channel->target_path) {
                     case cgltf_animation_path_type_translation: {
                         poses[target_node_index].t = sample_vec3(sampler, t);
+                        poses[target_node_index].is_matrix = false;
                         break;
                     }
                     case cgltf_animation_path_type_rotation: {
                         poses[target_node_index].r = sample_quaternion(sampler, t);
+                        poses[target_node_index].is_matrix = false;
                         break;
                     }
                     case cgltf_animation_path_type_scale: {
                         poses[target_node_index].s = sample_vec3(sampler, t);
+                        poses[target_node_index].is_matrix = false;
                         break;
                     }
                 }
@@ -254,7 +260,12 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
             //make local matrices
             for(uint32_t l = 0; l < node_count; l++) {
                 animation_frame_joint_t* pose = &poses[l];
-                local_matrices[l] = rlr_mat4x4_trs(&pose->t, &pose->r, &pose->s);
+
+                if(pose->is_matrix) {
+                    local_matrices[l] = pose->matrix;
+                } else {
+                    local_matrices[l] = rlr_mat4x4_trs(&pose->t, &pose->r, &pose->s);
+                }
             }
 
             build_global_poses(model->nodes, local_matrices, global_matrices, node_count);
@@ -293,19 +304,19 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
     }
-
+    
     model->meshes = NULL;
     model->animations = (rlr_res_animations_t) {
         .animation_texture = 0,
         .joint_count = 0,
         .metas = NULL
     };
-
+    
     data = rlr_res_model_load_glb(glb_model_location);
     if(!data) {
         goto err;
     }
-
+    
     //load the animations first
     model->animations = load_animations(data, RLR_RES_ANIMATED_MODEL_ANIMATION_FPS);
     if(model->animations.animation_texture == 0) {
@@ -386,7 +397,7 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
                 rlr_error_set(RLR_ERR_MODEL_NO_POSITION_ATTRIBUTE);
                 goto err;
             }
-            if(!accessor_normal || count_normal != count_position) {
+            if(accessor_normal && count_normal != count_position) {
                 rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
                 goto err;
             }
@@ -394,11 +405,11 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
                 rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
                 goto err;
             }
-            if(!accessor_joints || count_joints != count_position) {
+            if(accessor_joints && count_joints != count_position) {
                 rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
                 goto err;
             }
-            if(!accessor_weights || count_weights != count_position) {
+            if(accessor_weights && count_weights != count_position) {
                 rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
                 goto err;
             }
@@ -406,24 +417,24 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
             //load vertices
             for(size_t v = 0; v < count_position; v++) {
                 float pos[3];
-                float norm[3] = {0};
+                float norm[3] = {0, 1, 0};
                 float uv[2] = {0};
                 uint32_t joints[4] = {0};
                 float weights[4] = {0};
                 cgltf_accessor_read_float(accessor_position, v, pos, 3);
-                if(accessor_normal) {
+                if(accessor_normal && count_normal > 0) {
                     cgltf_accessor_read_float(accessor_normal, v, norm, 3);
                 }
-                if(accessor_uv) {
+                if(accessor_uv && count_uv > 0) {
                     cgltf_accessor_read_float(accessor_uv, v, uv, 2);
                 }
-                if(accessor_joints) {
+                if(accessor_joints && count_joints > 0) {
                     cgltf_accessor_read_uint(accessor_joints, v, joints, 4);
                 }
-                if(accessor_weights) {
+                if(accessor_weights && count_weights > 0) {
                     cgltf_accessor_read_float(accessor_weights, v, weights, 4);
                 }
-
+                
                 rlr_animated_model_vertex_t vertex = {
                     .pos = rlr_vec3(pos[0], pos[1], pos[2]),
                     .normal = rlr_vec3(norm[0], norm[1], norm[2]),
@@ -452,22 +463,32 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
                     memcpy(vertex.joints, default_joints, sizeof(default_joints));
                     memcpy(vertex.weights, default_weights, sizeof(default_weights));
                 }
-
+                
                 arrpush(vertices, vertex);
             }
 
             //load indices
-            for(size_t ind = 0; ind < primitive->indices->count; ind++) {
-                uint32_t index = cgltf_accessor_read_index(primitive->indices, ind);
-                arrpush(indices, index);
+            if(primitive->indices) {
+                for(size_t ind = 0; ind < primitive->indices->count; ind++) {
+                    uint32_t index = cgltf_accessor_read_index(primitive->indices, ind);
+                    arrpush(indices, index);
+                }
+                printf("mesh %s: vertices=%u indices=%u triangles=%u\n",
+                    mesh->name,
+                    count_position,
+                    primitive->indices->count,
+                    primitive->indices->count / 3);
+            } else {
+                printf("mesh %s: vertices=%u indices=%u triangles=%u\n",
+                    mesh->name,
+                    count_position,
+                    count_position,
+                    count_position / 3);
+                for(size_t i = 0; i < count_position; i++) {
+                    arrpush(indices, i);
+                }
             }
-
-            printf("mesh %s: vertices=%u indices=%u triangles=%u\n",
-                mesh->name,
-                count_position,
-                primitive->indices->count,
-                primitive->indices->count / 3);
-
+                
             //create mesh
             arrpush(model->meshes, (rlr_res_animated_mesh_t){0});
             rlr_res_animated_mesh_t* mesh = &arrlast(model->meshes);
@@ -500,6 +521,15 @@ err:
     cgltf_free(data);
     rlr_res_animated_model_free(model);
     return NULL;
+}
+
+int32_t rlr_res_animated_model_get_animation_index(rlr_res_animated_model_t* model, const char* animation_name) {
+    for(int32_t i = 0; i < arrlen(model->animations.metas); i++) {
+        if(strcmp(model->animations.metas[i].name, animation_name) == 0) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void rlr_res_animated_model_free(rlr_res_animated_model_t* model) {

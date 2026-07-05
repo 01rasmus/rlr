@@ -81,6 +81,10 @@ err:
 }
 
 rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
+    if(!tex) {
+        return NULL;
+    }
+
     rlr_res_texture_t* texture = malloc(sizeof(rlr_res_texture_t));
     if(!texture) {
         rlr_error_set(RLR_ERR_NO_MEMORY);

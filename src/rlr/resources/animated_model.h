@@ -4,7 +4,7 @@
 
 #define RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH        (128)
 #define RLR_RES_ANIMATED_MODEL_ANIMATION_TEXTURE_SIZE       (2048)
-#define RLR_RES_ANIMATED_MODEL_ANIMATION_FPS                (15.0)
+#define RLR_RES_ANIMATED_MODEL_ANIMATION_FPS                (30.0)
 
 typedef struct cgltf_material cgltf_material;
 typedef struct rlr_res_texture_t rlr_res_texture_t;
@@ -48,3 +48,8 @@ typedef struct rlr_res_animated_model_t {
 
 rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_location);
 void rlr_res_animated_model_free(rlr_res_animated_model_t* model);
+
+/*
+    returns -1 if the animation doesnt exist
+*/
+int32_t rlr_res_animated_model_get_animation_index(rlr_res_animated_model_t* model, const char* animation_name);
