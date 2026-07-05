@@ -18,7 +18,6 @@ typedef struct rlr_obj_static_model_t {
     rlr_vec3_t scale;
 
     //transparency
-    float alpha;
     bool opaque;
 
     //internal pipeline context

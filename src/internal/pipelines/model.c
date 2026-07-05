@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "external/rlr_stb_ds.h"
+#include "rlr/objects/animated_model.h"
 #include "rlr/objects/static_model.h"
+#include "rlr/resources/animated_model.h"
 #include "rlr/resources/static_model.h"
 #include "rlr/resources/uniform.h"
 #include "rlr/resources/texture.h"
@@ -214,18 +216,11 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
         uint texel_index = matrix_index * 4u;
         uint x = texel_index % tex_w;
         uint y = texel_index / tex_w;
-
-        vec3 c0 = texelFetch(poses, ivec2(x + 0u, y), 0).xyz;
-        vec3 c1 = texelFetch(poses, ivec2(x + 1u, y), 0).xyz;
-        vec3 c2 = texelFetch(poses, ivec2(x + 2u, y), 0).xyz;
-        vec3 c3 = texelFetch(poses, ivec2(x + 3u, y), 0).xyz;
-
-        return mat4(
-            vec4(c0, 0.0),
-            vec4(c1, 0.0),
-            vec4(c2, 0.0),
-            vec4(c3, 1.0)
-        );
+        vec4 c0 = texelFetch(poses, ivec2(x + 0u, y), 0);
+        vec4 c1 = texelFetch(poses, ivec2(x + 1u, y), 0);
+        vec4 c2 = texelFetch(poses, ivec2(x + 2u, y), 0);
+        vec4 c3 = texelFetch(poses, ivec2(x + 3u, y), 0);
+        return mat4(c0, c1, c2, c3);
     }
 
     mat4 fetch_blended_joint(uint joint_index, uint tex_w) {
@@ -299,11 +294,52 @@ static rlr_pipeline_static_model_draw_command_t rlr_pipeline_model_create_static
     return cmd;
 }
 
+static rlr_pipeline_animated_model_draw_command_t rlr_pipeline_model_create_animated_model_draw_command(rlr_res_animated_model_t* model, rlr_res_shader_t* shader, uint64_t new_index) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+
+    rlr_pipeline_animated_model_draw_command_t cmd = {
+        .model = model,
+        .shader = shader,
+        .instances = NULL,
+        .mesh_vaos = NULL,
+        .dirty = false,
+        .generation = pm->generation_counter++,
+        .index = new_index,
+        .instance_vbo = rlr_backend()->create_buffer(),
+    };
+
+    for(int64_t i = 0; i < arrlen(model->meshes); i++) {
+        rlr_res_animated_mesh_t* mesh = &model->meshes[i];
+        uint64_t vao = rlr_backend()->create_vertex_array();
+        arrpush(cmd.mesh_vaos, vao);
+        rlr_backend()->bind_vertex_array(vao);
+        rlr_backend()->bind_buffer(mesh->vbo, RLR_BACKEND_BUFFER_ARRAY);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_animated_model_vertex_t), offsetof(rlr_animated_model_vertex_t, pos));
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 1, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_animated_model_vertex_t), offsetof(rlr_animated_model_vertex_t, normal));
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_animated_model_vertex_t), offsetof(rlr_animated_model_vertex_t, uv));
+        rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 3, 4, RLR_BACKEND_BUFFER_TYPE_U8, sizeof(rlr_animated_model_vertex_t), offsetof(rlr_animated_model_vertex_t, joints));
+        rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 4, 4, RLR_BACKEND_BUFFER_TYPE_U8, sizeof(rlr_animated_model_vertex_t), offsetof(rlr_animated_model_vertex_t, weights));
+        rlr_backend()->bind_buffer(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
+        rlr_backend()->bind_buffer(cmd.instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, matrix) + sizeof(float) * 3 * 0);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 6, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, matrix) + sizeof(float) * 3 * 1);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 7, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, matrix) + sizeof(float) * 3 * 2);
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 8, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, matrix) + sizeof(float) * 3 * 3);
+        rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 9, 1, RLR_BACKEND_BUFFER_TYPE_U32, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, pose_a_offset));
+        rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 10, 1, RLR_BACKEND_BUFFER_TYPE_U32, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, pose_b_offset));
+        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 11, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, lerp));
+    }
+
+    return cmd;
+}
+
 bool rlr_pipeline_model_init() {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
 
     pm->opaque_static_model_commands = NULL;
+    pm->opaque_animated_model_commands = NULL;
     pm->obj_static_models = rlr_sparse_gen_allocator_create(sizeof(rlr_obj_static_model_t));
+    pm->obj_animated_models = rlr_sparse_gen_allocator_create(sizeof(rlr_obj_animated_model_t));
     pm->shader_opaque_static_model = rlr_res_shader_create(static_model_vertex, model_fragment);
     pm->shader_opaque_animated_model = rlr_res_shader_create(animated_model_vertex, model_fragment);
     pm->generation_counter = 0;
@@ -339,6 +375,14 @@ void rlr_pipeline_model_draw() {
             cmd->dirty = false;
         }
     }
+    for(int64_t i = 0; i < arrlen(pm->opaque_animated_model_commands); i++) {
+        rlr_pipeline_animated_model_draw_command_t* cmd = &pm->opaque_animated_model_commands[i];
+        if(cmd->dirty) {
+            rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_animated_model_instance_t) * arrlenu(cmd->instances), cmd->instances, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+            cmd->dirty = false;
+        }
+    }
 
     //draw
     for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
@@ -358,6 +402,24 @@ void rlr_pipeline_model_draw() {
             rlr_backend()->draw_elements_instanced(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32, arrlenu(command->instances));
         }
     }
+    for(int64_t i = 0; i < arrlen(pm->opaque_animated_model_commands); i++) {
+        rlr_pipeline_animated_model_draw_command_t* command = &pm->opaque_animated_model_commands[i];
+        rlr_res_shader_bind(pm->shader_opaque_animated_model);
+        
+        for(int64_t j = 0; j < arrlen(command->mesh_vaos); j++) {
+            rlr_res_animated_mesh_t* mesh = &command->model->meshes[j];
+            rlr_res_uniform_bind(mesh->material_ubo, RLR_INTERNAL_UBO_MATERIAL);
+            rlr_backend()->bind_texture(command->model->animations.animation_texture, RLR_BACKEND_TEXTURE_2D, 1);
+            if(mesh->texture_base) {
+                rlr_res_texture_bind(mesh->texture_base, 0);
+            } else {
+                rlr_res_texture_bind(rlr()->texture_white, 0);
+            }
+
+            rlr_backend()->bind_vertex_array(command->mesh_vaos[j]);
+            rlr_backend()->draw_elements_instanced(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32, arrlenu(command->instances));
+        }
+    }
 }
 
 void rlr_pipeline_model_deinit() {
@@ -366,7 +428,11 @@ void rlr_pipeline_model_deinit() {
         return;
     }
 
+    rlr_sparse_gen_allocator_free(pm->obj_static_models);
+    rlr_sparse_gen_allocator_free(pm->obj_animated_models);
+
     arrfree(pm->opaque_static_model_commands);
+    arrfree(pm->opaque_animated_model_commands);
     rlr_res_shader_free(pm->shader_opaque_static_model);
     rlr_res_shader_free(pm->shader_opaque_animated_model);
 }
@@ -384,6 +450,21 @@ rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_d
 
     arrpush(pm->opaque_static_model_commands, rlr_pipeline_model_create_static_model_draw_command(model, shader, arrlen(pm->opaque_static_model_commands)));
     return &arrlast(pm->opaque_static_model_commands);
+}
+
+rlr_pipeline_animated_model_draw_command_t* rlr_pipeline_model_find_animated_model_draw_command(rlr_res_animated_model_t* model, rlr_res_shader_t* shader) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+
+    //todo: use binary search instead
+    for(int64_t i = 0; i < arrlen(pm->opaque_animated_model_commands); i++) {
+        rlr_pipeline_animated_model_draw_command_t* cmd = &pm->opaque_animated_model_commands[i];
+        if(cmd->model == model && cmd->shader == shader) {
+            return cmd;
+        }
+    }
+    
+    arrpush(pm->opaque_animated_model_commands, rlr_pipeline_model_create_animated_model_draw_command(model, shader, arrlen(pm->opaque_animated_model_commands)));
+    return &arrlast(pm->opaque_animated_model_commands);
 }
 
 uint32_t rlr_pipeline_model_add_static_model_instance(rlr_pipeline_static_model_draw_command_t* command, rlr_pipeline_static_model_instance_t data) {
@@ -407,6 +488,27 @@ void rlr_pipeline_model_update_static_model_instance(uint32_t cmd_index, uint32_
     cmd->dirty = true;
 }
 
+uint32_t rlr_pipeline_model_add_animated_model_instance(rlr_pipeline_animated_model_draw_command_t* command, rlr_pipeline_animated_model_instance_t data) {
+    arrpush(command->instances, data);
+    command->dirty = true;
+    return arrlen(command->instances) - 1;
+}
+
+void rlr_pipeline_model_update_animated_model_instance(uint32_t cmd_index, uint32_t cmd_generation, uint32_t instance_index, rlr_pipeline_animated_model_instance_t data) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+
+    if(cmd_index > arrlenu(pm->opaque_animated_model_commands) - 1) {
+        return;
+    }
+    rlr_pipeline_animated_model_draw_command_t* cmd = &pm->opaque_animated_model_commands[cmd_index];
+    if(cmd->generation != cmd_generation) {
+        return;
+    }
+
+    cmd->instances[instance_index] = data;
+    cmd->dirty = true;
+}
+
 rlr_sparse_gen_allocator_handle_t rlr_pipeline_model_alloc_static_model() {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
     return rlr_sparse_gen_allocator_alloc(pm->obj_static_models);
@@ -420,4 +522,19 @@ rlr_obj_static_model_t* rlr_pipeline_model_get_static_model(rlr_sparse_gen_alloc
 void rlr_pipeline_model_free_static_model(rlr_sparse_gen_allocator_handle_t handle) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
     rlr_sparse_gen_allocator_dealloc(pm->obj_static_models, handle);
+}
+
+rlr_sparse_gen_allocator_handle_t rlr_pipeline_model_alloc_animated_model() {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+    return rlr_sparse_gen_allocator_alloc(pm->obj_animated_models);
+}
+
+rlr_obj_animated_model_t* rlr_pipeline_model_get_animated_model(rlr_sparse_gen_allocator_handle_t handle) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+    return rlr_sparse_gen_allocator_get_unchecked(pm->obj_animated_models, handle);
+}
+
+void rlr_pipeline_model_free_animated_model(rlr_sparse_gen_allocator_handle_t am_handle) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+    rlr_sparse_gen_allocator_dealloc(pm->obj_animated_models, am_handle);
 }

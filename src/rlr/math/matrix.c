@@ -37,13 +37,13 @@ rlr_mat4x4_t rlr_mat4x4_trs(const rlr_vec3_t* translation, const rlr_quat_t* rot
     translation_rotation_matrix.matrix[3][3] = 1.0;
 
     translation_rotation_matrix.matrix[0][0] = 1.0 - 2.0*rotation->y*rotation->y - 2.0*rotation->z*rotation->z;
-    translation_rotation_matrix.matrix[1][0] = 2.0*rotation->x*rotation->y + 2.0*rotation->w*rotation->z;
-    translation_rotation_matrix.matrix[2][0] = 2.0*rotation->x*rotation->z - 2.0*rotation->w*rotation->y;
-    translation_rotation_matrix.matrix[0][1] = 2.0*rotation->x*rotation->y - 2.0*rotation->w*rotation->z;
+    translation_rotation_matrix.matrix[0][1] = 2.0*rotation->x*rotation->y + 2.0*rotation->w*rotation->z;
+    translation_rotation_matrix.matrix[0][2] = 2.0*rotation->x*rotation->z - 2.0*rotation->w*rotation->y;
+    translation_rotation_matrix.matrix[1][0] = 2.0*rotation->x*rotation->y - 2.0*rotation->w*rotation->z;
     translation_rotation_matrix.matrix[1][1] = 1.0 - 2.0*rotation->x*rotation->x - 2.0*rotation->z*rotation->z;
-    translation_rotation_matrix.matrix[2][1] = 2.0*rotation->y*rotation->z + 2.0*rotation->w*rotation->x;
-    translation_rotation_matrix.matrix[0][2] = 2.0*rotation->x*rotation->z + 2.0*rotation->w*rotation->y;
-    translation_rotation_matrix.matrix[1][2] = 2.0*rotation->y*rotation->z - 2.0*rotation->w*rotation->x;
+    translation_rotation_matrix.matrix[1][2] = 2.0*rotation->y*rotation->z + 2.0*rotation->w*rotation->x;
+    translation_rotation_matrix.matrix[2][0] = 2.0*rotation->x*rotation->z + 2.0*rotation->w*rotation->y;
+    translation_rotation_matrix.matrix[2][1] = 2.0*rotation->y*rotation->z - 2.0*rotation->w*rotation->x;
     translation_rotation_matrix.matrix[2][2] = 1.0 - 2.0*rotation->x*rotation->x - 2.0*rotation->y*rotation->y;
 
     scale_matrix.matrix[0][0] = scale->x;

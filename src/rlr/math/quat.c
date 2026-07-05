@@ -30,6 +30,11 @@ rlr_quat_t rlr_quat_slerp(const rlr_quat_t* q1, const rlr_quat_t* q2, float t) {
         return rlr_quat(q1->w, q1->x, q1->y, q1->z);
     }
 
+    // if(cos_half_theta < 0.0f) {
+    //     q2 = -q2;
+    //     cos_half_theta = -cos_half_theta;
+    // }
+
     float half_theta = acos(cos_half_theta);
     float sinhalf_theta = sqrt(1.0 - cos_half_theta*cos_half_theta);
     if (fabs(sinhalf_theta) < 0.001){

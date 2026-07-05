@@ -10,6 +10,7 @@
 #include "src/rlr/objects/label.h"
 #include "src/rlr/objects/sprite.h"
 #include "src/rlr/objects/model_occluder.h"
+#include "src/rlr/objects/animated_model.h"
 #include "src/rlr/objects/static_model.h"
 
 int32_t main() {
@@ -38,13 +39,14 @@ int32_t main() {
     float yStart = -1.0;
     float interval = 2.0 / (float)amount;
     rlr_obj_static_model_handle_t* monkey_objects = NULL;
-    for(int32_t y = 0; y < amount; y++) {
-        for(int32_t x = 0; x < amount; x++) {
-            rlr_vec3_t pos = rlr_vec3(xStart + (float)x * interval, 0.05, yStart + (float)y * interval);
-            arrpush(monkey_objects, rlr_obj_static_model_create(monkey, pos, rlr_quat_from_euler(&rot), rlr_vec3(0.015, 0.015, 0.015)));
-        }
-    }
+    // for(int32_t y = 0; y < amount; y++) {
+    //     for(int32_t x = 0; x < amount; x++) {
+    //         rlr_vec3_t pos = rlr_vec3(xStart + (float)x * interval, 0.05, yStart + (float)y * interval);
+    //         arrpush(monkey_objects, rlr_obj_static_model_create(monkey, pos, rlr_quat_from_euler(&rot), rlr_vec3(0.015, 0.015, 0.015)));
+    //     }
+    // }
     rlr_obj_static_model_handle_t model = rlr_obj_static_model_create(plane, rlr_vec3(0, 0, 0), rlr_quat_ident, rlr_vec3(1, 1, 1));
+    rlr_obj_animated_model_handle_t move_obj = rlr_obj_animated_model_create(move_indicator, rlr_vec3(0, 0.05, 0), rlr_quat_ident, rlr_vec3(0.0075, 0.0075, 0.0075));
 
     rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 12, "", font);
     
@@ -93,10 +95,11 @@ int32_t main() {
         double delta = total_stats->time - last_time;
         last_time = total_stats->time;
         rotation += 3.1415926535 * delta / 2;
-        for(int64_t i = 0; i < arrlen(monkey_objects); i++) {
-            rlr_obj_static_model_set_trs(monkey_objects[i], NULL, &rlr_quat(cos(rotation / 2), 0, 1 * sin(rotation / 2), 0), NULL);
-        }
+        // for(int64_t i = 0; i < arrlen(monkey_objects); i++) {
+        //     rlr_obj_static_model_set_trs(monkey_objects[i], NULL, &rlr_quat(cos(rotation / 2), 0, 1 * sin(rotation / 2), 0), NULL);
+        // }
         //rlr_obj_static_model_set_trs(model, NULL, &rlr_quat(cos(rotation / 2), 0, 1 * sin(rotation / 2), 0), NULL);
+        rlr_obj_animated_model_update_animation(move_obj, total_stats->time * 2);
     }
 
 end:

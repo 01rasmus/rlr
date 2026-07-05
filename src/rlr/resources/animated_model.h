@@ -4,7 +4,7 @@
 
 #define RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH        (128)
 #define RLR_RES_ANIMATED_MODEL_ANIMATION_TEXTURE_SIZE       (2048)
-#define RLR_RES_ANIMATED_MODEL_ANIMATION_FPS                (30.0)
+#define RLR_RES_ANIMATED_MODEL_ANIMATION_FPS                (15.0)
 
 typedef struct cgltf_material cgltf_material;
 typedef struct rlr_res_texture_t rlr_res_texture_t;

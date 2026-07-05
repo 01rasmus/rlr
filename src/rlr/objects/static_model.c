@@ -21,7 +21,6 @@ rlr_obj_static_model_handle_t rlr_obj_static_model_create(rlr_res_static_model_t
         .rotation = rotation,
         .scale = scale,
         .opaque = true,
-        .alpha = 1.0,
         .cmd_index = cmd->index,
         .cmd_generation = cmd->generation,
         .instance_index = 0,

@@ -42,6 +42,10 @@ static void reset_frames(animation_frame_joint_t* poses, cgltf_node* nodes, uint
         cgltf_node* node = &nodes[i];
         animation_frame_joint_t* final = &poses[i];
 
+        if(node->has_matrix) {
+            printf("has matrix\n");
+        }
+
         if(node->has_translation) {
             final->t = rlr_vec3(node->translation[0], node->translation[1], node->translation[2]);
         } else {
@@ -118,6 +122,10 @@ static rlr_vec3_t sample_vec3(cgltf_animation_sampler* sampler, float t) {
     float alpha = 0.0;
     find_keyframe_interval(sampler->input, t, &k0, &k1, &alpha);
 
+    if(sampler->interpolation == cgltf_interpolation_type_step) {
+        alpha = 0.0;
+    }
+
     float a[3];
     float b[3];
     cgltf_accessor_read_float(sampler->output, k0, a, 3);
@@ -131,6 +139,10 @@ static rlr_quat_t sample_quaternion(cgltf_animation_sampler* sampler, float t) {
     uint32_t k1 = 0;
     float alpha = 0.0;
     find_keyframe_interval(sampler->input, t, &k0, &k1, &alpha);
+
+    if(sampler->interpolation == cgltf_interpolation_type_step) {
+        alpha = 0.0f;
+    }
 
     float a[4];
     float b[4];
@@ -161,6 +173,18 @@ static void build_global_poses(cgltf_node* nodes, rlr_mat4x4_t* local_poses, rlr
     }
 }
 
+static cgltf_node* find_mesh_node_for_skin(cgltf_data* data, cgltf_skin* skin) {
+    for(uint32_t i = 0; i < data->nodes_count; i++) {
+        cgltf_node* node = &data->nodes[i];
+
+        if(node->mesh && node->skin == skin) {
+            return node;
+        }
+    }
+
+    return NULL;
+}
+
 static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     rlr_res_animations_t final = {0};
     rlr_mat4x4_t* matrices = NULL;
@@ -170,7 +194,7 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
         return (rlr_res_animations_t){0};
     }
     cgltf_skin* skin = &model->skins[0];
-    rlr_affine_mat4x3_t* animation_matrices = NULL; // the final, baked, gpu data
+    rlr_mat4x4_t* animation_matrices = NULL; // the final, baked, gpu data
 
     final.joint_count = model->skins[0].joints_count;
     const uint32_t joint_count = model->skins[0].joints_count;
@@ -180,10 +204,12 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     rlr_mat4x4_t* global_matrices = malloc(sizeof(rlr_mat4x4_t) * node_count);
 
     //make identity pose(which is used for meshes that don't have any weights and joints)
-    rlr_affine_mat4x3_t identity_affine = rlr_mat4x4_to_affine_mat4x3(&rlr_mat4x4_ident);
     for(int32_t i = 0; i < model->skins[0].joints_count; i++) {
-        arrpush(animation_matrices, identity_affine);
+        arrpush(animation_matrices, rlr_mat4x4_ident);
     }
+
+    cgltf_node* mesh_node = find_mesh_node_for_skin(model, skin);
+    uint32_t mesh_node_index = mesh_node - model->nodes;
 
     for(int64_t i = 0; i < model->animations_count; i++) {
         cgltf_animation* animation = &model->animations[i];
@@ -232,15 +258,16 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
             }
 
             build_global_poses(model->nodes, local_matrices, global_matrices, node_count);
+            rlr_mat4x4_t inv_mesh_global = mesh_node != NULL ? rlr_mat4x4_inverse(&global_matrices[mesh_node_index]) : rlr_mat4x4_ident;
 
             for(uint32_t j = 0; j < skin->joints_count; j++) {
-                rlr_mat4x4_t inverse_bind_matrix;
+                rlr_mat4x4_t inverse_bind_matrix = rlr_mat4x4_ident;
                 cgltf_accessor_read_float(skin->inverse_bind_matrices, j, (float*)&inverse_bind_matrix, 16);
                 uint32_t node_index = skin->joints[j] - model->nodes;
 
-                rlr_mat4x4_t final = rlr_mat4x4_mul(&global_matrices[node_index], &inverse_bind_matrix);
-                rlr_affine_mat4x3_t affine = rlr_mat4x4_to_affine_mat4x3(&final);
-                arrpush(animation_matrices, affine);
+                rlr_mat4x4_t joint = rlr_mat4x4_mul(&global_matrices[node_index], &inverse_bind_matrix);
+                rlr_mat4x4_t final = rlr_mat4x4_mul(&inv_mesh_global, &joint);
+                arrpush(animation_matrices, final);
             }
 
             if(done) {
@@ -253,7 +280,7 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
 
     final.animation_texture = rlr_backend()->create_animation_texture(animation_matrices, arrlenu(animation_matrices), RLR_RES_ANIMATED_MODEL_ANIMATION_TEXTURE_SIZE);
     printf("tex %d\n", final.animation_texture);
-    printf("baked animation data info: \nmatrix count=%d\nsize=%d\ntexel count=%d\n", arrlen(animation_matrices), arrlen(animation_matrices) * sizeof(rlr_affine_mat4x3_t), arrlen(animation_matrices) * 3);
+    printf("baked animation data info: \nmatrix count=%d\nsize=%d\ntexel count=%d\n", arrlen(animation_matrices), arrlen(animation_matrices) * sizeof(rlr_affine_mat4x3_t), arrlen(animation_matrices) * 4);
     return final;
 }
 
@@ -263,6 +290,7 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
     rlr_animated_model_vertex_t* vertices = NULL;
     uint32_t* indices = NULL;
     if(!model) {
+        rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
     }
 
@@ -281,6 +309,7 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
     //load the animations first
     model->animations = load_animations(data, RLR_RES_ANIMATED_MODEL_ANIMATION_FPS);
     if(model->animations.animation_texture == 0) {
+        rlr_error_set(RLR_ERR_MODEL_COULD_NOT_LOAD_ANIMATION);
         goto err;
     }
 
@@ -403,7 +432,7 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
 
                 if(has_joints && has_weights) {
                     for(uint32_t jw = 0; jw < 4; jw++) {
-                        if(joints[jw] >= 255) {
+                        if(joints[jw] > 255) {
                             goto err;
                         }
                         vertex.joints[jw] = (uint8_t)joints[jw];

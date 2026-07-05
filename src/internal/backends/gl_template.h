@@ -212,15 +212,15 @@ static uint64_t gl_create_cube_map_texture(uint8_t* right, uint8_t* left, uint8_
     return texture;
 }
 
-static uint64_t gl_create_animation_texture(rlr_affine_mat4x3_t* matrices, uint32_t matrix_count, uint32_t width) {
+static uint64_t gl_create_animation_texture(rlr_mat4x4_t* matrices, uint32_t matrix_count, uint32_t width) {
     uint32_t texture = 0;
     GL_CALL(gl->GenTextures(1, &texture));
     if(texture == 0) {
-        return 0;
+        goto err;
     }
 
-    if(texture % 4 != 0) {
-        return 0;
+    if((width % 4) != 0) {
+        goto err;
     }
 
     uint32_t texel_count = matrix_count * 4;
@@ -234,9 +234,12 @@ static uint64_t gl_create_animation_texture(rlr_affine_mat4x3_t* matrices, uint3
     GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     GL_CALL(gl->PixelStorei(GL_UNPACK_ALIGNMENT, 4));
 
-    GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, matrices));
+    GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, matrices));
 
     return texture;
+err:
+    GL_CALL(gl->DeleteTextures(1, &texture));
+    return 0;
 }
 
 static void gl_bind_texture(uint64_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot) {
@@ -626,8 +629,8 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     const char* gpu_renderer = gl->GetString(GL_RENDERER);
     snprintf(gpu_name, 256, "%s %s", gpu_vendor, gpu_renderer);
 
-    GL_CALL(gl->Enable(GL_CULL_FACE));
-    GL_CALL(gl->CullFace(GL_BACK));
+    //GL_CALL(gl->Enable(GL_CULL_FACE));
+    //GL_CALL(gl->CullFace(GL_BACK));
     statistic_draw_call_count = 0;
     return backend;
 err:
