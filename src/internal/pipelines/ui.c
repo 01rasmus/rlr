@@ -137,12 +137,16 @@ bool rlr_pipeline_ui_init() {
     rlr_res_shader_bind_uniform_slot(pu->shader_text, "inv_screen_size", RLR_INTERNAL_UBO_UI);
 
     pu->quad_vbo = rlr_backend()->create_buffer();
-    if(!pu->quad_vbo) {
+    pu->quad_ebo = rlr_backend()->create_buffer();
+    if(!pu->quad_vbo || !pu->quad_ebo) {
         goto err;
     }
 
+    rlr_backend()->bind_vertex_array(0);
     rlr_backend()->bind_buffer(pu->quad_vbo, RLR_BACKEND_BUFFER_ARRAY);
     rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_quad_vertices), rlr_quad_vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
+    rlr_backend()->bind_buffer(pu->quad_ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
+    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ELEMENT_ARRAY, sizeof(rlr_quad_indices), rlr_quad_indices, RLR_BACKEND_BUFFER_USAGE_STATIC);
     pu->is_dirty = true;
     return true;
 err:
@@ -162,6 +166,7 @@ static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command() {
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv));
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv_size));
     rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 1, RLR_BACKEND_BUFFER_TYPE_U8, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, screen_anchor));
+    rlr_backend()->bind_buffer(RLR_PIPELINE_UI->quad_ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
     return command;
 }
 
@@ -241,7 +246,7 @@ void rlr_pipeline_ui_draw() {
         rlr_res_shader_bind(pu->commands[i].shader);
         rlr_res_texture_bind(pu->commands[i].texture, 0);
         rlr_backend()->bind_vertex_array(pu->commands[i].vao);
-        rlr_backend()->draw_arrays_instanced(0, 6, pu->commands[i].instance_count);
+        rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U8, pu->commands[i].instance_count);
     }
 
     rlr_res_shader_bind(pu->shader_text);
@@ -266,6 +271,9 @@ void rlr_pipeline_ui_deinit() {
 
     rlr_res_shader_free(pu->shader_text);
     rlr_res_shader_free(pu->shader_sprite);
+
+    rlr_backend()->free_buffer(pu->quad_vbo);
+    rlr_backend()->free_buffer(pu->quad_ebo);
 
     for(int64_t i = 0; i < arrlen(pu->obj_labels); i++) {
         rlr_obj_label_free(&pu->obj_labels[i]);

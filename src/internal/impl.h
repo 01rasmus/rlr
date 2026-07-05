@@ -71,7 +71,8 @@ typedef struct rlr_t {
     rlr_res_cube_map_t* test_cube_map;
 } rlr_t;
 
-extern rlr_vec2_t rlr_quad_vertices[6];
+extern rlr_vec2_t rlr_quad_vertices[4];
+extern uint8_t rlr_quad_indices[6];
 
 rlr_t* rlr();
 rlr_backend_t* rlr_backend();

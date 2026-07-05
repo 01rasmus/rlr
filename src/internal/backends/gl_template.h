@@ -290,27 +290,19 @@ static uint64_t gl_create_shader(const char* vertex_shader, const char* fragment
     uint32_t vid = 0;
     uint32_t fid = 0;
 
-    //opengl es 3.0 must have a vertex and a fragment shader
     #if defined(GL_IMPLEMENTATION_TEMPLATE_GLES)
-    const char* minimum_shader_es = "#version 300 es\nprecision highp float;\nprecision highp int;\nvoid main() {}";
-    if(!vertex_shader) {
-        vertex_shader = minimum_shader_es;
-    }
-    if(!fragment_shader) {
-        fragment_shader = minimum_shader_es;
-    }
+    const char* minimum_shader = "#version 300 es\nprecision highp float;\nprecision highp int;\nvoid main() {}";
+    #endif
+    #if defined(GL_IMPLEMENTATION_TEMPLATE_GL)
+    const char* minimum_shader = "#version 330 core\nvoid main() {}";
     #endif
 
-    //apple devices need to have a shader attached to make the stencil work
-    #if defined(GL_IMPLEMENTATION_TEMPLATE_GL) && defined(__APPLE__)
-    const char* minimum_shader_gl = "#version 330 core\nvoid main() {}";
     if(!vertex_shader) {
-        vertex_shader = minimum_shader_gl;
+        vertex_shader = minimum_shader;
     }
     if(!fragment_shader) {
-        fragment_shader = minimum_shader_gl;
+        fragment_shader = minimum_shader;
     }
-    #endif
 
     int32_t vertex_length[1] = { vertex_shader ? strlen(vertex_shader) : 0 };
     int32_t fragment_length[1] = { fragment_shader ? strlen(fragment_shader) : 0 };

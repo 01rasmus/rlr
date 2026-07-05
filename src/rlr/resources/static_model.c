@@ -127,6 +127,7 @@ rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_loca
             }
 
             //fill buffers
+            rlr_backend()->bind_vertex_array(0);
             rlr_backend()->bind_buffer(mesh->vbo, RLR_BACKEND_BUFFER_ARRAY);
             rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_static_model_vertex_t) * arrlenu(vertices), vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
             rlr_backend()->bind_buffer(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);

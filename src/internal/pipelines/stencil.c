@@ -9,6 +9,13 @@
 
 #define RLR_PIPELINE_STENCIL    (&rlr()->pipeline_stencil)
 
+static const char stencil_fragment[] = RLR_SHADER_INLINE(
+    out vec4 out_color;
+    void main() {
+        out_color = vec4(1.0);
+    }
+);
+
 static const char stencil_vertex[] = RLR_SHADER_INLINE(
     layout (location = 0) in vec2 pos;
     layout (location = 1) in vec2 rect_pos;
@@ -61,7 +68,7 @@ static void rlr_pipeline_stencil_rebuild() {
     ps->is_dirty = false;
     arrfree(instances);
 }
-
+#include <stdio.h>
 bool rlr_pipeline_stencil_init() {
     rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     (*ps) = (rlr_pipeline_stencil_t){0};
@@ -69,12 +76,13 @@ bool rlr_pipeline_stencil_init() {
     ps->is_dirty = true;
     ps->vao = rlr_backend()->create_vertex_array();
     ps->vbo = rlr_backend()->create_buffer();
+    ps->ebo = rlr_backend()->create_buffer();
     ps->instance_vbo = rlr_backend()->create_buffer();
-    if(!ps->vao || !ps->vbo || !ps->instance_vbo) {
+    if(!ps->vao || !ps->vbo || !ps->ebo || !ps->instance_vbo) {
         goto err;
     }
 
-    ps->shader = rlr_res_shader_create(stencil_vertex, NULL);
+    ps->shader = rlr_res_shader_create(stencil_vertex, stencil_fragment);
     if(!ps->shader) {
         goto err;
     }
@@ -88,6 +96,8 @@ bool rlr_pipeline_stencil_init() {
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_stencil_t), offsetof(rlr_instance_data_stencil_t, pos));
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_stencil_t), offsetof(rlr_instance_data_stencil_t, size));
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_stencil_t), offsetof(rlr_instance_data_stencil_t, screen_anchor));
+    rlr_backend()->bind_buffer(ps->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
+    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ELEMENT_ARRAY, sizeof(rlr_quad_indices), rlr_quad_indices, RLR_BACKEND_BUFFER_USAGE_STATIC);
     return true;
 err:
     rlr_pipeline_stencil_deinit();
@@ -110,7 +120,7 @@ void rlr_pipeline_stencil_draw() {
 
     rlr_res_shader_bind(ps->shader);
     rlr_backend()->bind_vertex_array(ps->vao);
-    rlr_backend()->draw_arrays_instanced(0, 6, ps->instance_count);
+    rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U8, ps->instance_count);
 
     rlr_backend()->set_stencil_mask(0x0);
     rlr_backend()->set_stencil_func(RLR_BACKEND_STENCIL_FUNC_NOTEQUAL, 1, 0xFF);
@@ -129,6 +139,8 @@ void rlr_pipeline_stencil_deinit() {
     rlr_res_shader_free(ps->shader);
     rlr_backend()->free_vertex_array(ps->vao);
     rlr_backend()->free_buffer(ps->vbo);
+    rlr_backend()->free_buffer(ps->ebo);
+    rlr_backend()->free_buffer(ps->instance_vbo);
 }
 
 rlr_obj_model_occluder_t* rlr_pipeline_stencil_alloc_model_occluder() {

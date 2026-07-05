@@ -10,6 +10,7 @@ typedef struct rlr_pipeline_stencil_t {
     rlr_res_shader_t* shader;
     uint64_t vao;
     uint64_t vbo;
+    uint64_t ebo;
     uint64_t instance_vbo;
     uint64_t instance_count;
     rlr_obj_model_occluder_t* obj_model_occluders;

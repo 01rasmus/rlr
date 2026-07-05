@@ -20,13 +20,15 @@
 
 static rlr_t* ctx = NULL;
 
-rlr_vec2_t rlr_quad_vertices[6] = {
-    rlr_vec2(1, 1),
-    rlr_vec2(1, 0),
+rlr_vec2_t rlr_quad_vertices[4] = {
     rlr_vec2(0, 0),
-    rlr_vec2(0, 1),
+    rlr_vec2(1, 0),
     rlr_vec2(1, 1),
-    rlr_vec2(0, 0)
+    rlr_vec2(0, 1)
+};
+
+uint8_t rlr_quad_indices[6] = {
+    0, 1, 2, 0, 2, 3
 };
 
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags) {

@@ -29,6 +29,7 @@ typedef struct rlr_pipeline_ui_t {
     rlr_pipeline_ui_draw_command_t* commands;
     uint64_t command_count;
     uint64_t quad_vbo;
+    uint64_t quad_ebo;
 
     bool is_dirty;
 } rlr_pipeline_ui_t;
