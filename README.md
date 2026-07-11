@@ -20,9 +20,10 @@ Defined below are the libraries used in the renderer. It mostly depends on other
 - [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h)
 - [stb_image_resize2.h](https://github.com/nothings/stb/blob/master/stb_image_resize2.h)
 - [rlsl](https://github.com/rasu01/rlsl)
+- [rlpp](https://github.com/rasu01/rlpp)
 
 ## Dependencies
-For a computer to run the renderer an OpenGL 3.3, OpenGL ES 3.0 or DirectX 10 compatible graphics card is required.
+For a computer to run the renderer an OpenGL 3.3 or OpenGL ES 3.0 compatible graphics card is required.
 
 On linux you need to install some dependencies to build. On a debian based linux distribution, the following command will download all the required packages<br>
 ```
