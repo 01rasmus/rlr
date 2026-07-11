@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "external/rlr_stb_ds.h"
+#include "external/stb_ds.h"
 #include "internal/impl.h"
 #include "rlr/io/csv.h"
 #include "rlr/io/str.h"

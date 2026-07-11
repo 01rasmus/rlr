@@ -1,12 +1,12 @@
 #include <stdlib.h>
-#include "external/rlr_stb_ds.h"
-#include "internal/pipelines/model.h"
+#include "external/stb_ds.h"
+#include "internal/impl.h"
 #include "rlr/math/matrix.h"
 #include "static_model.h"
 
-rlr_obj_static_model_handle_t rlr_obj_static_model_create(rlr_res_static_model_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
-    rlr_obj_static_model_handle_t handle = rlr_pipeline_model_alloc_static_model();
-    rlr_obj_static_model_t* obj = rlr_pipeline_model_get_static_model(handle);
+rlr_obj_t rlr_obj_static_model_create(rlr_res_static_model_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
+    rlr_obj_t handle = rlr_mem_man_allocate_obj_static_model(rlr_mem_man(), (rlr_obj_static_model_t){0});
+    rlr_obj_static_model_t* obj = rlr_mem_man_get_obj_static_model(rlr_mem_man(), handle);
     if(!obj) {
         goto err;
     }
@@ -32,23 +32,23 @@ rlr_obj_static_model_handle_t rlr_obj_static_model_create(rlr_res_static_model_t
     return handle;
 err:
     rlr_obj_static_model_free(handle);
-    return RLR_SPARSE_GEN_ALLOCATOR_NULL_HANDLE;
+    return RLR_NULL;
 }
 
-rlr_vec3_t rlr_obj_static_model_get_translation(rlr_obj_static_model_handle_t model) {
-    return rlr_pipeline_model_get_static_model(model)->translation;
+rlr_vec3_t rlr_obj_static_model_get_translation(rlr_obj_t model) {
+    return rlr_mem_man_get_obj_static_model(rlr_mem_man(), model)->translation;
 }
 
-rlr_quat_t rlr_obj_static_model_get_rotation(rlr_obj_static_model_handle_t model) {
-    return rlr_pipeline_model_get_static_model(model)->rotation;
+rlr_quat_t rlr_obj_static_model_get_rotation(rlr_obj_t model) {
+    return rlr_mem_man_get_obj_static_model(rlr_mem_man(), model)->rotation;
 }
 
-rlr_vec3_t rlr_obj_static_model_get_scale(rlr_obj_static_model_handle_t model) {
-    return rlr_pipeline_model_get_static_model(model)->scale;
+rlr_vec3_t rlr_obj_static_model_get_scale(rlr_obj_t model) {
+    return rlr_mem_man_get_obj_static_model(rlr_mem_man(), model)->scale;
 }
 
-void rlr_obj_static_model_set_trs(rlr_obj_static_model_handle_t handle, const rlr_vec3_t* translation, const rlr_quat_t* rotation, const rlr_vec3_t* scale) {
-    rlr_obj_static_model_t* model = rlr_pipeline_model_get_static_model(handle);
+void rlr_obj_static_model_set_trs(rlr_obj_t handle, const rlr_vec3_t* translation, const rlr_quat_t* rotation, const rlr_vec3_t* scale) {
+    rlr_obj_static_model_t* model = rlr_mem_man_get_obj_static_model(rlr_mem_man(), handle);
     if(translation) {
         model->translation = *translation;
     }
@@ -64,6 +64,6 @@ void rlr_obj_static_model_set_trs(rlr_obj_static_model_handle_t handle, const rl
     rlr_pipeline_model_update_static_model_instance(model->cmd_index, model->cmd_generation, model->instance_index, (rlr_pipeline_static_model_instance_t){.matrix = affine});
 }
 
-void rlr_obj_static_model_free(rlr_obj_static_model_handle_t handle) {
-    rlr_pipeline_model_free_static_model(handle);
+void rlr_obj_static_model_free(rlr_obj_t handle) {
+    rlr_mem_man_free_obj_static_model(rlr_mem_man(), handle);
 }

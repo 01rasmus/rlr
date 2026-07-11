@@ -1,7 +1,6 @@
-#include "external/rlr_stb_ds.h"
 #include <utf8.h>
+#include "external/stb_ds.h"
 #include "internal/backends/backend.h"
-#include "internal/pipelines/ui.h"
 #include "internal/impl.h"
 #include "rlr/resources/font.h"
 #include "rlr/math/vec.h"
@@ -95,8 +94,9 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
     arrfree(vertices);
 }
 
-rlr_obj_label_t* rlr_obj_label_create(float x, float y, float size, const char* text, rlr_res_font_t* font) {
-    rlr_obj_label_t* label = rlr_pipeline_ui_alloc_label();
+rlr_obj_t rlr_obj_label_create(float x, float y, float size, const char* text, rlr_res_font_t* font) {
+    rlr_obj_t id = rlr_mem_man_allocate_obj_label(rlr_mem_man(), (rlr_obj_label_t){0});
+    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), id);
 
     label->font = font;
     label->size = size;
@@ -119,25 +119,28 @@ rlr_obj_label_t* rlr_obj_label_create(float x, float y, float size, const char* 
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 3, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_obj_label_vertex_t), offsetof(rlr_obj_label_vertex_t, screen_px_range));
     
     rlr_obj_label_upload_vertices(label, text);
-    return label;
+    return id;
 err:
-    rlr_obj_label_free(label);
-    return NULL;
+    rlr_obj_label_free(id);
+    return RLR_NULL;
 }
 
-void rlr_obj_label_set_visability(rlr_obj_label_t* label, bool visible) {
+void rlr_obj_label_set_visability(rlr_obj_t obj, bool visible) {
+    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), obj);
     label->visible = visible;
 }
 
-void rlr_obj_label_set_text(rlr_obj_label_t* label, const char* text) {
+void rlr_obj_label_set_text(rlr_obj_t obj, const char* text) {
+    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), obj);
     rlr_obj_label_upload_vertices(label, text);
 }
 
-void rlr_obj_label_free(rlr_obj_label_t* label) {
-    if(!label) {
+void rlr_obj_label_free(rlr_obj_t obj) {
+    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), obj);
+    if(!label || obj == RLR_NULL) {
         return;
     }
     rlr_backend()->free_vertex_array(label->vao);
     rlr_backend()->free_buffer(label->vbo);
-    rlr_pipeline_ui_free_label(label);
+    rlr_mem_man_free_obj_label(rlr_mem_man(), obj);
 }

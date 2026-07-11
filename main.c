@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
-#include "external/rlr_stb_ds.h"
+#include "external/stb_ds.h"
 #include "src/rlr/rlr.h"
 #include "src/rlr/error.h"
 #include "src/rlr/resources/animated_model.h"
@@ -17,7 +17,7 @@ int32_t main() {
 
     rlr_res_font_t* font = NULL;
     rlr_res_font_t* font2 = NULL;
-    rlr_init("rl render", 1024, 768, RLR_INIT_FLAG_FULLSCREEN);
+    rlr_init("rl render", 1024, 768, 0);
 
     font = rlr_res_font_load("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
     font2 = rlr_res_font_load("assets/tinos-small.csv", "assets/tinos-small.png", 8.0);
@@ -38,17 +38,17 @@ int32_t main() {
     float xStart = -1.0;
     float yStart = -1.0;
     float interval = 2.0 / (float)amount;
-    rlr_obj_static_model_handle_t* monkey_objects = NULL;
+    rlr_obj_t* monkey_objects = NULL;
     // for(int32_t y = 0; y < amount; y++) {
     //     for(int32_t x = 0; x < amount; x++) {
     //         rlr_vec3_t pos = rlr_vec3(xStart + (float)x * interval, 0.05, yStart + (float)y * interval);
     //         arrpush(monkey_objects, rlr_obj_static_model_create(monkey, pos, rlr_quat_from_euler(&rot), rlr_vec3(0.015, 0.015, 0.015)));
     //     }
     // }
-    rlr_obj_static_model_handle_t model = rlr_obj_static_model_create(plane, rlr_vec3(0, 0, 0), rlr_quat_ident, rlr_vec3(1, 1, 1));
-    rlr_obj_animated_model_handle_t move_obj = rlr_obj_animated_model_create(move_indicator, rlr_vec3(0, 0.05, 0), rlr_quat_from_euler(&rlr_vec3(3.14, 0, 0)), rlr_vec3(0.0025, 0.0025, 0.0025));
+    rlr_obj_t model = rlr_obj_static_model_create(plane, rlr_vec3(0, 0, 0), rlr_quat_ident, rlr_vec3(1, 1, 1));
+    rlr_obj_t move_obj = rlr_obj_animated_model_create(move_indicator, rlr_vec3(0, 0.05, 0), rlr_quat_from_euler(&rlr_vec3(3.14, 0, 0)), rlr_vec3(0.0025, 0.0025, 0.0025));
 
-    rlr_obj_label_t* label = rlr_obj_label_create(2, 2, 12, "", font);
+    rlr_obj_t label = rlr_obj_label_create(2, 2, 12, "", font);
     
     float ui_x = 8;
     float ui_y = -8;

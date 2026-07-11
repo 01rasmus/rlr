@@ -2,7 +2,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <string.h>
-#include "external/rlr_stb_ds.h"
+#include "external/stb_ds.h"
 #include "internal/backends/backend_selection.h"
 #include "internal/backends/backend.h"
 #include "rlr/resources/static_model.h"
@@ -60,6 +60,12 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     }
     glfwSwapInterval((RLR_INIT_FLAG_VSYNC & flags) == RLR_INIT_FLAG_VSYNC ? 1 : 0);
 
+    //setup resource manager
+    if(!rlr_mem_man_init(&ctx->res_man)) {
+        rlr_error_set(RLR_ERR_COULD_NOT_FIND_SUITABLE_BACKEND);
+        goto err;
+    }
+
     //setup uniform buffer objects
     rlr()->ubos[RLR_INTERNAL_UBO_MODEL]         = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_model_t));
     rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL]      = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_material_t));
@@ -112,6 +118,10 @@ rlr_t* rlr() {
 
 rlr_backend_t* rlr_backend() {
     return ctx->backend;
+}
+
+rlr_mem_man_t* rlr_mem_man() {
+    return &ctx->res_man;
 }
 
 rlr_vec2_t rlr_get_framebuffer_size() {
@@ -236,6 +246,10 @@ void rlr_free() {
     if(ctx->window) {
         glfwDestroyWindow(ctx->window);
     }
+
+    //free resource manager
+    rlr_mem_man_deinit(&ctx->res_man);
+
     free(ctx);
     glfwTerminate();
     ctx = NULL;

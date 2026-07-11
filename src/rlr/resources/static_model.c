@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <cgltf.h>
-#include "external/rlr_stb_ds.h"
+#include "external/stb_ds.h"
 #include "internal/impl.h"
 #include "rlr/resources/model_shared.h"
 #include "rlr/resources/texture.h"

@@ -7,9 +7,6 @@ typedef struct rlr_res_shader_t rlr_res_shader_t;
 typedef struct rlr_res_texture_t rlr_res_texture_t;
 typedef struct rlr_res_uniform_t rlr_res_uniform_t;
 
-typedef struct rlr_obj_label_t rlr_obj_label_t;
-typedef struct rlr_obj_sprite_t rlr_obj_sprite_t;
-
 typedef struct rlr_pipeline_ui_draw_command_t {
     rlr_res_shader_t* shader;
     rlr_res_texture_t* texture;
@@ -23,8 +20,6 @@ typedef struct rlr_pipeline_ui_draw_command_t {
 typedef struct rlr_pipeline_ui_t {
     rlr_res_shader_t* shader_text;
     rlr_res_shader_t* shader_sprite;
-    rlr_obj_label_t* obj_labels;
-    rlr_obj_sprite_t* obj_sprites;
 
     rlr_pipeline_ui_draw_command_t* commands;
     uint64_t command_count;
@@ -37,8 +32,3 @@ typedef struct rlr_pipeline_ui_t {
 bool rlr_pipeline_ui_init();
 void rlr_pipeline_ui_draw();
 void rlr_pipeline_ui_deinit();
-
-rlr_obj_label_t* rlr_pipeline_ui_alloc_label();
-rlr_obj_sprite_t* rlr_pipeline_ui_alloc_sprite();
-void rlr_pipeline_ui_free_label(rlr_obj_label_t* label);
-void rlr_pipeline_ui_free_sprite(rlr_obj_sprite_t* sprite);

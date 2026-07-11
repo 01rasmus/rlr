@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "external/rlr_stb_ds.h"
+#include "external/stb_ds.h"
 #include "rlr/objects/animated_model.h"
 #include "rlr/objects/static_model.h"
 #include "rlr/resources/animated_model.h"
@@ -345,8 +345,6 @@ bool rlr_pipeline_model_init() {
 
     pm->opaque_static_model_commands = NULL;
     pm->opaque_animated_model_commands = NULL;
-    pm->obj_static_models = rlr_sparse_gen_allocator_create(sizeof(rlr_obj_static_model_t));
-    pm->obj_animated_models = rlr_sparse_gen_allocator_create(sizeof(rlr_obj_animated_model_t));
     pm->shader_opaque_static_model = rlr_res_shader_create(static_model_vertex, model_fragment);
     pm->shader_opaque_animated_model = rlr_res_shader_create(animated_model_vertex, model_fragment);
     pm->generation_counter = 0;
@@ -435,9 +433,6 @@ void rlr_pipeline_model_deinit() {
         return;
     }
 
-    rlr_sparse_gen_allocator_free(pm->obj_static_models);
-    rlr_sparse_gen_allocator_free(pm->obj_animated_models);
-
     arrfree(pm->opaque_static_model_commands);
     arrfree(pm->opaque_animated_model_commands);
     rlr_res_shader_free(pm->shader_opaque_static_model);
@@ -514,34 +509,4 @@ void rlr_pipeline_model_update_animated_model_instance(uint32_t cmd_index, uint3
 
     cmd->instances[instance_index] = data;
     cmd->dirty = true;
-}
-
-rlr_sparse_gen_allocator_handle_t rlr_pipeline_model_alloc_static_model() {
-    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
-    return rlr_sparse_gen_allocator_alloc(pm->obj_static_models);
-}
-
-rlr_obj_static_model_t* rlr_pipeline_model_get_static_model(rlr_sparse_gen_allocator_handle_t handle) {
-    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
-    return rlr_sparse_gen_allocator_get_unchecked(pm->obj_static_models, handle);
-}
-
-void rlr_pipeline_model_free_static_model(rlr_sparse_gen_allocator_handle_t handle) {
-    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
-    rlr_sparse_gen_allocator_dealloc(pm->obj_static_models, handle);
-}
-
-rlr_sparse_gen_allocator_handle_t rlr_pipeline_model_alloc_animated_model() {
-    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
-    return rlr_sparse_gen_allocator_alloc(pm->obj_animated_models);
-}
-
-rlr_obj_animated_model_t* rlr_pipeline_model_get_animated_model(rlr_sparse_gen_allocator_handle_t handle) {
-    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
-    return rlr_sparse_gen_allocator_get_unchecked(pm->obj_animated_models, handle);
-}
-
-void rlr_pipeline_model_free_animated_model(rlr_sparse_gen_allocator_handle_t am_handle) {
-    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
-    rlr_sparse_gen_allocator_dealloc(pm->obj_animated_models, am_handle);
 }

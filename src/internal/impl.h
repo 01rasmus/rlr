@@ -3,6 +3,7 @@
 #include "pipelines/stencil.h"
 #include "pipelines/model.h"
 #include "pipelines/ui.h"
+#include "core/memory_manager.h"
 #include "rlr/math/matrix.h"
 #include "rlr/rlr.h"
 
@@ -47,6 +48,7 @@ typedef rlr_res_material_t rlr_uniform_material_t;
 typedef struct rlr_t {
     GLFWwindow* window;
     rlr_backend_t* backend;
+    rlr_mem_man_t res_man;
 
     //configuration
     int32_t framebuffer_width;
@@ -76,4 +78,5 @@ extern uint8_t rlr_quad_indices[6];
 
 rlr_t* rlr();
 rlr_backend_t* rlr_backend();
+rlr_mem_man_t* rlr_mem_man();
 rlr_res_texture_t* rlr_internal_get_white_texture();

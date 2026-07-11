@@ -1,4 +1,4 @@
-#include "external/rlr_stb_ds.h"
+#include "external/stb_ds.h"
 #include "rlr/resources/texture.h"
 #include "rlr/resources/uniform.h"
 #include "rlr/resources/shader.h"
@@ -116,12 +116,12 @@ static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
     const rlr_obj_sprite_t* spr_a = a;
     const rlr_obj_sprite_t* spr_b = b;
 
-    if (spr_a->layer != spr_b->layer)
+    if(spr_a->layer != spr_b->layer) {
         return (spr_a->layer > spr_b->layer) - (spr_a->layer < spr_b->layer);
-
-    if (spr_a->texture->texture != spr_b->texture->texture)
+    }
+    if(spr_a->texture->texture != spr_b->texture->texture) {
         return (spr_a->texture->texture > spr_b->texture->texture) - (spr_a->texture->texture < spr_b->texture->texture);
-
+    }
     return 0;
 }
 
@@ -172,8 +172,9 @@ static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command() {
 
 static void rlr_pipeline_ui_rebuild_commands() {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
-    uint64_t needed_commands = arrlenu(pu->obj_sprites);
-    uint64_t commands_available = arrlenu(pu->commands);
+    uint32_t sprites_count = rlr_mem_man_get_obj_sprites_count(rlr_mem_man());
+    uint32_t needed_commands = sprites_count;
+    uint32_t commands_available = arrlenu(pu->commands);
     while(needed_commands > commands_available) {
         arrpush(pu->commands, rlr_pipeline_ui_new_command(pu));
         commands_available++;
@@ -181,12 +182,14 @@ static void rlr_pipeline_ui_rebuild_commands() {
 
     rlr_instance_data_ui_t* instance_data = NULL;
 
-    qsort(pu->obj_sprites, arrlenu(pu->obj_sprites), sizeof(rlr_obj_sprite_t), rlr_pipeline_ui_sorter_sprite);
+    rlr_obj_sprite_t* sprites = rlr_mem_man_get_obj_sprites(rlr_mem_man());
+    rlpp_sort(sprites, rlr_pipeline_ui_sorter_sprite);
+
     int64_t current_command = 0;
     rlr_res_texture_t* current_texture = NULL;
 
-    for(int64_t i = 0; i < arrlen(pu->obj_sprites); i++) {
-        rlr_obj_sprite_t* sprite = &pu->obj_sprites[i];
+    for(int64_t i = 0; i < sprites_count; i++) {
+        rlr_obj_sprite_t* sprite = &sprites[i];
         if(current_texture == NULL) {
             current_texture = sprite->texture;
         }
@@ -250,8 +253,9 @@ void rlr_pipeline_ui_draw() {
     }
 
     rlr_res_shader_bind(pu->shader_text);
-    for(int64_t i = 0; i < arrlen(pu->obj_labels); i++) {
-        rlr_obj_label_t* label = &pu->obj_labels[i];
+
+    for(uint32_t i = 0; i < rlr_mem_man_get_obj_labels_count(rlr_mem_man()); i++) {
+        rlr_obj_label_t* label = &rlr_mem_man_get_obj_labels(rlr_mem_man())[i];
         if(!label->visible) {
             continue;
         }
@@ -274,37 +278,4 @@ void rlr_pipeline_ui_deinit() {
 
     rlr_backend()->free_buffer(pu->quad_vbo);
     rlr_backend()->free_buffer(pu->quad_ebo);
-
-    for(int64_t i = 0; i < arrlen(pu->obj_labels); i++) {
-        rlr_obj_label_free(&pu->obj_labels[i]);
-    }
-    for(int64_t i = 0; i < arrlen(pu->obj_sprites); i++) {
-        rlr_obj_sprite_free(&pu->obj_sprites[i]);
-    }
-    arrfree(pu->obj_labels);
-    arrfree(pu->obj_sprites);
-}
-
-rlr_obj_label_t* rlr_pipeline_ui_alloc_label() {
-    rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
-    arrpush(pu->obj_labels, (rlr_obj_label_t){0});
-    rlr_obj_label_t* label = &arrlast(pu->obj_labels);
-    label->index = arrlenu(pu->obj_labels) - 1;
-    return label;
-}
-
-rlr_obj_sprite_t* rlr_pipeline_ui_alloc_sprite() {
-    rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
-    arrpush(pu->obj_sprites, (rlr_obj_sprite_t){0});
-    rlr_obj_sprite_t* sprite = &arrlast(pu->obj_sprites);
-    sprite->index = arrlenu(pu->obj_sprites) - 1;
-    return sprite;
-}
-
-void rlr_pipeline_ui_free_label(rlr_obj_label_t* label) {
-
-}
-
-void rlr_pipeline_ui_free_sprite(rlr_obj_sprite_t* sprite) {
-
 }

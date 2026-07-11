@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include "external/rlr_stb_ds.h"
+#include "external/stb_ds.h"
 #include "internal/impl.h"
 #include "rlr/resources/shader.h"
 #include "rlr/objects/model_occluder.h"
@@ -46,9 +46,9 @@ static void rlr_pipeline_stencil_rebuild() {
     rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     rlr_instance_data_stencil_t* instances = NULL;
 
-    for(int32_t i = 0; i < arrlen(ps->obj_model_occluders); i++) {
-        rlr_obj_model_occluder_t* mo = &ps->obj_model_occluders[i];
-        
+    for(uint32_t i = 0; i < rlr_mem_man_get_obj_model_occluders_count(rlr_mem_man()); i++) {
+        rlr_obj_model_occluder_t* mo = &rlr_mem_man_get_obj_model_occluders(rlr_mem_man())[i];
+
         rlr_vec2_t screen_anchor_vec = rlr_anchor_vec(mo->screen_anchor);
         rlr_vec2_t local_anchor_vec = rlr_anchor_vec(mo->local_anchor);
         float width = mo->rectangle.width;
@@ -68,7 +68,7 @@ static void rlr_pipeline_stencil_rebuild() {
     ps->is_dirty = false;
     arrfree(instances);
 }
-#include <stdio.h>
+
 bool rlr_pipeline_stencil_init() {
     rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     (*ps) = (rlr_pipeline_stencil_t){0};
@@ -141,21 +141,4 @@ void rlr_pipeline_stencil_deinit() {
     rlr_backend()->free_buffer(ps->vbo);
     rlr_backend()->free_buffer(ps->ebo);
     rlr_backend()->free_buffer(ps->instance_vbo);
-}
-
-rlr_obj_model_occluder_t* rlr_pipeline_stencil_alloc_model_occluder() {
-    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
-    arrpush(ps->obj_model_occluders, (rlr_obj_model_occluder_t){0});
-    rlr_obj_model_occluder_t* mo = &arrlast(ps->obj_model_occluders);
-    mo->index = arrlenu(ps->obj_model_occluders) - 1;
-    ps->is_dirty = true;
-    return mo;
-}
-
-void rlr_pipeline_stencil_free_model_occluder(rlr_obj_model_occluder_t* mo) {
-    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
-    if(!ps || !mo) {
-        return;
-    }
-    ps->is_dirty = true;
 }
