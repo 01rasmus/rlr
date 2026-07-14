@@ -7,6 +7,7 @@
 #include "rlr/resources/uniform.h"
 #include "rlr/resources/texture.h"
 #include "rlr/resources/shader.h"
+#include "rlr/math/scalar.h"
 #include "internal/impl.h"
 #include "model.h"
 
@@ -368,8 +369,46 @@ err:
     return false;
 }
 
-void rlr_pipeline_model_draw() {
+static inline void rlr_pipeline_update_animations(rlr_pipeline_model_t* pm, double delta_time) {
+    rlr_obj_animated_model_t* models = rlr_mem_man_get_obj_animated_models(rlr_mem_man());
+    for(uint32_t i = 0; i < rlr_mem_man_get_obj_animated_models_count(rlr_mem_man()); i++) {
+        rlr_obj_animated_model_t* model = &models[i];
+        if(model->current_animation_index == -1) {
+            continue;
+        }
+        rlr_pipeline_animated_model_draw_command_t* cmd = &pm->opaque_animated_model_commands[model->cmd_index];
+        if(cmd->generation != model->cmd_generation) {
+            continue;
+        }
+        rlr_res_animation_meta_t* meta = &cmd->model->animations.metas[model->current_animation_index];
+        float frame_interval = 1.0 / meta->fps;
+        uint32_t joint_count = cmd->model->animations.joint_count;
+
+        float current_pose = model->animation_time / frame_interval;
+        uint32_t pose_index_upper = rlr_clamp(ceilf(current_pose), 0, meta->pose_count - 1);
+        uint32_t pose_index_below = rlr_clamp(floorf(current_pose), 0, meta->pose_count - 1);
+
+        cmd->instances[model->instance_index].lerp = current_pose - floorf(current_pose);
+        cmd->instances[model->instance_index].pose_a_offset = meta->pose_offset + pose_index_below * joint_count;
+        cmd->instances[model->instance_index].pose_b_offset = meta->pose_offset + pose_index_upper * joint_count;
+        cmd->dirty = true;
+
+        model->animation_time += delta_time * model->animation_speed;
+        if(model->animation_time > meta->duration) {
+            if(model->animation_loop) {
+                model->animation_time -= meta->duration;
+            } else {
+                model->current_animation_index = -1;
+            }
+        }
+    }
+}
+
+void rlr_pipeline_model_draw(double delta_time) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+
+    //update animated models
+    rlr_pipeline_update_animations(pm, delta_time);
 
     //reupload command instance vbos that are dirty
     for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {

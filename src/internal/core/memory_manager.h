@@ -20,7 +20,7 @@
     the resources and the objects
 */
 
-#define RESOURCE_SCHEMA(X) \
+#define RLR_MEM_MAN_RESOURCE_SCHEMA(X) \
     X(res, animated_model) \
     X(res, cube_map) \
     X(res, font) \
@@ -29,7 +29,7 @@
     X(res, texture) \
     X(res, uniform)
 
-#define OBJECT_SCHEMA(X) \
+#define RLR_MEM_MAN_OBJECT_SCHEMA(X) \
     X(obj, animated_model) \
     X(obj, label) \
     X(obj, model_occluder) \
@@ -38,8 +38,8 @@
 
 typedef struct rlr_mem_man_t {
     #define X(TYPE, NAME) rlr_##TYPE##_##NAME##_t* TYPE##_##NAME##s;
-    RESOURCE_SCHEMA(X)
-    OBJECT_SCHEMA(X)
+    RLR_MEM_MAN_RESOURCE_SCHEMA(X)
+    RLR_MEM_MAN_OBJECT_SCHEMA(X)
     #undef X
 } rlr_mem_man_t;
 
@@ -48,14 +48,14 @@ void rlr_mem_man_deinit(rlr_mem_man_t* rm);
 
 //define allocators
 #define X(TYPE, NAME) rlr_##TYPE##_t rlr_mem_man_allocate_##TYPE##_##NAME(rlr_mem_man_t* rm, rlr_##TYPE##_##NAME##_t data);
-RESOURCE_SCHEMA(X);
-OBJECT_SCHEMA(X);
+RLR_MEM_MAN_RESOURCE_SCHEMA(X);
+RLR_MEM_MAN_OBJECT_SCHEMA(X);
 #undef X
 
 //define deallocators
 #define X(TYPE, NAME) rlr_##TYPE##_t rlr_mem_man_free_##TYPE##_##NAME(rlr_mem_man_t* rm, rlr_##TYPE##_t TYPE);
-RESOURCE_SCHEMA(X);
-OBJECT_SCHEMA(X);
+RLR_MEM_MAN_RESOURCE_SCHEMA(X);
+RLR_MEM_MAN_OBJECT_SCHEMA(X);
 #undef X
 
 //define getters
@@ -73,8 +73,8 @@ OBJECT_SCHEMA(X);
     }
 #endif
 
-RESOURCE_SCHEMA(X)
-OBJECT_SCHEMA(X)
+RLR_MEM_MAN_RESOURCE_SCHEMA(X)
+RLR_MEM_MAN_OBJECT_SCHEMA(X)
 #undef X
 
 //define array getters
@@ -83,8 +83,8 @@ OBJECT_SCHEMA(X)
         return rm->TYPE##_##NAME##s; \
     }
 
-RESOURCE_SCHEMA(X)
-OBJECT_SCHEMA(X)
+RLR_MEM_MAN_RESOURCE_SCHEMA(X)
+RLR_MEM_MAN_OBJECT_SCHEMA(X)
 #undef X
 
 //define array count getters
@@ -93,6 +93,6 @@ OBJECT_SCHEMA(X)
         return rlpp_len(rm->TYPE##_##NAME##s); \
     }
 
-RESOURCE_SCHEMA(X)
-OBJECT_SCHEMA(X)
+RLR_MEM_MAN_RESOURCE_SCHEMA(X)
+RLR_MEM_MAN_OBJECT_SCHEMA(X)
 #undef X

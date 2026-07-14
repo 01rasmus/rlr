@@ -106,6 +106,9 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         "assets/s/nz.png"
     );
     rlr_res_cube_map_bind(ctx->test_cube_map, 4);
+
+    //setup timer
+    ctx->last_time = glfwGetTime();
     return;
 err:
     rlr_free();
@@ -159,6 +162,10 @@ bool rlr_update() {
         return false;
     }
 
+    double current_time = glfwGetTime();
+    double delta_time = current_time - ctx->last_time;
+    ctx->last_time = current_time;
+
     int32_t width = 0;
     int32_t height = 0;
     glfwGetFramebufferSize(ctx->window, &width, &height);
@@ -192,11 +199,10 @@ bool rlr_update() {
     rlr_backend()->clear(RLR_BACKEND_CLEAR_BIT_COLOR | RLR_BACKEND_CLEAR_BIT_DEPTH | RLR_BACKEND_CLEAR_BIT_STENCIL);
 
     rlr_pipeline_stencil_draw();
-    rlr_pipeline_model_draw();
+    rlr_pipeline_model_draw(delta_time);
     rlr_pipeline_ui_draw();
 
     //statistics
-    double current_time = glfwGetTime();
     uint64_t draw_calls = rlr_backend()->get_draw_call_count();
 
     //temp

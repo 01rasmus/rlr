@@ -11,8 +11,8 @@ bool rlr_mem_man_init(rlr_mem_man_t* rm) {
 
 void rlr_mem_man_deinit(rlr_mem_man_t* rm) {
     #define X(TYPE, NAME) rlpp_free(rm->TYPE##_##NAME##s);
-    RESOURCE_SCHEMA(X)
-    OBJECT_SCHEMA(X)
+    RLR_MEM_MAN_RESOURCE_SCHEMA(X)
+    RLR_MEM_MAN_OBJECT_SCHEMA(X)
     #undef X
 }
 
@@ -22,8 +22,8 @@ void rlr_mem_man_deinit(rlr_mem_man_t* rm) {
         return rlpp_alloc(rm->TYPE##_##NAME##s, data); \
     }
 
-RESOURCE_SCHEMA(X)
-OBJECT_SCHEMA(X)
+RLR_MEM_MAN_RESOURCE_SCHEMA(X)
+RLR_MEM_MAN_OBJECT_SCHEMA(X)
 #undef X
 
 //deallocation implementations
@@ -32,6 +32,6 @@ OBJECT_SCHEMA(X)
         rlpp_remove(rm->TYPE##_##NAME##s, TYPE); \
     }
 
-RESOURCE_SCHEMA(X);
-OBJECT_SCHEMA(X);
+RLR_MEM_MAN_RESOURCE_SCHEMA(X);
+RLR_MEM_MAN_OBJECT_SCHEMA(X);
 #undef X

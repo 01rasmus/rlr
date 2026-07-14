@@ -53,7 +53,7 @@ typedef struct rlr_pipeline_model_t {
 } rlr_pipeline_model_t;
 
 bool rlr_pipeline_model_init();
-void rlr_pipeline_model_draw();
+void rlr_pipeline_model_draw(double delta_time);
 void rlr_pipeline_model_deinit();
 
 /*

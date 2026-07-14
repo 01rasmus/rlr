@@ -102,7 +102,7 @@ rlr_obj_t rlr_obj_label_create(float x, float y, float size, const char* text, r
     label->size = size;
     label->x = x;
     label->y = y;
-    label->color = rlr_vec3(1.0, 0.9, 1.0);
+    label->color = rlr_vec3(1.0, 1.0, 1.0);
     label->visible = true;
     label->vao = rlr_backend()->create_vertex_array();
     label->vbo = rlr_backend()->create_buffer();

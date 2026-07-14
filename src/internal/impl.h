@@ -54,6 +54,9 @@ typedef struct rlr_t {
     int32_t framebuffer_width;
     int32_t framebuffer_height;
 
+    //timing
+    double last_time;
+
     //pipelines
     rlr_pipeline_stencil_t pipeline_stencil;
     rlr_pipeline_model_t pipeline_model;

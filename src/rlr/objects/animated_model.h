@@ -19,6 +19,7 @@ typedef struct rlr_obj_animated_model_t {
     int32_t current_animation_index;
     float animation_time;
     float animation_speed;
+    bool animation_loop;
 
     //transparency
     bool opaque;
@@ -34,13 +35,14 @@ rlr_obj_t rlr_obj_animated_model_create(rlr_res_animated_model_t* model, rlr_vec
 rlr_vec3_t rlr_obj_animated_model_get_translation(rlr_obj_t model);
 rlr_quat_t rlr_obj_animated_model_get_rotation(rlr_obj_t model);
 rlr_vec3_t rlr_obj_animated_model_get_scale(rlr_obj_t model);
+bool rlr_obj_animated_model_is_animating(rlr_obj_t model);
 
 /*
     returns -1 if no animation is running
 */
 int32_t rlr_obj_animated_model_get_current_animation(rlr_obj_t model);
 
-void rlr_obj_animated_model_set_animation(rlr_obj_t model, int32_t animation_index);
+void rlr_obj_animated_model_set_animation(rlr_obj_t model, int32_t animation_index, float speed, bool loop);
 
 /*
     1.0 is the default
@@ -52,5 +54,3 @@ void rlr_obj_animated_model_set_animation_speed(rlr_obj_t model, float speed);
 */
 void rlr_obj_animated_model_set_trs(rlr_obj_t model, const rlr_vec3_t* translation, const rlr_quat_t* rotation, const rlr_vec3_t* scale);
 void rlr_obj_animated_model_free(rlr_obj_t obj);
-
-void rlr_obj_animated_model_update_animation(rlr_obj_t obj, float time);

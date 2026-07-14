@@ -30,7 +30,7 @@ int32_t main() {
     rlr_res_texture_t* hero_unknown = rlr_res_texture_load("assets/unknown_unit_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
     rlr_res_static_model_t* plane = rlr_res_static_model_load_glb("assets/plane.glb");
     rlr_res_static_model_t* monkey = rlr_res_static_model_load_glb("assets/move_arrow.glb");
-    rlr_res_animated_model_t* move_indicator = rlr_res_animated_model_load_glb("assets/Fox.glb");
+    rlr_res_animated_model_t* move_indicator = rlr_res_animated_model_load_glb("assets/move_arrow.glb");
 
     rlr_vec3_t rot = rlr_vec3(3.14, -0, 0);
  
@@ -46,7 +46,10 @@ int32_t main() {
     //     }
     // }
     rlr_obj_t model = rlr_obj_static_model_create(plane, rlr_vec3(0, 0, 0), rlr_quat_ident, rlr_vec3(1, 1, 1));
-    rlr_obj_t move_obj = rlr_obj_animated_model_create(move_indicator, rlr_vec3(0, 0.05, 0), rlr_quat_from_euler(&rlr_vec3(3.14, 0, 0)), rlr_vec3(0.0025, 0.0025, 0.0025));
+    rlr_obj_t move_obj = rlr_obj_animated_model_create(move_indicator, rlr_vec3(0, 0.02, 0), rlr_quat_from_euler(&rlr_vec3(3.14, 0, 0)), rlr_vec3(0.0075, 0.0075, 0.0075));
+
+    int32_t animation = rlr_res_animated_model_get_animation_index(move_indicator, "Fold");
+    rlr_obj_animated_model_set_animation(move_obj, animation, 0.4, true);
 
     rlr_obj_t label = rlr_obj_label_create(2, 2, 12, "", font);
     
@@ -98,8 +101,11 @@ int32_t main() {
         // for(int64_t i = 0; i < arrlen(monkey_objects); i++) {
         //     rlr_obj_static_model_set_trs(monkey_objects[i], NULL, &rlr_quat(cos(rotation / 2), 0, 1 * sin(rotation / 2), 0), NULL);
         // }
-        //rlr_obj_static_model_set_trs(model, NULL, &rlr_quat(cos(rotation / 2), 0, 1 * sin(rotation / 2), 0), NULL);
-        rlr_obj_animated_model_update_animation(move_obj, total_stats->time * 2);
+        //rlr_obj_static_model_set_trs(model, NULL, &rlr_quat(cos(rotation / 2), 0, 1 * sin(rotation / 2), 0), NULL);'
+
+        if(!rlr_obj_animated_model_is_animating(move_obj)) {
+            rlr_obj_animated_model_set_trs(move_obj, &rlr_vec3(0, -10000000, 0), NULL, NULL);
+        }
     }
 
 end:

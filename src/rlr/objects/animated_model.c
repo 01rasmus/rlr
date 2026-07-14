@@ -64,9 +64,17 @@ int32_t rlr_obj_animated_model_get_current_animation(rlr_obj_t handle) {
     return model->current_animation_index;
 }
 
-void rlr_obj_animated_model_set_animation(rlr_obj_t handle, int32_t animation_index) {
+bool rlr_obj_animated_model_is_animating(rlr_obj_t handle) {
+    rlr_obj_animated_model_t* model = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), handle);
+    return model->current_animation_index != -1;
+}
+
+void rlr_obj_animated_model_set_animation(rlr_obj_t handle, int32_t animation_index, float speed, bool loop) {
     rlr_obj_animated_model_t* model = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), handle);
     model->current_animation_index = animation_index;
+    model->animation_time = 0.0;
+    model->animation_speed = speed;
+    model->animation_loop = loop;
 }
 
 void rlr_obj_animated_model_set_animation_speed(rlr_obj_t handle, float speed) {
@@ -93,29 +101,4 @@ void rlr_obj_animated_model_set_trs(rlr_obj_t handle, const rlr_vec3_t* translat
 
 void rlr_obj_animated_model_free(rlr_obj_t obj) {
     rlr_mem_man_free_obj_animated_model(rlr_mem_man(), obj);
-}
-
-#include <stdio.h>
-void rlr_obj_animated_model_update_animation(rlr_obj_t obj, float time) {
-    rlr_obj_animated_model_t* model = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), obj);
-    rlr_mat4x4_t trs = rlr_mat4x4_trs(&model->translation, &model->rotation, &model->scale);
-    rlr_affine_mat4x3_t affine = rlr_mat4x4_to_affine_mat4x3(&trs);
-
-    while(time >= 1.158333) {
-        time -= 1.158333;
-    }
-
-    float fps = 30.0;
-    float frame_interval = 1.0 / fps;
-    float joints_per_pose = 24;
-    float start_pose = 3072;
-
-    float current_pose = time / frame_interval;
-    uint32_t current_pose_upper = start_pose + (ceilf(current_pose)) * joints_per_pose;
-    uint32_t current_pose_below = start_pose + (floorf(current_pose)) * joints_per_pose;
-    float alpha = current_pose - floorf(current_pose);
-
-    //printf("Pose data:\n\ttime=%f\n\tpose a=%d\n\tpose b=%d\n\tlerp=%f\n\n", time, current_pose_below, current_pose_upper, alpha);
-
-    rlr_pipeline_model_update_animated_model_instance(model->cmd_index, model->cmd_generation, model->instance_index, (rlr_pipeline_animated_model_instance_t){.matrix = affine, .lerp = alpha, .pose_a_offset = current_pose_below, .pose_b_offset = current_pose_upper });
 }
