@@ -111,7 +111,7 @@ static int32_t texture_internal_format(int32_t channels, bool srgb) {
         case 2:
             return GL_RG8;
         case 3:
-            return srgb ? GL_SRGB8 : GL_RGB8;
+            return srgb ? GL_SRGB8 : GL_RGB8; //todo: GL_SRGB8 cannot be used with mipmaps on gles 3.0
         case 4:
         default:
             return srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8;
@@ -132,6 +132,24 @@ static int32_t texture_format(int32_t channels) {
     }
 }
 
+static void gl_generate_srgb_mipmaps(uint8_t* color_data, uint32_t src_width, uint32_t src_height) {
+#ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+    GL_CALL(gl->GenerateMipmap(GL_TEXTURE_2D));
+#else
+    uint32_t width = src_width;
+    uint32_t height = src_height;
+    uint32_t channel_count = 3; //srgb uses 3 channels
+    for(uint32_t level = 1; width > 1 || height > 1; level++) {
+        uint32_t dst_width = width > 1 ? width / 2 : 1;
+        uint32_t dst_height = height > 1 ? height / 2 : 1;
+        stbir_resize_uint8_srgb(color_data, src_width, src_height, 0, texture_resize_buffer, dst_width, dst_height, 0, channel_count);
+        GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, level, GL_SRGB8, dst_width, dst_height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_resize_buffer));
+        width = dst_width;
+        height = dst_height;
+    }
+#endif
+}
+
 static uint64_t gl_create_texture(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
@@ -143,7 +161,9 @@ static uint64_t gl_create_texture(uint8_t* color_data, uint32_t width, uint32_t 
     int32_t internal_format = texture_internal_format(channels, use_srgb_color_space);
     int32_t format = texture_format(channels);
 
-    if(use_srgb_color_space) {
+    gl->PixelStorei(GL_UNPACK_ALIGNMENT, channels == 3 ? 1 : 4);
+
+    if(false) {
         int32_t output_w = 64;
         int32_t output_h = 64;
         stbir_resize_uint8_srgb(color_data, width, height, 0, texture_resize_buffer, output_w, output_h, 0, channels);
@@ -153,7 +173,11 @@ static uint64_t gl_create_texture(uint8_t* color_data, uint32_t width, uint32_t 
     }
 
     if(texture_filter_uses_mipmaps(filter_min)) {
-        GL_CALL(gl->GenerateMipmap(GL_TEXTURE_2D));
+        if(internal_format == GL_SRGB8) {
+            gl_generate_srgb_mipmaps(color_data, width, height);
+        } else {
+            GL_CALL(gl->GenerateMipmap(GL_TEXTURE_2D));
+        }
     }
 
     GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min));

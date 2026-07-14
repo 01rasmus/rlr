@@ -17,7 +17,7 @@ int32_t main() {
 
     rlr_res_font_t* font = NULL;
     rlr_res_font_t* font2 = NULL;
-    rlr_init("rl render", 1024, 768, 0);
+    rlr_init("rl render", 960, 540, 0);
 
     font = rlr_res_font_load("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
     font2 = rlr_res_font_load("assets/tinos-small.csv", "assets/tinos-small.png", 8.0);
