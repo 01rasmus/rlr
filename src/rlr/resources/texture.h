@@ -1,8 +1,9 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
-#include <cgltf.h>
 #include "../def.h"
+
+typedef struct cgltf_texture cgltf_texture;
 
 typedef enum rlr_res_texture_filter_t {
     RLR_RES_TEXTURE_FILTER_NEAREST = 0,

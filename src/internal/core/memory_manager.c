@@ -1,6 +1,9 @@
 #include "../../external/rlpp.h"
 #include "memory_manager.h"
 
+_Static_assert(sizeof(rlpp_id_t) == sizeof(rlr_res_t), "rlpp_id_t is not the same size as rlr_res_t");
+_Static_assert(sizeof(rlpp_id_t) == sizeof(rlr_obj_t), "rlpp_id_t is not the same size as rlr_obj_t");
+
 bool rlr_mem_man_init(rlr_mem_man_t* rm) {
     if(!rm) {
         return false;

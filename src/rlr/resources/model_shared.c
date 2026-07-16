@@ -1,5 +1,6 @@
 #include <string.h>
 #include <math.h>
+#include <cgltf.h>
 #include "../../internal/impl.h"
 #include "../resources/texture.h"
 #include "../resources/uniform.h"

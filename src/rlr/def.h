@@ -1,12 +1,11 @@
 #pragma once
 #include <stdint.h>
-#include "../external/rlpp.h"
 
 #define RLR_DEBUG   1
 #define RLR_NULL    ((uint64_t)0u)
 
-typedef rlpp_id_t rlr_res_t;
-typedef rlpp_id_t rlr_obj_t;
+typedef uint64_t rlr_res_t;
+typedef uint64_t rlr_obj_t;
 typedef uint64_t rlr_handle_t;
 
 typedef enum rlr_init_flags_t {

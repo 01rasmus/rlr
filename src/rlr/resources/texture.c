@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stb_image.h>
+#include <cgltf.h>
 #include "../../internal/impl.h"
 #include "../error.h"
 #include "../rlr.h"

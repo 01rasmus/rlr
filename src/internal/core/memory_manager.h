@@ -13,6 +13,7 @@
 #include "../../rlr/objects/model_occluder.h"
 #include "../../rlr/objects/sprite.h"
 #include "../../rlr/objects/static_model.h"
+#include "../../external/rlpp.h"
 #include "../../rlr/def.h"
 
 /*
@@ -48,14 +49,14 @@ void rlr_mem_man_deinit(rlr_mem_man_t* rm);
 
 //define allocators
 #define X(TYPE, NAME) rlr_##TYPE##_t rlr_mem_man_allocate_##TYPE##_##NAME(rlr_mem_man_t* rm, rlr_##TYPE##_##NAME##_t data);
-RLR_MEM_MAN_RESOURCE_SCHEMA(X);
-RLR_MEM_MAN_OBJECT_SCHEMA(X);
+RLR_MEM_MAN_RESOURCE_SCHEMA(X)
+RLR_MEM_MAN_OBJECT_SCHEMA(X)
 #undef X
 
 //define deallocators
 #define X(TYPE, NAME) rlr_##TYPE##_t rlr_mem_man_free_##TYPE##_##NAME(rlr_mem_man_t* rm, rlr_##TYPE##_t TYPE);
-RLR_MEM_MAN_RESOURCE_SCHEMA(X);
-RLR_MEM_MAN_OBJECT_SCHEMA(X);
+RLR_MEM_MAN_RESOURCE_SCHEMA(X)
+RLR_MEM_MAN_OBJECT_SCHEMA(X)
 #undef X
 
 //define getters

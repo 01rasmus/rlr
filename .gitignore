@@ -4,5 +4,3 @@ bin/
 .DS_Store
 *.out
 *.sh
-main.c
-main-cmake.txt

@@ -12,7 +12,6 @@ endif()
 # directories
 set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 set(OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin")
-set(OBJ_DIR "${OUT_DIR}/obj")
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 # glfw
@@ -27,13 +26,12 @@ file(GLOB_RECURSE RL_RENDER_SRC "${SRC_DIR}/*.c")
 set(SRC ${RL_RENDER_SRC})
 
 # binaries
-set(LIBRARY "rlr")
+set(LIBRARY "rl_render")
 add_library(${LIBRARY} ${SRC})
 
 # incudes
-target_include_directories(${LIBRARY} PUBLIC ${LIB_DIR} PRIVATE ${LIB_DIR}/glfw/include)
+target_include_directories(${LIBRARY} PRIVATE ${LIB_DIR} ${LIB_DIR}/glfw/include)
 
 # library linking
 target_link_libraries(${LIBRARY} PRIVATE glfw ${OPENGL_LIBS})
-target_compile_options(${LIBRARY} PRIVATE -O3 -pg)
-target_link_options(${LIBRARY} PRIVATE -pg)
+target_compile_options(${LIBRARY} PRIVATE -O3)
