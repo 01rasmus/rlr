@@ -207,11 +207,11 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
     layout(location = 8) in vec3 instance_mat_col_3;
     layout(location = 9) in uint pose_a_offset_primary;
     layout(location = 10) in uint pose_b_offset_primary;
-    layout(location = 11) in float pose_lerp_primary;
+    layout(location = 11) in uint pose_lerp_primary;
     layout(location = 12) in uint pose_a_offset_secondary;
     layout(location = 13) in uint pose_b_offset_secondary;
-    layout(location = 14) in float pose_lerp_secondary;
-    layout(location = 15) in float transition_lerp;
+    layout(location = 14) in uint pose_lerp_secondary;
+    layout(location = 15) in uint transition_lerp;
 
     layout(std140) uniform ubo_model {
         mat4 vp;
@@ -223,6 +223,10 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
     out vec2 frag_uv;
     out vec3 frag_normal;
     out vec3 frag_vert_pos;
+
+    const float EPSILON = 0.01;
+    const float UINT8_MAX_RATIO = 1.0 / 255.0;
+    const float UINT16_MAX_RATIO = 1.0 / 65535;
 
     mat4 fetch_pose(uint matrix_index, uint tex_w) {
         uint texel_index = matrix_index * 4u;
@@ -257,17 +261,21 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
         );
 
         vec4 w = vec4(
-            float(weights[0]) / 255.0,
-            float(weights[1]) / 255.0,
-            float(weights[2]) / 255.0,
-            float(weights[3]) / 255.0
+            float(weights[0]) * UINT8_MAX_RATIO,
+            float(weights[1]) * UINT8_MAX_RATIO,
+            float(weights[2]) * UINT8_MAX_RATIO,
+            float(weights[3]) * UINT8_MAX_RATIO
         );
 
+        float lerp_prim = pose_lerp_primary * UINT8_MAX_RATIO;
+        float lerp_sec = pose_lerp_secondary * UINT8_MAX_RATIO;
+        float lerp_trans = float(transition_lerp) * UINT16_MAX_RATIO;
+
         uint tex_w = uint(textureSize(poses, 0).x);
-        mat4 skin = fetch_skin_matrix(tex_w, w, joints, pose_lerp_primary, pose_a_offset_primary, pose_b_offset_primary);
-        if(transition_lerp >= 0.001 && transition_lerp < 1.0) {
-            mat4 skin_secondary = fetch_skin_matrix(tex_w, w, joints, pose_lerp_secondary, pose_a_offset_secondary, pose_b_offset_secondary);
-            skin = (1.0 - transition_lerp) * skin + transition_lerp * skin_secondary;
+        mat4 skin = fetch_skin_matrix(tex_w, w, joints, lerp_prim, pose_a_offset_primary, pose_b_offset_primary);
+        if(transition_lerp > 0u && lerp_trans < 1.0) {
+            mat4 skin_secondary = fetch_skin_matrix(tex_w, w, joints, lerp_sec, pose_a_offset_secondary, pose_b_offset_secondary);
+            skin = (1.0 - lerp_trans) * skin + lerp_trans * skin_secondary;
         }
 
         vec4 skinned_pos = skin * vec4(pos, 1.0);
@@ -346,11 +354,11 @@ static rlr_pipeline_animated_model_draw_command_t rlr_pipeline_model_create_anim
         rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 8, 3, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, matrix) + sizeof(float) * 3 * 3);
         rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 9, 1, RLR_BACKEND_BUFFER_TYPE_U32, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, pose_a_offset_primary));
         rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 10, 1, RLR_BACKEND_BUFFER_TYPE_U32, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, pose_b_offset_primary));
-        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 11, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, lerp_primary));
+        rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 11, 1, RLR_BACKEND_BUFFER_TYPE_U8, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, lerp_primary));
         rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 12, 1, RLR_BACKEND_BUFFER_TYPE_U32, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, pose_a_offset_secondary));
         rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 13, 1, RLR_BACKEND_BUFFER_TYPE_U32, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, pose_b_offset_secondary));
-        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 14, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, lerp_secondary));
-        rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 15, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, transition_lerp));
+        rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 14, 1, RLR_BACKEND_BUFFER_TYPE_U8, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, lerp_secondary));
+        rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 15, 1, RLR_BACKEND_BUFFER_TYPE_U16, sizeof(rlr_pipeline_animated_model_instance_t), offsetof(rlr_pipeline_animated_model_instance_t, transition_lerp));
     }
 
     return cmd;
@@ -429,23 +437,23 @@ static inline void rlr_pipeline_update_animations(rlr_pipeline_model_t* pm, doub
         uint32_t pose_a_secondary;
         uint32_t pose_b_secondary;
         if(rlr_pipeline_update_animation_state(pm, model, cmd, &model->animation_states[RLR_OBJ_ANIMATION_PRIMARY], delta_time, &lerp_primary, &pose_a_primary, &pose_b_primary)) {
-            cmd->instances[model->instance_index].lerp_primary = lerp_primary;
+            cmd->instances[model->instance_index].lerp_primary = lerp_primary * UINT8_MAX;
             cmd->instances[model->instance_index].pose_a_offset_primary = pose_a_primary;
             cmd->instances[model->instance_index].pose_b_offset_primary = pose_b_primary;
         }
         if(rlr_pipeline_update_animation_state(pm, model, cmd, &model->animation_states[RLR_OBJ_ANIMATION_SECONDARY], delta_time, &lerp_secondary, &pose_a_secondary, &pose_b_secondary)) {
-            cmd->instances[model->instance_index].lerp_secondary = lerp_secondary;
+            cmd->instances[model->instance_index].lerp_secondary = lerp_secondary * UINT8_MAX;
             cmd->instances[model->instance_index].pose_a_offset_secondary = pose_a_secondary;
             cmd->instances[model->instance_index].pose_b_offset_secondary = pose_b_secondary;
         }
 
-        float transition_amount = 1.0;
+        uint16_t transition_amount = 0;
         model->current_transition_time += delta_time;
         if(model->transition_time > 0.0) {
-            transition_amount = rlr_smoothstep(rlr_clampf(model->current_transition_time, 0.0, model->transition_time) / model->transition_time);
+            transition_amount = (1.0 - rlr_smoothstep(rlr_clampf(model->current_transition_time, 0.0, model->transition_time) / model->transition_time)) * UINT16_MAX;
         }
         
-        cmd->instances[model->instance_index].transition_lerp = 1.0 - transition_amount;
+        cmd->instances[model->instance_index].transition_lerp = transition_amount;
         cmd->dirty = true;
     }
 }

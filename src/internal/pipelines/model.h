@@ -15,13 +15,13 @@ typedef struct rlr_pipeline_static_model_instance_t {
 
 typedef struct rlr_pipeline_animated_model_instance_t {
     rlr_affine_mat4x3_t matrix;
-    float lerp_primary;
-    float lerp_secondary;
     uint32_t pose_a_offset_primary;
     uint32_t pose_b_offset_primary;
     uint32_t pose_a_offset_secondary;
     uint32_t pose_b_offset_secondary;
-    float transition_lerp;
+    uint16_t transition_lerp;
+    uint8_t lerp_primary;
+    uint8_t lerp_secondary;
 } rlr_pipeline_animated_model_instance_t;
 
 typedef struct rlr_pipeline_static_model_draw_command_t {
