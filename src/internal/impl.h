@@ -10,12 +10,7 @@
 typedef struct rlr_backend_t rlr_backend_t;
 typedef struct GLFWwindow GLFWwindow;
 
-typedef struct rlr_res_shader_t rlr_res_shader_t;
-typedef struct rlr_res_texture_t rlr_res_texture_t;
-typedef struct rlr_res_uniform_t rlr_res_uniform_t;
-typedef struct rlr_res_cube_map_t rlr_res_cube_map_t;
 typedef struct rlr_res_material_t rlr_res_material_t;
-typedef struct rlr_res_static_model_t rlr_res_static_model_t;
 
 typedef bool (*rlr_pipeline_init_function_t)();
 
@@ -63,8 +58,8 @@ typedef struct rlr_t {
     rlr_pipeline_ui_t pipeline_ui;
 
     //built in resources
-    rlr_res_texture_t* texture_white;
-    rlr_res_uniform_t* ubos[RLR_INTERNAL_UBO_COUNT];
+    rlr_res_t texture_white;
+    rlr_res_t ubos[RLR_INTERNAL_UBO_COUNT];
 
     //statistics
     rlr_statistics_t statistics_total;
@@ -73,7 +68,7 @@ typedef struct rlr_t {
     double statistics_timer;
 
     //misc (todo: remove and add a new model pipeline)
-    rlr_res_cube_map_t* test_cube_map;
+    rlr_res_t test_cube_map;
 } rlr_t;
 
 extern rlr_vec2_t rlr_quad_vertices[4];
@@ -82,4 +77,4 @@ extern uint8_t rlr_quad_indices[6];
 rlr_t* rlr();
 rlr_backend_t* rlr_backend();
 rlr_mem_man_t* rlr_mem_man();
-rlr_res_texture_t* rlr_internal_get_white_texture();
+rlr_res_t rlr_internal_get_white_texture();

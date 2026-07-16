@@ -16,6 +16,8 @@ typedef struct rlr_obj_label_vertex_t {
 
 static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* text) {
     rlr_obj_label_vertex_t* vertices = NULL;
+    rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), label->font);
+    rlr_res_texture_t* font_texture = rlr_mem_man_get_res_texture(rlr_mem_man(), font->texture);
     rlr_res_font_glyph_t* space_glyph = rlr_res_font_get_glyph(label->font, ' ');
     rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_get_glyph(label->font, '?');
     float x = label->x;
@@ -66,9 +68,9 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
         float v1 = glyph->atlas_top;
 
         //calculate the screen px range
-        float texture_width = (u2 - u1) * label->font->texture->width;
+        float texture_width = (u2 - u1) * font_texture->width;
         float quad_width = draw_x2 - draw_x1;
-        float screen_px_range = quad_width / texture_width * (label->font->px_range);
+        float screen_px_range = quad_width / texture_width * (font->px_range);
         if(screen_px_range < 1.0) {
             screen_px_range = 1.0;
         }
@@ -94,7 +96,7 @@ static void rlr_obj_label_upload_vertices(rlr_obj_label_t* label, const char* te
     arrfree(vertices);
 }
 
-rlr_obj_t rlr_obj_label_create(float x, float y, float size, const char* text, rlr_res_font_t* font) {
+rlr_obj_t rlr_obj_label_create(float x, float y, float size, const char* text, rlr_res_t font) {
     rlr_obj_t id = rlr_mem_man_allocate_obj_label(rlr_mem_man(), (rlr_obj_label_t){0});
     rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), id);
 

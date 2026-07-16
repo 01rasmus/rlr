@@ -4,14 +4,14 @@
 #include "rlr/math/matrix.h"
 #include "static_model.h"
 
-rlr_obj_t rlr_obj_static_model_create(rlr_res_static_model_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
+rlr_obj_t rlr_obj_static_model_create(rlr_res_t model_id, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
     rlr_obj_t handle = rlr_mem_man_allocate_obj_static_model(rlr_mem_man(), (rlr_obj_static_model_t){0});
     rlr_obj_static_model_t* obj = rlr_mem_man_get_obj_static_model(rlr_mem_man(), handle);
     if(!obj) {
         goto err;
     }
 
-    rlr_pipeline_static_model_draw_command_t* cmd = rlr_pipeline_model_find_static_model_draw_command(model, NULL);
+    rlr_pipeline_static_model_draw_command_t* cmd = rlr_pipeline_model_find_static_model_draw_command(model_id, RLR_NULL);
     if(!cmd) {
         goto err;
     }

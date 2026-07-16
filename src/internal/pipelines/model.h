@@ -2,12 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "rlr/math/matrix.h"
-
-typedef struct rlr_res_shader_t rlr_res_shader_t;
-typedef struct rlr_res_static_model_t rlr_res_static_model_t;
-typedef struct rlr_res_animated_model_t rlr_res_animated_model_t;
-typedef struct rlr_obj_static_model_t rlr_obj_static_model_t;
-typedef struct rlr_obj_animated_model_t rlr_obj_animated_model_t;
+#include "rlr/def.h"
 
 typedef struct rlr_pipeline_static_model_instance_t {
     rlr_affine_mat4x3_t matrix;
@@ -25,8 +20,8 @@ typedef struct rlr_pipeline_animated_model_instance_t {
 } rlr_pipeline_animated_model_instance_t;
 
 typedef struct rlr_pipeline_static_model_draw_command_t {
-    rlr_res_static_model_t* model;
-    rlr_res_shader_t* shader;
+    rlr_res_t model;
+    rlr_res_t shader;
     uint64_t* mesh_vaos;
     uint64_t instance_vbo; //shared between all vaos
     uint32_t generation;
@@ -36,8 +31,8 @@ typedef struct rlr_pipeline_static_model_draw_command_t {
 } rlr_pipeline_static_model_draw_command_t;
 
 typedef struct rlr_pipeline_animated_model_draw_command_t {
-    rlr_res_animated_model_t* model;
-    rlr_res_shader_t* shader;
+    rlr_res_t model;
+    rlr_res_t shader;
     uint64_t* mesh_vaos;
     uint64_t instance_vbo; //shared between all vaos
     uint32_t generation;
@@ -47,8 +42,8 @@ typedef struct rlr_pipeline_animated_model_draw_command_t {
 } rlr_pipeline_animated_model_draw_command_t;
 
 typedef struct rlr_pipeline_model_t {
-    rlr_res_shader_t* shader_opaque_static_model;
-    rlr_res_shader_t* shader_opaque_animated_model;
+    rlr_res_t shader_opaque_static_model;
+    rlr_res_t shader_opaque_animated_model;
 
     uint32_t generation_counter;
 
@@ -65,9 +60,8 @@ void rlr_pipeline_model_deinit();
     configuration belongs to. If there is no command,
     a new one will be created.
 */
-rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_draw_command(rlr_res_static_model_t* model, rlr_res_shader_t* shader);
-rlr_pipeline_animated_model_draw_command_t* rlr_pipeline_model_find_animated_model_draw_command(rlr_res_animated_model_t* model, rlr_res_shader_t* shader);
-
+rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_draw_command(rlr_res_t model, rlr_res_t shader);
+rlr_pipeline_animated_model_draw_command_t* rlr_pipeline_model_find_animated_model_draw_command(rlr_res_t model, rlr_res_t shader);
 
 /*
 returns the index to the instance buffer.

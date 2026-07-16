@@ -4,14 +4,14 @@
 #include "rlr/math/matrix.h"
 #include "animated_model.h"
 
-rlr_obj_t rlr_obj_animated_model_create(rlr_res_animated_model_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
+rlr_obj_t rlr_obj_animated_model_create(rlr_res_t model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
     rlr_obj_t handle = rlr_mem_man_allocate_obj_animated_model(rlr_mem_man(), (rlr_obj_animated_model_t){0});
     rlr_obj_animated_model_t* obj = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), handle);
     if(!obj) {
         goto err;
     }
     
-    rlr_pipeline_animated_model_draw_command_t* cmd = rlr_pipeline_model_find_animated_model_draw_command(model, NULL);
+    rlr_pipeline_animated_model_draw_command_t* cmd = rlr_pipeline_model_find_animated_model_draw_command(model, RLR_NULL);
     if(!cmd) {
         goto err;
     }

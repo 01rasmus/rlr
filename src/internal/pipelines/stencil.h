@@ -1,13 +1,11 @@
 #pragma once
 #include "internal/backends/backend.h"
+#include "rlr/def.h"
 
 #define RLR_PIPELINE_STENCIL    (&rlr()->pipeline_stencil)
 
-typedef struct rlr_res_shader_t rlr_res_shader_t;
-typedef struct rlr_obj_model_occluder_t rlr_obj_model_occluder_t;
-
 typedef struct rlr_pipeline_stencil_t {
-    rlr_res_shader_t* shader;
+    rlr_res_t shader;
     uint64_t vao;
     uint64_t vbo;
     uint64_t ebo;

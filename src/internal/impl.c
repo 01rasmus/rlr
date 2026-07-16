@@ -72,8 +72,8 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     rlr()->ubos[RLR_INTERNAL_UBO_ENVIRONMENT]   = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_environment_t));
     rlr()->ubos[RLR_INTERNAL_UBO_UI]            = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_ui_t));
     for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {
-        rlr_res_uniform_t* ubo = rlr()->ubos[i];
-        if(!ubo) {
+        rlr_res_t ubo = rlr()->ubos[i];
+        if(ubo == RLR_NULL) {
             goto err;
         }
         rlr_res_uniform_bind(ubo, i);
@@ -139,7 +139,7 @@ rlr_statistics_t* rlr_get_statistics() {
     return &ctx->statistics_interval;
 }
 
-rlr_res_texture_t* rlr_internal_get_white_texture() {
+rlr_res_t rlr_internal_get_white_texture() {
     return ctx->texture_white;
 }
 

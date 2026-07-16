@@ -10,12 +10,20 @@
 #include "rlr/rlr.h"
 #include "static_model.h"
 
-rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_location) {
+rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {
+    rlr_res_t id = RLR_NULL;
     cgltf_data* data = NULL;
     rlr_res_static_model_t* model = NULL;
     rlr_static_model_vertex_t* vertices = NULL;
     uint32_t* indices = NULL;
-    model = malloc(sizeof(rlr_res_static_model_t));
+
+    id = rlr_mem_man_allocate_res_static_model(rlr_mem_man(), (rlr_res_static_model_t){0});
+    if(id == RLR_NULL) {
+        rlr_error_set(RLR_ERR_NO_MEMORY);
+        goto err;
+    }
+
+    model = rlr_mem_man_get_res_static_model(rlr_mem_man(), id);
     if(!model) {
         goto err;
     }
@@ -117,7 +125,7 @@ rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_loca
             //create mesh
             arrpush(model->meshes, (rlr_res_static_mesh_t){0});
             rlr_res_static_mesh_t* mesh = &arrlast(model->meshes);
-            mesh->material_ubo = NULL;
+            mesh->material_ubo = RLR_NULL;
             mesh->vbo = rlr_backend()->create_buffer();
             mesh->ebo = rlr_backend()->create_buffer();
             mesh->index_count = arrlenu(indices);
@@ -143,16 +151,21 @@ rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_loca
     cgltf_free(data);
     arrfree(vertices);
     arrfree(indices);
-    return model;
+    return id;
 err:
     cgltf_free(data);
     arrfree(vertices);
     arrfree(indices);
-    rlr_res_static_model_free(model);
-    return NULL;
+    rlr_res_static_model_free(id);
+    return RLR_NULL;
 }
 
-void rlr_res_static_model_free(rlr_res_static_model_t* model) {
+void rlr_res_static_model_free(rlr_res_t id) {
+    if(id == RLR_NULL) {
+        return;
+    }
+
+    rlr_res_static_model_t* model = rlr_mem_man_get_res_static_model(rlr_mem_man(), id);
     if(!model) {
         return;
     }
@@ -165,5 +178,5 @@ void rlr_res_static_model_free(rlr_res_static_model_t* model) {
         rlr_res_uniform_free(mesh->material_ubo);
     }
     arrfree(model->meshes);
-    free(model);
+    rlr_mem_man_free_res_static_model(rlr_mem_man(), id);
 }

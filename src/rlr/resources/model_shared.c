@@ -34,9 +34,9 @@ err:
     return NULL;
 }
 
-bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_uniform_t** out_material_ubo, rlr_res_texture_t** out_base_texture) {
-    rlr_res_uniform_t* ubo = NULL;
-    rlr_res_texture_t* tex = NULL;
+bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_t* out_material_ubo, rlr_res_t* out_base_texture) {
+    rlr_res_t ubo = RLR_NULL;
+    rlr_res_t tex = RLR_NULL;
     if(!out_material_ubo || !out_base_texture) {
         goto err;
     }
@@ -57,7 +57,7 @@ bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_unifor
         mat.reflectiveness = 0.0;
     }
     ubo = rlr_res_uniform_create_static(&mat, sizeof(mat));
-    if(!ubo) {
+    if(ubo == RLR_NULL) {
         goto err;
     }
 

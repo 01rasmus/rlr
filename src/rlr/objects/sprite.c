@@ -4,11 +4,13 @@
 #include "rlr/rlr.h"
 #include "sprite.h"
 
-rlr_obj_t rlr_obj_sprite_create(rlr_res_texture_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, int32_t layer) {
-    return rlr_obj_sprite_create_ext(texture, rectangle, screen_anchor, local_anchor, layer, rlr_rect(0, 0, texture->width, texture->height), rlr_rect(0, 0, 0, 0));
+rlr_obj_t rlr_obj_sprite_create(rlr_res_t texture_id, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, int32_t layer) {
+    rlr_res_texture_t* texture = rlr_mem_man_get_res_texture(rlr_mem_man(), texture_id == RLR_NULL ? rlr_res_texture_default() : texture_id);
+    return rlr_obj_sprite_create_ext(texture_id, rectangle, screen_anchor, local_anchor, layer, rlr_rect(0, 0, texture->width, texture->height), rlr_rect(0, 0, 0, 0));
 }
 
-rlr_obj_t rlr_obj_sprite_create_ext(rlr_res_texture_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, int32_t layer, rlr_rect_t uv, rlr_rect_t scissor) {
+rlr_obj_t rlr_obj_sprite_create_ext(rlr_res_t texture_id, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, int32_t layer, rlr_rect_t uv, rlr_rect_t scissor) {
+    rlr_res_texture_t* texture = rlr_mem_man_get_res_texture(rlr_mem_man(), texture_id == RLR_NULL ? rlr_res_texture_default() : texture_id);
     float uv_x = uv.x / texture->width;
     float uv_y = uv.y / texture->height;
     rlr_obj_t id = rlr_mem_man_allocate_obj_sprite(rlr_mem_man(), (rlr_obj_sprite_t){
@@ -17,7 +19,7 @@ rlr_obj_t rlr_obj_sprite_create_ext(rlr_res_texture_t* texture, rlr_rect_t recta
         .layer = layer,
         .rectangle = rectangle,
         .scissor = scissor,
-        .texture = texture == NULL ? rlr_internal_get_white_texture() : texture,
+        .texture = texture_id == RLR_NULL ? rlr_internal_get_white_texture() : texture_id,
         .uv = rlr_rect(
             uv_x,
             uv_y,

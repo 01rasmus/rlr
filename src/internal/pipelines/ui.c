@@ -119,8 +119,8 @@ static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
     if(spr_a->layer != spr_b->layer) {
         return (spr_a->layer > spr_b->layer) - (spr_a->layer < spr_b->layer);
     }
-    if(spr_a->texture->texture != spr_b->texture->texture) {
-        return (spr_a->texture->texture > spr_b->texture->texture) - (spr_a->texture->texture < spr_b->texture->texture);
+    if(spr_a->texture != spr_b->texture) {
+        return (spr_a->texture > spr_b->texture) - (spr_a->texture < spr_b->texture);
     }
     return 0;
 }
@@ -186,15 +186,15 @@ static void rlr_pipeline_ui_rebuild_commands() {
     rlpp_sort(sprites, rlr_pipeline_ui_sorter_sprite);
 
     int64_t current_command = 0;
-    rlr_res_texture_t* current_texture = NULL;
+    rlr_res_t current_texture = RLR_NULL;
 
     for(int64_t i = 0; i < sprites_count; i++) {
         rlr_obj_sprite_t* sprite = &sprites[i];
-        if(current_texture == NULL) {
+        if(current_texture == RLR_NULL) {
             current_texture = sprite->texture;
         }
 
-        if(current_texture->texture != sprite->texture->texture) {
+        if(current_texture != sprite->texture) {
             rlr_pipeline_ui_draw_command_t* command = &pu->commands[current_command];
             command->shader = pu->shader_sprite;
             command->instance_count = arrlenu(instance_data);
@@ -259,7 +259,8 @@ void rlr_pipeline_ui_draw() {
         if(!label->visible) {
             continue;
         }
-        rlr_res_texture_bind(label->font->texture, 0);
+        rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), label->font);
+        rlr_res_texture_bind(font->texture, 0);
         rlr_backend()->bind_vertex_array(label->vao);
         rlr_backend()->draw_arrays(0, label->vertex_count);
     }

@@ -15,9 +15,9 @@
 
 int32_t main() {
 
-    rlr_res_font_t* font = NULL;
-    rlr_res_font_t* font2 = NULL;
-    rlr_init("rl render", 1024, 768, 0);
+    rlr_res_t font = RLR_NULL;
+    rlr_res_t font2 = RLR_NULL;
+    rlr_init("rl render", 1024, 768, RLR_INIT_FLAG_FULLSCREEN);
 
     font = rlr_res_font_load("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
     font2 = rlr_res_font_load("assets/tinos-small.csv", "assets/tinos-small.png", 8.0);
@@ -25,12 +25,12 @@ int32_t main() {
         goto end;
     }
 
-    rlr_res_texture_t* ta_ui = rlr_res_texture_load("assets/ui_texture_atlas_large.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
-    rlr_res_texture_t* ability_empty = rlr_res_texture_load("assets/ability_empty_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
-    rlr_res_texture_t* hero_unknown = rlr_res_texture_load("assets/unknown_unit_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
-    rlr_res_static_model_t* plane = rlr_res_static_model_load_glb("assets/plane.glb");
-    rlr_res_static_model_t* monkey = rlr_res_static_model_load_glb("assets/move_arrow.glb");
-    rlr_res_animated_model_t* move_indicator = rlr_res_animated_model_load_glb("assets/Fox.glb");
+    rlr_res_t ta_ui = rlr_res_texture_load("assets/ui_texture_atlas_large.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
+    rlr_res_t ability_empty = rlr_res_texture_load("assets/ability_empty_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
+    rlr_res_t hero_unknown = rlr_res_texture_load("assets/unknown_unit_small.png", false, RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP);
+    rlr_res_t plane = rlr_res_static_model_load_glb("assets/plane.glb");
+    rlr_res_t monkey = rlr_res_static_model_load_glb("assets/move_arrow.glb");
+    rlr_res_t move_indicator = rlr_res_animated_model_load_glb("assets/Fox.glb");
 
     rlr_vec3_t rot = rlr_vec3(3.14, -0, 0);
  

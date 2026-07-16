@@ -9,7 +9,8 @@
     for(int64_t i = 0; i < sizeof(ARRAY) / sizeof(ARRAY[0]); i++) \
         stbi_image_free(ARRAY[i]);
 
-rlr_res_cube_map_t* rlr_res_cube_map_load(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back) {
+rlr_res_t rlr_res_cube_map_load(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back) {
+    rlr_res_t id = RLR_NULL;
     rlr_res_cube_map_t* cm = NULL;
     uint8_t* texture_data[6] = {0};
     const char* texture_locations[6] = {
@@ -21,7 +22,13 @@ rlr_res_cube_map_t* rlr_res_cube_map_load(const char* right, const char* left, c
         back
     };
 
-    cm = malloc(sizeof(rlr_res_cube_map_t));
+    id = rlr_mem_man_allocate_res_cube_map(rlr_mem_man(), (rlr_res_cube_map_t){0});
+    if(id == RLR_NULL) {
+        rlr_error_set(RLR_ERR_NO_MEMORY);
+        goto err;
+    }
+    
+    cm = rlr_mem_man_get_res_cube_map(rlr_mem_man(), id);
     if(!cm) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
@@ -55,21 +62,26 @@ rlr_res_cube_map_t* rlr_res_cube_map_load(const char* right, const char* left, c
     }
 
     FREE_TEXTURE_DATA(texture_data);
-    return cm;
+    return id;
 err:
     FREE_TEXTURE_DATA(texture_data);
-    rlr_res_cube_map_free(cm);
-    return NULL;
+    rlr_res_cube_map_free(id);
+    return RLR_NULL;
 }
 
-void rlr_res_cube_map_bind(rlr_res_cube_map_t* cm, uint8_t texture_slot) {
-    rlr_backend()->bind_texture(cm->texture, RLR_BACKEND_TEXTURE_CUBE_MAP, texture_slot);
+void rlr_res_cube_map_bind(rlr_res_t cm, uint8_t texture_slot) {
+    rlr_backend()->bind_texture(rlr_mem_man_get_res_cube_map(rlr_mem_man(), cm)->texture, RLR_BACKEND_TEXTURE_CUBE_MAP, texture_slot);
 }
 
-void rlr_res_cube_map_free(rlr_res_cube_map_t* cm) {
+void rlr_res_cube_map_free(rlr_res_t id) {
+    if(id == RLR_NULL) {
+        return;
+    }
+
+    rlr_res_cube_map_t* cm = rlr_mem_man_get_res_cube_map(rlr_mem_man(), id);
     if(!cm) {
         return;
     }
     rlr_backend()->free_texture(cm->texture);
-    free(cm);
+    rlr_mem_man_free_res_cube_map(rlr_mem_man(), id);
 }

@@ -295,11 +295,20 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     return final;
 }
 
-rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_location) {
+rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
     cgltf_data* data = NULL;
-    rlr_res_animated_model_t* model = malloc(sizeof(rlr_res_animated_model_t));
+    rlr_res_t id = RLR_NULL;
+    rlr_res_animated_model_t* model = NULL;
     rlr_animated_model_vertex_t* vertices = NULL;
     uint32_t* indices = NULL;
+
+    id = rlr_mem_man_allocate_res_animated_model(rlr_mem_man(), (rlr_res_animated_model_t){0});
+    if(id == RLR_NULL) {
+        rlr_error_set(RLR_ERR_NO_MEMORY);
+        goto err;
+    }
+    
+    model = rlr_mem_man_get_res_animated_model(rlr_mem_man(), id);
     if(!model) {
         rlr_error_set(RLR_ERR_NO_MEMORY);
         goto err;
@@ -493,7 +502,7 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
             arrpush(model->meshes, (rlr_res_animated_mesh_t){0});
             rlr_res_animated_mesh_t* mesh = &arrlast(model->meshes);
             mesh->is_skinned = has_joints && has_weights;
-            mesh->material_ubo = NULL;
+            mesh->material_ubo = RLR_NULL;
             mesh->vbo = rlr_backend()->create_buffer();
             mesh->ebo = rlr_backend()->create_buffer();
             mesh->index_count = arrlenu(indices);
@@ -517,14 +526,15 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
     }
 
     cgltf_free(data);
-    return model;
+    return id;
 err:
     cgltf_free(data);
-    rlr_res_animated_model_free(model);
-    return NULL;
+    rlr_res_animated_model_free(id);
+    return RLR_NULL;
 }
 
-int32_t rlr_res_animated_model_get_animation_index(rlr_res_animated_model_t* model, const char* animation_name) {
+int32_t rlr_res_animated_model_get_animation_index(rlr_res_t id, const char* animation_name) {
+    rlr_res_animated_model_t* model = rlr_mem_man_get_res_animated_model(rlr_mem_man(), id);
     for(int32_t i = 0; i < arrlen(model->animations.metas); i++) {
         if(strcmp(model->animations.metas[i].name, animation_name) == 0) {
             return i;
@@ -533,7 +543,11 @@ int32_t rlr_res_animated_model_get_animation_index(rlr_res_animated_model_t* mod
     return -1;
 }
 
-void rlr_res_animated_model_free(rlr_res_animated_model_t* model) {
+void rlr_res_animated_model_free(rlr_res_t id) {
+    if(id == RLR_NULL) {
+        return;
+    }
+    rlr_res_animated_model_t* model = rlr_mem_man_get_res_animated_model(rlr_mem_man(), id);
     if(!model) {
         return;
     }
@@ -548,5 +562,5 @@ void rlr_res_animated_model_free(rlr_res_animated_model_t* model) {
         rlr_res_texture_free(mesh->texture_base);
     }
     arrfree(model->meshes);
-    free(model);
+    rlr_mem_man_free_res_animated_model(rlr_mem_man(), id);
 }

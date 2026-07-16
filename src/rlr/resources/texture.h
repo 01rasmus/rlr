@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <cgltf.h>
+#include "rlr/def.h"
 
 typedef enum rlr_res_texture_filter_t {
     RLR_RES_TEXTURE_FILTER_NEAREST = 0,
@@ -15,8 +16,8 @@ typedef struct rlr_res_texture_t {
     float height;
 } rlr_res_texture_t;
 
-rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter);
-rlr_res_texture_t* rlr_res_texture_default();
-rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex);
-void rlr_res_texture_bind(rlr_res_texture_t* texture, uint8_t texture_slot);
-void rlr_res_texture_free(rlr_res_texture_t* texture);
+rlr_res_t rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter);
+rlr_res_t rlr_res_texture_default();
+rlr_res_t rlr_res_texture_load_cgltf_base(cgltf_texture* tex);
+void rlr_res_texture_bind(rlr_res_t texture, uint8_t texture_slot);
+void rlr_res_texture_free(rlr_res_t texture);
