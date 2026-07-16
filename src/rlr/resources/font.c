@@ -1,10 +1,10 @@
 #include <stdlib.h>
-#include "external/stb_ds.h"
-#include "internal/impl.h"
-#include "rlr/io/csv.h"
-#include "rlr/io/str.h"
-#include "rlr/error.h"
-#include "rlr/rlr.h"
+#include "../../external/stb_ds.h"
+#include "../../internal/impl.h"
+#include "../io/csv.h"
+#include "../io/str.h"
+#include "../error.h"
+#include "../rlr.h"
 #include "font.h"
 
 typedef struct rlr_res_font_load_context_t {

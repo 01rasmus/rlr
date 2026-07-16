@@ -1,5 +1,5 @@
 #include <stddef.h>
-#include "internal/impl.h"
+#include "../../internal/impl.h"
 #include "model_occluder.h"
 
 rlr_obj_t rlr_obj_model_occluder_create(rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor) {

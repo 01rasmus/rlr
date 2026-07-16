@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
-#include "rlr/math/vec.h"
-#include "rlr/def.h"
+#include "../../rlr/math/vec.h"
+#include "../../rlr/def.h"
 
 #define RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH        (128)
 #define RLR_RES_ANIMATED_MODEL_ANIMATION_TEXTURE_SIZE       (2048)

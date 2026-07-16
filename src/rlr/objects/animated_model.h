@@ -1,8 +1,8 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
-#include "rlr/math/matrix.h"
-#include "rlr/def.h"
+#include "../math/matrix.h"
+#include "../def.h"
 
 #define RLR_OBJ_ANIMATION_STATE_COUNT       2
 #define RLR_OBJ_ANIMATION_PRIMARY           0

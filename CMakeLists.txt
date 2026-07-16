@@ -27,21 +27,13 @@ file(GLOB_RECURSE RL_RENDER_SRC "${SRC_DIR}/*.c")
 set(SRC ${RL_RENDER_SRC})
 
 # binaries
-set(EXECUTABLE "rlr_exec")
 set(LIBRARY "rlr")
 add_library(${LIBRARY} ${SRC})
-add_executable(${EXECUTABLE} main.c)
 
 # incudes
-target_include_directories(${LIBRARY} PRIVATE ${LIB_DIR} ${SRC_DIR} ${LIB_DIR}/glfw/include)
-target_include_directories(${EXECUTABLE} PRIVATE ${LIB_DIR} ${SRC_DIR} ${LIB_DIR}/glfw/include)
+target_include_directories(${LIBRARY} PUBLIC ${LIB_DIR} PRIVATE ${LIB_DIR}/glfw/include)
 
 # library linking
-target_link_libraries(${LIBRARY} glfw ${OPENGL_LIBS})
-target_link_libraries(${EXECUTABLE} ${LIBRARY})
-
+target_link_libraries(${LIBRARY} PRIVATE glfw ${OPENGL_LIBS})
 target_compile_options(${LIBRARY} PRIVATE -O3 -pg)
-target_compile_options(${EXECUTABLE} PRIVATE -O3 -pg)
-
 target_link_options(${LIBRARY} PRIVATE -pg)
-target_link_options(${EXECUTABLE} PRIVATE -pg)

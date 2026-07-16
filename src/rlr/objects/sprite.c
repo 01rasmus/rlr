@@ -1,7 +1,7 @@
-#include "external/stb_ds.h"
-#include "internal/impl.h"
-#include "rlr/resources/texture.h"
-#include "rlr/rlr.h"
+#include "../../external/stb_ds.h"
+#include "../../internal/impl.h"
+#include "../resources/texture.h"
+#include "../rlr.h"
 #include "sprite.h"
 
 rlr_obj_t rlr_obj_sprite_create(rlr_res_t texture_id, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, int32_t layer) {

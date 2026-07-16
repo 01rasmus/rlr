@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include "rlr/def.h"
+#include "../def.h"
 #include "texture.h"
 
 /*

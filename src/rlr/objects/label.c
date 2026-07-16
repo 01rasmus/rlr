@@ -1,10 +1,10 @@
 #include <utf8.h>
-#include "external/stb_ds.h"
-#include "internal/backends/backend.h"
-#include "internal/impl.h"
-#include "rlr/resources/font.h"
-#include "rlr/math/vec.h"
-#include "rlr/rlr.h"
+#include "../../external/stb_ds.h"
+#include "../../internal/backends/backend.h"
+#include "../../internal/impl.h"
+#include "../resources/font.h"
+#include "../math/vec.h"
+#include "../rlr.h"
 #include "label.h"
 
 typedef struct rlr_obj_label_vertex_t {

@@ -4,8 +4,8 @@
 #include "pipelines/model.h"
 #include "pipelines/ui.h"
 #include "core/memory_manager.h"
-#include "rlr/math/matrix.h"
-#include "rlr/rlr.h"
+#include "../rlr/math/matrix.h"
+#include "../rlr/rlr.h"
 
 typedef struct rlr_backend_t rlr_backend_t;
 typedef struct GLFWwindow GLFWwindow;

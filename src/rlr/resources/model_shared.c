@@ -1,9 +1,9 @@
 #include <string.h>
 #include <math.h>
-#include "rlr/resources/texture.h"
-#include "rlr/resources/uniform.h"
-#include "rlr/error.h"
-#include "internal/impl.h"
+#include "../../internal/impl.h"
+#include "../resources/texture.h"
+#include "../resources/uniform.h"
+#include "../error.h"
 #include "model_shared.h"
 
 cgltf_data* rlr_res_model_load_glb(const char* filename) {

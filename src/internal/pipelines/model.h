@@ -1,8 +1,8 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
-#include "rlr/math/matrix.h"
-#include "rlr/def.h"
+#include "../../rlr/math/matrix.h"
+#include "../../rlr/def.h"
 
 typedef struct rlr_pipeline_static_model_instance_t {
     rlr_affine_mat4x3_t matrix;

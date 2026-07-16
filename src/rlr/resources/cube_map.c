@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stb_image.h>
-#include "internal/impl.h"
-#include "rlr/error.h"
-#include "rlr/rlr.h"
+#include "../../internal/impl.h"
+#include "../error.h"
+#include "../rlr.h"
 #include "cube_map.h"
 
 #define FREE_TEXTURE_DATA(ARRAY) \

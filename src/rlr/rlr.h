@@ -1,7 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
-#include "rlr/math/vec.h"
+#include "math/vec.h"
 #include "def.h"
 
 typedef struct rlr_statistics_t {

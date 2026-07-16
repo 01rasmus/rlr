@@ -1,8 +1,8 @@
 #include <stdint.h>
 #include <stb_image.h>
-#include "internal/impl.h"
-#include "rlr/error.h"
-#include "rlr/rlr.h"
+#include "../../internal/impl.h"
+#include "../error.h"
+#include "../rlr.h"
 #include "texture.h"
 
 rlr_res_t rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter) {

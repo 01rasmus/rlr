@@ -1,7 +1,7 @@
 #pragma once
 #include <stdbool.h>
-#include "internal/backends/backend.h"
-#include "rlr/math/rect.h"
+#include "../backends/backend.h"
+#include "../../rlr/math/rect.h"
 
 typedef struct rlr_pipeline_ui_draw_command_t {
     rlr_res_t shader;

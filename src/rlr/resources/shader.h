@@ -1,7 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
-#include "rlr/def.h"
+#include "../def.h"
 
 #define RLR_SHADER_ERROR_LENGTH       4096
 #define RLR_SHADER_INLINE(SRC)        "#version 330 core\n" #SRC

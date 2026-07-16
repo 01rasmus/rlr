@@ -1,7 +1,7 @@
 #include <stdlib.h>
-#include "external/stb_ds.h"
-#include "internal/impl.h"
-#include "rlr/math/matrix.h"
+#include "../../external/stb_ds.h"
+#include "../../rlr/math/matrix.h"
+#include "../../internal/impl.h"
 #include "animated_model.h"
 
 rlr_obj_t rlr_obj_animated_model_create(rlr_res_t model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {

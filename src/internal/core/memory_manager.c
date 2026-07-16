@@ -1,4 +1,4 @@
-#include "external/rlpp.h"
+#include "../../external/rlpp.h"
 #include "memory_manager.h"
 
 bool rlr_mem_man_init(rlr_mem_man_t* rm) {

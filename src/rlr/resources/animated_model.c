@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cgltf.h>
-#include "external/stb_ds.h"
-#include "internal/impl.h"
-#include "rlr/resources/texture.h"
-#include "rlr/resources/uniform.h"
-#include "rlr/math/quat.h"
-#include "rlr/math/matrix.h"
-#include "rlr/error.h"
+#include "../../external/stb_ds.h"
+#include "../../internal/impl.h"
+#include "../resources/texture.h"
+#include "../resources/uniform.h"
+#include "../math/quat.h"
+#include "../math/matrix.h"
+#include "../error.h"
 #include "model_shared.h"
 #include "animated_model.h"
 

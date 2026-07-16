@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include "rlr/def.h"
+#include "../def.h"
 
 typedef struct rlr_res_cube_map_t {
     uint64_t texture;

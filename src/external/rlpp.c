@@ -1,2 +1,2 @@
 #define RLPP_IMPLEMENTATION
-#include "external/rlpp.h"
+#include "rlpp.h"

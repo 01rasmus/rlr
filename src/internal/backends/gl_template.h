@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stb_image_resize2.h>
-#include "rlr/error.h"
+#include "../../rlr/error.h"
 #include "backend.h"
 
 #define RLR_BUILD_VERSION(MAJOR, MINOR)     (((uint64_t)(MAJOR) << 32) + (uint64_t)(MINOR))

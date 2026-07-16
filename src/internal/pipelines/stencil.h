@@ -1,6 +1,6 @@
 #pragma once
-#include "internal/backends/backend.h"
-#include "rlr/def.h"
+#include "../backends/backend.h"
+#include "../../rlr/def.h"
 
 #define RLR_PIPELINE_STENCIL    (&rlr()->pipeline_stencil)
 

@@ -1,8 +1,8 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
-#include "rlr/math/matrix.h"
-#include "rlr/def.h"
+#include "../math/matrix.h"
+#include "../def.h"
 
 typedef struct rlr_pipeline_static_model_draw_command_t rlr_pipeline_static_model_draw_command_t;
 

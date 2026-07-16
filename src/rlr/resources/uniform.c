@@ -1,7 +1,7 @@
 #include <stdlib.h>
-#include "internal/impl.h"
-#include "rlr/error.h"
-#include "rlr/rlr.h"
+#include "../../internal/impl.h"
+#include "../error.h"
+#include "../rlr.h"
 #include "uniform.h"
 
 rlr_res_t rlr_res_uniform_create_dynamic(uint64_t size) {

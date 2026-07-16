@@ -1,19 +1,19 @@
 #pragma once
 #include <stdbool.h>
 #include <assert.h>
-#include "rlr/resources/animated_model.h"
-#include "rlr/resources/cube_map.h"
-#include "rlr/resources/font.h"
-#include "rlr/resources/shader.h"
-#include "rlr/resources/static_model.h"
-#include "rlr/resources/texture.h"
-#include "rlr/resources/uniform.h"
-#include "rlr/objects/animated_model.h"
-#include "rlr/objects/label.h"
-#include "rlr/objects/model_occluder.h"
-#include "rlr/objects/sprite.h"
-#include "rlr/objects/static_model.h"
-#include "rlr/def.h"
+#include "../../rlr/resources/animated_model.h"
+#include "../../rlr/resources/cube_map.h"
+#include "../../rlr/resources/font.h"
+#include "../../rlr/resources/shader.h"
+#include "../../rlr/resources/static_model.h"
+#include "../../rlr/resources/texture.h"
+#include "../../rlr/resources/uniform.h"
+#include "../../rlr/objects/animated_model.h"
+#include "../../rlr/objects/label.h"
+#include "../../rlr/objects/model_occluder.h"
+#include "../../rlr/objects/sprite.h"
+#include "../../rlr/objects/static_model.h"
+#include "../../rlr/def.h"
 
 /*
     a memory manager that stores all

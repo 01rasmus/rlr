@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
-#include "rlr/math/vec.h"
-#include "rlr/def.h"
+#include "../math/vec.h"
+#include "../def.h"
 
 typedef struct rlr_res_font_t rlr_res_font_t;
 

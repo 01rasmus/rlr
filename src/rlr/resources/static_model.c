@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <cgltf.h>
-#include "external/stb_ds.h"
-#include "internal/impl.h"
-#include "rlr/resources/model_shared.h"
-#include "rlr/resources/texture.h"
-#include "rlr/resources/uniform.h"
-#include "rlr/math/vec.h"
-#include "rlr/error.h"
-#include "rlr/rlr.h"
+#include "../../external/stb_ds.h"
+#include "../../internal/impl.h"
+#include "../resources/model_shared.h"
+#include "../resources/texture.h"
+#include "../resources/uniform.h"
+#include "../math/vec.h"
+#include "../error.h"
+#include "../rlr.h"
 #include "static_model.h"
 
 rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {

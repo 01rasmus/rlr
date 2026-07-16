@@ -1,10 +1,10 @@
 #include <stddef.h>
-#include "external/stb_ds.h"
-#include "internal/impl.h"
-#include "rlr/resources/shader.h"
-#include "rlr/objects/model_occluder.h"
-#include "rlr/math/vec.h"
-#include "rlr/rlr.h"
+#include "../../external/stb_ds.h"
+#include "../impl.h"
+#include "../../rlr/resources/shader.h"
+#include "../../rlr/objects/model_occluder.h"
+#include "../../rlr/math/vec.h"
+#include "../../rlr/rlr.h"
 #include "stencil.h"
 
 #define RLR_PIPELINE_STENCIL    (&rlr()->pipeline_stencil)

@@ -1,6 +1,6 @@
 #include <GLFW/glfw3.h>
-#include "internal/backends/backend.h"
 #include "backend_selection.h"
+#include "backend.h"
 
 typedef bool (*rlr_backend_selection_function_t)(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title);
 

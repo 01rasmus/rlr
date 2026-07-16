@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <cgltf.h>
-#include "rlr/def.h"
+#include "../def.h"
 
 typedef enum rlr_res_texture_filter_t {
     RLR_RES_TEXTURE_FILTER_NEAREST = 0,

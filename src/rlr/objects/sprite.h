@@ -1,8 +1,8 @@
 #pragma once
 #include <stdint.h>
-#include "rlr/math/anchor.h"
-#include "rlr/math/rect.h"
-#include "rlr/def.h"
+#include "../math/anchor.h"
+#include "../math/rect.h"
+#include "../def.h"
 
 typedef struct rlr_res_texture_t rlr_res_texture_t;
 

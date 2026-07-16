@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "internal/impl.h"
-#include "rlr/error.h"
-#include "rlr/rlr.h"
+#include "../../internal/impl.h"
+#include "../error.h"
+#include "../rlr.h"
 #include "shader.h"
 
 rlr_res_t rlr_res_shader_create(const char* vertex_string, const char* fragment_string) {

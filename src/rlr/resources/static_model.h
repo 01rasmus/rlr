@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
-#include "rlr/math/vec.h"
-#include "rlr/def.h"
+#include "../math/vec.h"
+#include "../def.h"
 
 typedef struct rlr_static_model_vertex_t {
     rlr_vec3_t pos;
