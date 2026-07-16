@@ -103,7 +103,7 @@ typedef enum rlr_backend_type_t {
     X(void,         draw_elements,                  (uint64_t offset, uint32_t element_count, rlr_backend_type_t type)) \
     X(void,         draw_elements_instanced,        (uint64_t offset, uint32_t element_count, rlr_backend_type_t type, uint32_t instance_count)) \
     X(void,         clear,                          (rlr_backend_clear_flag_t clear_flags)) \
-    X(void,         update_buffer,                  (rlr_backend_buffer_target_t target, uint64_t size, const void* data, rlr_backend_buffer_usage_t update_type)) \
+    X(void,         update_buffer,                  (rlr_backend_buffer_target_t target, size_t size, const void* data, rlr_backend_buffer_usage_t update_type)) \
     X(const char*,  get_implementation,             ()) \
     X(const char*,  get_gpu_name,                   ()) \
     X(const char*,  get_context_version,            ()) \

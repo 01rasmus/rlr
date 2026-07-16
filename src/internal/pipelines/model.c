@@ -224,9 +224,8 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
     out vec3 frag_normal;
     out vec3 frag_vert_pos;
 
-    const float EPSILON = 0.01;
     const float UINT8_MAX_RATIO = 1.0 / 255.0;
-    const float UINT16_MAX_RATIO = 1.0 / 65535;
+    const float UINT16_MAX_RATIO = 1.0 / 65535.0;
 
     mat4 fetch_pose(uint matrix_index, uint tex_w) {
         uint texel_index = matrix_index * 4u;
@@ -267,13 +266,13 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
             float(weights[3]) * UINT8_MAX_RATIO
         );
 
-        float lerp_prim = pose_lerp_primary * UINT8_MAX_RATIO;
-        float lerp_sec = pose_lerp_secondary * UINT8_MAX_RATIO;
+        float lerp_prim = float(pose_lerp_primary) * UINT8_MAX_RATIO;
+        float lerp_sec = float(pose_lerp_secondary) * UINT8_MAX_RATIO;
         float lerp_trans = float(transition_lerp) * UINT16_MAX_RATIO;
 
         uint tex_w = uint(textureSize(poses, 0).x);
         mat4 skin = fetch_skin_matrix(tex_w, w, joints, lerp_prim, pose_a_offset_primary, pose_b_offset_primary);
-        if(transition_lerp > 0u && lerp_trans < 1.0) {
+        if(transition_lerp > 0u) {
             mat4 skin_secondary = fetch_skin_matrix(tex_w, w, joints, lerp_sec, pose_a_offset_secondary, pose_b_offset_secondary);
             skin = (1.0 - lerp_trans) * skin + lerp_trans * skin_secondary;
         }
@@ -281,7 +280,7 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
         vec4 skinned_pos = skin * vec4(pos, 1.0);
         vec4 world_pos = instance_matrix * skinned_pos;
         frag_vert_pos = world_pos.xyz;
-        frag_normal = mat3(transpose(inverse(instance_matrix))) * (skin * vec4(normal, 0)).xyz;
+        frag_normal = mat3(transpose(inverse(instance_matrix))) * (skin * vec4(normal, 0.0)).xyz;
         frag_uv = uv;
         gl_Position = model.vp * world_pos;
     }
@@ -548,7 +547,9 @@ rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_d
         }
     }
 
-    arrpush(pm->opaque_static_model_commands, rlr_pipeline_model_create_static_model_draw_command(model, shader, arrlen(pm->opaque_static_model_commands)));
+    uint64_t new_index = arrlenu(pm->opaque_static_model_commands);
+    rlr_pipeline_static_model_draw_command_t new_cmd = rlr_pipeline_model_create_static_model_draw_command(model, shader, new_index);
+    arrpush(pm->opaque_static_model_commands, new_cmd);
     return &arrlast(pm->opaque_static_model_commands);
 }
 
@@ -563,7 +564,9 @@ rlr_pipeline_animated_model_draw_command_t* rlr_pipeline_model_find_animated_mod
         }
     }
     
-    arrpush(pm->opaque_animated_model_commands, rlr_pipeline_model_create_animated_model_draw_command(model, shader, arrlen(pm->opaque_animated_model_commands)));
+    uint64_t new_index = arrlenu(pm->opaque_animated_model_commands);
+    rlr_pipeline_animated_model_draw_command_t new_cmd = rlr_pipeline_model_create_animated_model_draw_command(model, shader, new_index);
+    arrpush(pm->opaque_animated_model_commands, new_cmd);
     return &arrlast(pm->opaque_animated_model_commands);
 }
 

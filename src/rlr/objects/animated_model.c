@@ -6,6 +6,10 @@
 
 rlr_obj_t rlr_obj_animated_model_create(rlr_res_t model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
     rlr_obj_t handle = rlr_mem_man_allocate_obj_animated_model(rlr_mem_man(), (rlr_obj_animated_model_t){0});
+    if(handle == RLR_NULL) {
+        goto err;
+    }
+
     rlr_obj_animated_model_t* obj = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), handle);
     if(!obj) {
         goto err;

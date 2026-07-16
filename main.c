@@ -17,7 +17,7 @@ int32_t main() {
 
     rlr_res_t font = RLR_NULL;
     rlr_res_t font2 = RLR_NULL;
-    rlr_init("rl render", 1024, 768, RLR_INIT_FLAG_FULLSCREEN);
+    rlr_init("rl render", 800, 480, 0);
 
     font = rlr_res_font_load("assets/noto_sans.csv", "assets/noto_sans.png", 2.0);
     font2 = rlr_res_font_load("assets/tinos-small.csv", "assets/tinos-small.png", 8.0);
@@ -104,7 +104,7 @@ int32_t main() {
         //rlr_obj_static_model_set_trs(model, NULL, &rlr_quat(cos(rotation / 2), 0, 1 * sin(rotation / 2), 0), NULL);
 
         if(!rlr_obj_animated_model_is_animating(move_obj)) {
-           rlr_obj_animated_model_set_animation_blended(move_obj, 1, 1.0, 0.2, true);
+           rlr_obj_animated_model_set_animation_blended(move_obj, 2, 1.0, 0.2, true);
         }
     }
 

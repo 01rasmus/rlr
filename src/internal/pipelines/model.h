@@ -64,8 +64,8 @@ rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_d
 rlr_pipeline_animated_model_draw_command_t* rlr_pipeline_model_find_animated_model_draw_command(rlr_res_t model, rlr_res_t shader);
 
 /*
-returns the index to the instance buffer.
-returns -1 on failure
+    returns the index to the instance buffer.
+    returns -1 on failure
 */
 uint32_t rlr_pipeline_model_add_static_model_instance(rlr_pipeline_static_model_draw_command_t* command, rlr_pipeline_static_model_instance_t data);
 void rlr_pipeline_model_update_static_model_instance(uint32_t cmd_index, uint32_t cmd_generation, uint32_t instance_index, rlr_pipeline_static_model_instance_t data);

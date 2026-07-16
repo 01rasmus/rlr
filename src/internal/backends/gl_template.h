@@ -258,7 +258,20 @@ static uint64_t gl_create_animation_texture(rlr_mat4x4_t* matrices, uint32_t mat
     GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     GL_CALL(gl->PixelStorei(GL_UNPACK_ALIGNMENT, 4));
 
-    GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, matrices));
+    GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL));
+
+    uint32_t complete_rows = texel_count / width;
+    uint32_t remaining_texels = texel_count % width;
+    float* data = (float*)matrices;
+
+    if(complete_rows > 0) {
+        GL_CALL(gl->TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, complete_rows, GL_RGBA, GL_FLOAT, data));
+    }
+
+    if(remaining_texels > 0) {
+        data += complete_rows * width * 4;
+        GL_CALL(gl->TexSubImage2D(GL_TEXTURE_2D, 0, 0, complete_rows, remaining_texels, 1, GL_RGBA, GL_FLOAT, data));
+    }
 
     return texture;
 err:
@@ -480,7 +493,7 @@ static void gl_bind_buffer(uint64_t buffer, rlr_backend_buffer_target_t target) 
     GL_CALL(gl->BindBuffer(target, buffer));
 }
 
-static void gl_update_buffer(rlr_backend_buffer_target_t target, uint64_t size, const void* data, rlr_backend_buffer_usage_t usage_type) {
+static void gl_update_buffer(rlr_backend_buffer_target_t target, size_t size, const void* data, rlr_backend_buffer_usage_t usage_type) {
     GL_CALL(gl->BufferData(target, size, data, usage_type));
 }
 
