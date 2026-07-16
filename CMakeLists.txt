@@ -10,10 +10,10 @@ else()
 endif()
 
 # directories
-set(LIB_DIR "${CMAKE_SOURCE_DIR}/lib")
-set(OUT_DIR "${CMAKE_SOURCE_DIR}/bin")
+set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib")
+set(OUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 set(OBJ_DIR "${OUT_DIR}/obj")
-set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
+set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 # glfw
 set(GLFW_BUILD_EXAMPLES OFF)
