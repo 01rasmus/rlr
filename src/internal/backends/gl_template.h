@@ -132,7 +132,7 @@ static int32_t texture_format(int32_t channels) {
     }
 }
 
-static void gl_generate_srgb_mipmaps(uint8_t* color_data, uint32_t src_width, uint32_t src_height) {
+static void gl_generate_srgb_mipmaps(const uint8_t* color_data, uint32_t src_width, uint32_t src_height) {
 #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
     GL_CALL(gl->GenerateMipmap(GL_TEXTURE_2D));
 #else
@@ -150,7 +150,7 @@ static void gl_generate_srgb_mipmaps(uint8_t* color_data, uint32_t src_width, ui
 #endif
 }
 
-static uint64_t gl_create_texture(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t) {
+static uint64_t gl_create_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t) {
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
@@ -187,19 +187,19 @@ static uint64_t gl_create_texture(uint8_t* color_data, uint32_t width, uint32_t 
     return (uint64_t)texture;
 }
 
-static uint64_t gl_create_linear_texture(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
+static uint64_t gl_create_linear_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
     return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-static uint64_t gl_create_linear_mipmap_texture(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
+static uint64_t gl_create_linear_mipmap_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
     return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-static uint64_t gl_create_nearest_texture(uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
+static uint64_t gl_create_nearest_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
     return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 }
 
-static uint64_t gl_create_cube_map_texture(uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height, int32_t channels) {
+static uint64_t gl_create_cube_map_texture(const uint8_t* right, const uint8_t* left, const uint8_t* top, const uint8_t* bottom, const uint8_t* front, const uint8_t* back, uint32_t width, uint32_t height, int32_t channels) {
     uint32_t texture = 0;
     GL_CALL(gl->GenTextures(1, &texture));
     if(texture == 0) {

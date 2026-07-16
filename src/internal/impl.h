@@ -59,6 +59,7 @@ typedef struct rlr_t {
 
     //built in resources
     rlr_res_t texture_white;
+    rlr_res_t cube_map_white;
     rlr_res_t ubos[RLR_INTERNAL_UBO_COUNT];
 
     //statistics
@@ -66,9 +67,6 @@ typedef struct rlr_t {
     rlr_statistics_t statistics_interval;
     rlr_statistics_t statistics_temp;
     double statistics_timer;
-
-    //misc (todo: remove and add a new model pipeline)
-    rlr_res_t test_cube_map;
 } rlr_t;
 
 extern rlr_vec2_t rlr_quad_vertices[4];

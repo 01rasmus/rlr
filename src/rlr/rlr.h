@@ -11,6 +11,7 @@ typedef struct rlr_statistics_t {
 } rlr_statistics_t;
 
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags);
+void rlr_set_cube_map(rlr_res_t cube_map_id);
 const char* rlr_get_backend_implementation();
 const char* rlr_get_backend_context();
 const char* rlr_get_gpu_name();

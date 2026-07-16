@@ -94,18 +94,8 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
 
     //setup default resources
     ctx->texture_white = rlr_res_texture_default();
-
-    // todo: remove
-    //_rlr->test_cube_map = rlr_res_cube_map_load("assets/skybox/right.jpg", "assets/skybox/left.jpg", "assets/skybox/top.jpg", "assets/skybox/bottom.jpg", "assets/skybox/front.jpg", "assets/skybox/back.jpg");
-    ctx->test_cube_map = rlr_res_cube_map_load(
-        "assets/s/px.png",
-        "assets/s/nx.png",
-        "assets/s/py.png",
-        "assets/s/ny.png",
-        "assets/s/pz.png",
-        "assets/s/nz.png"
-    );
-    rlr_res_cube_map_bind(ctx->test_cube_map, 4);
+    ctx->cube_map_white = rlr_res_cube_map_default();
+    rlr_res_cube_map_bind(ctx->cube_map_white, 4);
 
     //setup timer
     ctx->last_time = glfwGetTime();
@@ -125,6 +115,11 @@ rlr_backend_t* rlr_backend() {
 
 rlr_mem_man_t* rlr_mem_man() {
     return &ctx->res_man;
+}
+
+void rlr_set_cube_map(rlr_res_t cube_map_id) {
+    rlr_res_t cube_map = cube_map_id == RLR_NULL ? ctx->cube_map_white : cube_map_id;
+    rlr_res_cube_map_bind(cube_map, 4);
 }
 
 rlr_vec2_t rlr_get_framebuffer_size() {

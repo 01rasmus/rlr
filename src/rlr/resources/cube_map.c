@@ -69,6 +69,35 @@ err:
     return RLR_NULL;
 }
 
+rlr_res_t rlr_res_cube_map_default() {
+    rlr_res_t id = RLR_NULL;
+    rlr_res_cube_map_t* cm = NULL;
+
+    id = rlr_mem_man_allocate_res_cube_map(rlr_mem_man(), (rlr_res_cube_map_t){0});
+    if(id == RLR_NULL) {
+        rlr_error_set(RLR_ERR_NO_MEMORY);
+        goto err;
+    }
+    
+    cm = rlr_mem_man_get_res_cube_map(rlr_mem_man(), id);
+    if(!cm) {
+        rlr_error_set(RLR_ERR_NO_MEMORY);
+        goto err;
+    }
+
+    const uint8_t white[3] = {255, 255, 255};
+    cm->texture = rlr_backend()->create_cube_map_texture(white, white, white, white, white, white, 1, 1, 3);
+    if(!cm->texture) {
+        rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
+        goto err;
+    }
+
+    return id;
+err:
+    rlr_res_cube_map_free(id);
+    return RLR_NULL;
+}
+
 void rlr_res_cube_map_bind(rlr_res_t cm, uint8_t texture_slot) {
     rlr_backend()->bind_texture(rlr_mem_man_get_res_cube_map(rlr_mem_man(), cm)->texture, RLR_BACKEND_TEXTURE_CUBE_MAP, texture_slot);
 }

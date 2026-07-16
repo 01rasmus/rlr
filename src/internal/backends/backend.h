@@ -68,12 +68,12 @@ typedef enum rlr_backend_type_t {
 
 #define RLR_BACKEND_FUNCTIONS(X) \
     X(uint64_t,     create_vertex_array,            ()) \
-    X(uint64_t,     create_texture,                 (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
+    X(uint64_t,     create_texture,                 (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
     X(uint64_t,     create_buffer,                  ()) \
-    X(uint64_t,     create_linear_texture,          (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
-    X(uint64_t,     create_linear_mipmap_texture,   (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
-    X(uint64_t,     create_nearest_texture,         (uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
-    X(uint64_t,     create_cube_map_texture,        (uint8_t* right, uint8_t* left, uint8_t* top, uint8_t* bottom, uint8_t* front, uint8_t* back, uint32_t width, uint32_t height, int32_t channels)) \
+    X(uint64_t,     create_linear_texture,          (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
+    X(uint64_t,     create_linear_mipmap_texture,   (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
+    X(uint64_t,     create_nearest_texture,         (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
+    X(uint64_t,     create_cube_map_texture,        (const uint8_t* right, const uint8_t* left, const uint8_t* top, const uint8_t* bottom, const uint8_t* front, const uint8_t* back, uint32_t width, uint32_t height, int32_t channels)) \
     X(uint64_t,     create_animation_texture,       (rlr_mat4x4_t* matrices, uint32_t matrix_count, uint32_t width)) \
     X(uint64_t,     create_shader,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
     X(void,         bind_vertex_array,              (uint64_t vao)) \
