@@ -20,3 +20,7 @@ static inline int64_t rlr_clamp(int64_t value, int64_t min, int64_t max) {
     }
     return value;
 }
+
+static inline float rlr_smoothstep(float t) {
+    return t * t * (3.0 - 2.0 * t);
+}

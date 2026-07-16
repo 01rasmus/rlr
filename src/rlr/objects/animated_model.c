@@ -24,18 +24,23 @@ rlr_obj_t rlr_obj_animated_model_create(rlr_res_animated_model_t* model, rlr_vec
         .cmd_index = cmd->index,
         .cmd_generation = cmd->generation,
         .instance_index = 0,
-        .animation_speed = 1.0,
-        .animation_time = 0.0,
-        .current_animation_index = -1,
+        .animation_states = {
+            {.animation_index = -1, .animation_loop = false, .animation_speed = 1.0, .animation_time = 0.0 },
+            {.animation_index = -1, .animation_loop = false, .animation_speed = 1.0, .animation_time = 0.0 },
+        },
     };
 
     rlr_mat4x4_t trs = rlr_mat4x4_trs(&translation, &rotation, &scale);
     rlr_affine_mat4x3_t affine = rlr_mat4x4_to_affine_mat4x3(&trs);
     rlr_pipeline_animated_model_instance_t instance = {
         .matrix = affine,
-        .pose_a_offset = 0,
-        .pose_b_offset = 0,
-        .lerp = 0.0,
+        .lerp_primary = 0.0,
+        .lerp_secondary = 0.0,
+        .pose_a_offset_primary = 0,
+        .pose_b_offset_primary = 0,
+        .pose_a_offset_secondary = 0,
+        .pose_b_offset_secondary = 0,
+        .transition_lerp = 0.0,
     };
     obj->instance_index = rlr_pipeline_model_add_animated_model_instance(cmd, instance);
     return handle;
@@ -61,25 +66,38 @@ rlr_vec3_t rlr_obj_animated_model_get_scale(rlr_obj_t handle) {
 
 int32_t rlr_obj_animated_model_get_current_animation(rlr_obj_t handle) {
     rlr_obj_animated_model_t* model = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), handle);
-    return model->current_animation_index;
+    return model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_index;
 }
 
 bool rlr_obj_animated_model_is_animating(rlr_obj_t handle) {
     rlr_obj_animated_model_t* model = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), handle);
-    return model->current_animation_index != -1;
+    return model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_index != -1;
 }
 
 void rlr_obj_animated_model_set_animation(rlr_obj_t handle, int32_t animation_index, float speed, bool loop) {
     rlr_obj_animated_model_t* model = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), handle);
-    model->current_animation_index = animation_index;
-    model->animation_time = 0.0;
-    model->animation_speed = speed;
-    model->animation_loop = loop;
+    model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_index = animation_index;
+    model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_time = 0.0;
+    model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_speed = speed;
+    model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_loop = loop;
+    model->transition_time = 0.0;
+}
+
+void rlr_obj_animated_model_set_animation_blended(rlr_obj_t handle, int32_t animation_index, float speed, float transition_time, bool loop) {
+    rlr_obj_animated_model_t* model = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), handle);
+    model->transition_time = transition_time;
+    model->current_transition_time = 0.0;
+    model->animation_states[RLR_OBJ_ANIMATION_SECONDARY] = model->animation_states[RLR_OBJ_ANIMATION_PRIMARY];
+    model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_index = animation_index;
+    model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_time = 0.0;
+    model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_speed = speed;
+    model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_loop = loop;
+    rlr_pipeline_model_swap_animation_states(model->cmd_index, model->cmd_generation, model->instance_index);
 }
 
 void rlr_obj_animated_model_set_animation_speed(rlr_obj_t handle, float speed) {
     rlr_obj_animated_model_t* model = rlr_mem_man_get_obj_animated_model(rlr_mem_man(), handle);
-    model->animation_speed = speed;
+    model->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_speed = speed;
 }
 
 void rlr_obj_animated_model_set_trs(rlr_obj_t handle, const rlr_vec3_t* translation, const rlr_quat_t* rotation, const rlr_vec3_t* scale) {

@@ -163,7 +163,7 @@ static uint64_t gl_create_texture(uint8_t* color_data, uint32_t width, uint32_t 
 
     gl->PixelStorei(GL_UNPACK_ALIGNMENT, channels == 3 ? 1 : 4);
 
-    if(false) {
+    if(use_srgb_color_space) {
         int32_t output_w = 64;
         int32_t output_h = 64;
         stbir_resize_uint8_srgb(color_data, width, height, 0, texture_resize_buffer, output_w, output_h, 0, channels);
@@ -645,8 +645,8 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     const char* gpu_renderer = gl->GetString(GL_RENDERER);
     snprintf(gpu_name, 256, "%s %s", gpu_vendor, gpu_renderer);
 
-    //GL_CALL(gl->Enable(GL_CULL_FACE));
-    //GL_CALL(gl->CullFace(GL_BACK));
+    GL_CALL(gl->Enable(GL_CULL_FACE));
+    GL_CALL(gl->CullFace(GL_BACK));
     statistic_draw_call_count = 0;
     return backend;
 err:

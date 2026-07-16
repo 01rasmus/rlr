@@ -28,7 +28,7 @@ rlr_vec2_t rlr_quad_vertices[4] = {
 };
 
 uint8_t rlr_quad_indices[6] = {
-    0, 1, 2, 0, 2, 3
+    2, 1, 0, 3, 2, 0
 };
 
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags) {

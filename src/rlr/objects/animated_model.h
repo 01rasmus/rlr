@@ -4,9 +4,20 @@
 #include "rlr/math/matrix.h"
 #include "rlr/def.h"
 
+#define RLR_OBJ_ANIMATION_STATE_COUNT       2
+#define RLR_OBJ_ANIMATION_PRIMARY           0
+#define RLR_OBJ_ANIMATION_SECONDARY         1
+
 typedef struct rlr_pipeline_static_model_draw_command_t rlr_pipeline_static_model_draw_command_t;
 typedef struct rlr_res_animated_model_t rlr_res_animated_model_t;
 typedef struct rlr_res_shader_t rlr_res_shader_t;
+
+typedef struct rlr_obj_animation_state_t {
+    int32_t animation_index;
+    float animation_time;
+    float animation_speed;
+    bool animation_loop;
+} rlr_obj_animation_state_t;
 
 typedef struct rlr_obj_animated_model_t {
 
@@ -16,10 +27,9 @@ typedef struct rlr_obj_animated_model_t {
     rlr_vec3_t scale;
 
     //animation info
-    int32_t current_animation_index;
-    float animation_time;
-    float animation_speed;
-    bool animation_loop;
+    rlr_obj_animation_state_t animation_states[RLR_OBJ_ANIMATION_STATE_COUNT];
+    float transition_time;
+    float current_transition_time;
 
     //transparency
     bool opaque;
@@ -43,6 +53,7 @@ bool rlr_obj_animated_model_is_animating(rlr_obj_t model);
 int32_t rlr_obj_animated_model_get_current_animation(rlr_obj_t model);
 
 void rlr_obj_animated_model_set_animation(rlr_obj_t model, int32_t animation_index, float speed, bool loop);
+void rlr_obj_animated_model_set_animation_blended(rlr_obj_t model, int32_t animation_index, float speed, float transition_time, bool loop);
 
 /*
     1.0 is the default

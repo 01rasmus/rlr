@@ -15,9 +15,13 @@ typedef struct rlr_pipeline_static_model_instance_t {
 
 typedef struct rlr_pipeline_animated_model_instance_t {
     rlr_affine_mat4x3_t matrix;
-    uint32_t pose_a_offset;
-    uint32_t pose_b_offset;
-    float lerp;
+    float lerp_primary;
+    float lerp_secondary;
+    uint32_t pose_a_offset_primary;
+    uint32_t pose_b_offset_primary;
+    uint32_t pose_a_offset_secondary;
+    uint32_t pose_b_offset_secondary;
+    float transition_lerp;
 } rlr_pipeline_animated_model_instance_t;
 
 typedef struct rlr_pipeline_static_model_draw_command_t {
@@ -64,11 +68,13 @@ void rlr_pipeline_model_deinit();
 rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_draw_command(rlr_res_static_model_t* model, rlr_res_shader_t* shader);
 rlr_pipeline_animated_model_draw_command_t* rlr_pipeline_model_find_animated_model_draw_command(rlr_res_animated_model_t* model, rlr_res_shader_t* shader);
 
+
 /*
-    returns the index to the instance buffer.
-    returns -1 on failure
+returns the index to the instance buffer.
+returns -1 on failure
 */
 uint32_t rlr_pipeline_model_add_static_model_instance(rlr_pipeline_static_model_draw_command_t* command, rlr_pipeline_static_model_instance_t data);
 void rlr_pipeline_model_update_static_model_instance(uint32_t cmd_index, uint32_t cmd_generation, uint32_t instance_index, rlr_pipeline_static_model_instance_t data);
 uint32_t rlr_pipeline_model_add_animated_model_instance(rlr_pipeline_animated_model_draw_command_t* command, rlr_pipeline_animated_model_instance_t data);
 void rlr_pipeline_model_update_animated_model_instance(uint32_t cmd_index, uint32_t cmd_generation, uint32_t instance_index, rlr_pipeline_animated_model_instance_t data);
+void rlr_pipeline_model_swap_animation_states(uint32_t cmd_index, uint32_t cmd_generation, uint32_t instance_index);
