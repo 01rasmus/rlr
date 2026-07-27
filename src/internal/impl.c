@@ -120,7 +120,7 @@ rlr_mem_man_t* rlr_mem_man() {
 void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation) {
     const rlr_vec3_t up = rlr_vec3(0, 1, 0);
     rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)ctx->framebuffer_width / (float)ctx->framebuffer_height, 0.001, 100.0);
-    rlr_mat4x4_t view = rlr_mat4x4_look_towards_quat(&pos, &rotation, &up);
+    rlr_mat4x4_t view = rlr_mat4x4_look_towards_quat(&pos, &rotation);
     rlr_uniform_model_t ubo_model = {
         .vp = rlr_mat4x4_mul(&projection, &view),
         .camera_pos = pos,
@@ -199,7 +199,7 @@ bool rlr_update() {
 
         const rlr_vec3_t up = rlr_vec3(0, 1, 0);
         rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)ctx->framebuffer_width / (float)ctx->framebuffer_height, 0.001, 100.0);
-        rlr_mat4x4_t view = rlr_mat4x4_look_towards_quat(&ctx->camera_pos, &ctx->camera_rot, &up);
+        rlr_mat4x4_t view = rlr_mat4x4_look_towards_quat(&ctx->camera_pos, &ctx->camera_rot);
         rlr_uniform_model_t ubo_model = {
             .vp = rlr_mat4x4_mul(&projection, &view),
             .camera_pos = ctx->camera_pos,

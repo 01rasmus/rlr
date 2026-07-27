@@ -77,9 +77,47 @@ rlr_mat4x4_t rlr_mat4x4_look_towards_vec3(const rlr_vec3_t* position, const rlr_
     return view_matrix;
 }
 
-rlr_mat4x4_t rlr_mat4x4_look_towards_quat(const rlr_vec3_t* position, const rlr_quat_t* look_direction, const rlr_vec3_t* up) {
-    rlr_vec3_t euler_direction = rlr_quat_to_euler(look_direction);
-    return rlr_mat4x4_look_towards_vec3(position, &euler_direction, up);
+rlr_mat4x4_t rlr_mat4x4_look_towards_quat(const rlr_vec3_t* position, const rlr_quat_t* q) {
+    float x = q->x;
+    float y = q->y;
+    float z = q->z;
+    float w = q->w;
+
+    float xx = x * x;
+    float yy = y * y;
+    float zz = z * z;
+    float xy = x * y;
+    float xz = x * z;
+    float yz = y * z;
+    float wx = w * x;
+    float wy = w * y;
+    float wz = w * z;
+
+    float ns_x = 1.0 - 2.0 * (yy + zz);
+    float ns_y = 2.0 * (xy + wz);
+    float ns_z = 2.0 * (xz - wy);
+    float nu_x = 2.0 * (xy - wz);
+    float nu_y = 1.0 - 2.0 * (xx + zz);
+    float nu_z = 2.0 * (yz + wx);
+    float nb_x = 2.0 * (xz + wy);
+    float nb_y = 2.0 * (yz - wx);
+    float nb_z = 1.0 - 2.0 * (xx + yy);
+
+    rlr_mat4x4_t m = {0};
+    m.matrix[0][0] = ns_x;
+    m.matrix[1][0] = ns_y;
+    m.matrix[2][0] = ns_z;
+    m.matrix[0][1] = nu_x;
+    m.matrix[1][1] = nu_y;
+    m.matrix[2][1] = nu_z;
+    m.matrix[0][2] = nb_x;
+    m.matrix[1][2] = nb_y;
+    m.matrix[2][2] = nb_z;
+    m.matrix[3][0] = -(ns_x * position->x + ns_y * position->y + ns_z * position->z);
+    m.matrix[3][1] = -(nu_x * position->x + nu_y * position->y + nu_z * position->z);
+    m.matrix[3][2] = -(nb_x * position->x + nb_y * position->y + nb_z * position->z);
+    m.matrix[3][3] = 1.0;
+    return m;
 }
 
 rlr_mat4x4_t rlr_mat4x4_look_at(const rlr_vec3_t* position, const rlr_vec3_t* look_position, const rlr_vec3_t* up) {
