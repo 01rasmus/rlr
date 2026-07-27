@@ -18,6 +18,12 @@ void rlr_free();
 
 void rlr_set_cube_map(rlr_res_t cube_map_id);
 rlr_vec2_t rlr_get_framebuffer_size();
+rlr_vec2_t rlr_get_mouse_position();
+
+//callbacks
+void rlr_set_user(void* user);
+void rlr_set_mouse_input_callback(rlr_input_mouse_callback_t func);
+void rlr_set_key_input_callback(rlr_input_key_callback_t func);
 
 //camera
 void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation);

@@ -31,6 +31,18 @@ uint8_t rlr_quad_indices[6] = {
     2, 1, 0, 3, 2, 0
 };
 
+static void _rlr_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if(ctx->callback_key_input) {
+        ctx->callback_key_input(key, scancode, action, mods, ctx->user);
+    }
+}
+
+static void _rlr_mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    if(ctx->callback_mouse_input) {
+        ctx->callback_mouse_input(button, action, mods, rlr_get_mouse_position(), ctx->user);
+    }
+}
+
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags) {
     ctx = malloc(sizeof(rlr_t));
     if(!ctx) {
@@ -59,6 +71,8 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         goto err;
     }
     glfwSwapInterval((RLR_INIT_FLAG_VSYNC & flags) == RLR_INIT_FLAG_VSYNC ? 1 : 0);
+    glfwSetMouseButtonCallback(ctx->window, _rlr_mouse_button_callback);
+    glfwSetKeyCallback(ctx->window, _rlr_key_callback);
 
     //setup resource manager
     if(!rlr_mem_man_init(&ctx->res_man)) {
@@ -145,6 +159,25 @@ void rlr_set_cube_map(rlr_res_t cube_map_id) {
 
 rlr_vec2_t rlr_get_framebuffer_size() {
     return rlr_vec2(ctx->framebuffer_width, ctx->framebuffer_height);
+}
+
+void rlr_set_user(void* user) {
+    ctx->user = user;
+}
+
+void rlr_set_mouse_input_callback(rlr_input_mouse_callback_t func) {
+    ctx->callback_mouse_input = func;
+}
+
+void rlr_set_key_input_callback(rlr_input_key_callback_t func) {
+    ctx->callback_key_input = func;
+}
+
+rlr_vec2_t rlr_get_mouse_position() {
+    double x;
+    double y;
+    glfwGetCursorPos(ctx->window, &x, &y);
+    return (rlr_vec2_t){.x = x, .y = y};
 }
 
 rlr_statistics_t* rlr_get_total_statistics() {

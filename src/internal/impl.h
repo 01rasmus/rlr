@@ -52,6 +52,11 @@ typedef struct rlr_t {
     rlr_vec3_t camera_pos;
     rlr_quat_t camera_rot;
 
+    //callbacks
+    void* user;
+    rlr_input_key_callback_t callback_key_input;
+    rlr_input_mouse_callback_t callback_mouse_input;
+
     //timing
     double last_time;
 
