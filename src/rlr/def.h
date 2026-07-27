@@ -5,26 +5,26 @@
 #define RLR_DEBUG   1
 #define RLR_NULL    ((uint64_t)0u)
 
-#define RLR_INPUT_RELEASE       0
-#define RLR_INPUT_PRESS         1
-#define RLR_INPUT_REPEAT        2
+#define RLR_INPUT_ACTION_RELEASE        0
+#define RLR_INPUT_ACTION_PRESS          1
+#define RLR_INPUT_ACTION_REPEAT         2
 
-#define RLR_INPUT_MOD_SHIFT     0x0001
-#define RLR_INPUT_MOD_CONTROL   0x0002
-#define RLR_INPUT_MOD_ALT       0x0004
-#define RLR_INPUT_MOD_SUPER     0x0008
+#define RLR_INPUT_MOD_SHIFT             0x0001
+#define RLR_INPUT_MOD_CONTROL           0x0002
+#define RLR_INPUT_MOD_ALT               0x0004
+#define RLR_INPUT_MOD_SUPER             0x0008
 
-#define RLR_INPUT_MOUSE_1       0
-#define RLR_INPUT_MOUSE_2       1
-#define RLR_INPUT_MOUSE_3       2
-#define RLR_INPUT_MOUSE_4       3
-#define RLR_INPUT_MOUSE_5       4
-#define RLR_INPUT_MOUSE_6       5
-#define RLR_INPUT_MOUSE_7       6
-#define RLR_INPUT_MOUSE_8       7
-#define RLR_INPUT_MOUSE_LEFT    RLR_INPUT_MOUSE_1
-#define RLR_INPUT_MOUSE_RIGHT   RLR_INPUT_MOUSE_2
-#define RLR_INPUT_MOUSE_MIDDLE  RLR_INPUT_MOUSE_3
+#define RLR_INPUT_MOUSE_1               0
+#define RLR_INPUT_MOUSE_2               1
+#define RLR_INPUT_MOUSE_3               2
+#define RLR_INPUT_MOUSE_4               3
+#define RLR_INPUT_MOUSE_5               4
+#define RLR_INPUT_MOUSE_6               5
+#define RLR_INPUT_MOUSE_7               6
+#define RLR_INPUT_MOUSE_8               7
+#define RLR_INPUT_MOUSE_LEFT            RLR_INPUT_MOUSE_1
+#define RLR_INPUT_MOUSE_RIGHT           RLR_INPUT_MOUSE_2
+#define RLR_INPUT_MOUSE_MIDDLE          RLR_INPUT_MOUSE_3
 
 #define RLR_INPUT_KEY_UNKNOWN           -1
 #define RLR_INPUT_KEY_SPACE             32
