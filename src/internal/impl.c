@@ -117,6 +117,27 @@ rlr_mem_man_t* rlr_mem_man() {
     return &ctx->res_man;
 }
 
+void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation) {
+    const rlr_vec3_t up = rlr_vec3(0, 1, 0);
+    rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)ctx->framebuffer_width / (float)ctx->framebuffer_height, 0.001, 100.0);
+    rlr_mat4x4_t view = rlr_mat4x4_look_towards_quat(&pos, &rotation, &up);
+    rlr_uniform_model_t ubo_model = {
+        .vp = rlr_mat4x4_mul(&projection, &view),
+        .camera_pos = pos,
+    };
+    ctx->camera_pos = pos;
+    ctx->camera_rot = rotation;
+    rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_MODEL], 0, &ubo_model, sizeof(rlr_uniform_model_t));
+}
+
+rlr_vec3_t rlr_get_camera_pos() {
+    return ctx->camera_pos;
+}
+
+rlr_quat_t rlr_get_camera_rot() {
+    return ctx->camera_rot;
+}
+
 void rlr_set_cube_map(rlr_res_t cube_map_id) {
     rlr_res_t cube_map = cube_map_id == RLR_NULL ? ctx->cube_map_white : cube_map_id;
     rlr_res_cube_map_bind(cube_map, 4);
@@ -176,14 +197,12 @@ bool rlr_update() {
         rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_UI], 0, &ui_uniform, sizeof(rlr_uniform_ui_t));
         rlr_backend()->set_viewport(0, 0, width, height);
 
-        rlr_vec3_t cam_pos = rlr_vec3_mulf(rlr_vec3(-0.05, 0.1, -0.1), 7);
-        rlr_vec3_t scene_center = rlr_vec3(0, 0, 0);
-        rlr_vec3_t up = rlr_vec3(0, 1, 0);
-        rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)width / (float)height, 0.001, 100.0);
-        rlr_mat4x4_t view = rlr_mat4x4_look_at(&cam_pos, &scene_center, &up);
+        const rlr_vec3_t up = rlr_vec3(0, 1, 0);
+        rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)ctx->framebuffer_width / (float)ctx->framebuffer_height, 0.001, 100.0);
+        rlr_mat4x4_t view = rlr_mat4x4_look_towards_quat(&ctx->camera_pos, &ctx->camera_rot, &up);
         rlr_uniform_model_t ubo_model = {
             .vp = rlr_mat4x4_mul(&projection, &view),
-            .camera_pos = cam_pos,
+            .camera_pos = ctx->camera_pos,
         };
         rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_MODEL], 0, &ubo_model, sizeof(rlr_uniform_model_t));
     }

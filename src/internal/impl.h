@@ -48,6 +48,8 @@ typedef struct rlr_t {
     //configuration
     int32_t framebuffer_width;
     int32_t framebuffer_height;
+    rlr_vec3_t camera_pos;
+    rlr_quat_t camera_rot;
 
     //timing
     double last_time;
