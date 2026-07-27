@@ -15,6 +15,7 @@ typedef struct rlr_mat4x4_t {
 } rlr_mat4x4_t;
 
 rlr_mat4x4_t rlr_mat4x4_mul(const rlr_mat4x4_t* mat, const rlr_mat4x4_t* other);
+rlr_vec4_t rlr_mat4x4_mul_vec4(const rlr_mat4x4_t* mat, const rlr_vec4_t* vec);
 rlr_mat4x4_t rlr_mat4x4_mulf(const rlr_mat4x4_t* mat, float other);
 rlr_mat4x4_t rlr_mat4x4_trs(const rlr_vec3_t* translation, const rlr_quat_t* rotation, const rlr_vec3_t* scale);
 rlr_mat4x4_t rlr_mat4x4_look_towards_quat(const rlr_vec3_t* position, const rlr_quat_t* q);

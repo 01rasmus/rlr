@@ -51,6 +51,7 @@ typedef struct rlr_t {
     int32_t framebuffer_height;
     rlr_vec3_t camera_pos;
     rlr_quat_t camera_rot;
+    rlr_mat4x4_t view_projection;
 
     //callbacks
     void* user;

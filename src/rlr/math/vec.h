@@ -12,6 +12,13 @@ typedef struct rlr_vec3_t {
     float z;
 } rlr_vec3_t;
 
+typedef struct rlr_vec4_t {
+    float x;
+    float y;
+    float z;
+    float w;
+} rlr_vec4_t;
+
 #define rlr_vec2(X, Y)              ((rlr_vec2_t){.x = X, .y = Y})
 #define rlr_vec2_zero               rlr_vec2({.x = 0.0, .y = 0.0})
 #define rlr_vec2_add(A, B)          rlr_vec2((A).x + (B).x, (A).y + (B).y)

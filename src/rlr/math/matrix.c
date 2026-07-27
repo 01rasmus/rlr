@@ -17,6 +17,15 @@ rlr_mat4x4_t rlr_mat4x4_mul(const rlr_mat4x4_t* other, const rlr_mat4x4_t* matri
     return multiplied;
 }
 
+rlr_vec4_t rlr_mat4x4_mul_vec4(const rlr_mat4x4_t* mat, const rlr_vec4_t* vec) {
+    return (rlr_vec4_t) {
+        .x = mat->matrix[0][0] * vec->x + mat->matrix[1][0] * vec->y + mat->matrix[2][0] * vec->z + mat->matrix[3][0] * vec->w,
+        .y = mat->matrix[0][1] * vec->x + mat->matrix[1][1] * vec->y + mat->matrix[2][1] * vec->z + mat->matrix[3][1] * vec->w,
+        .z = mat->matrix[0][2] * vec->x + mat->matrix[1][2] * vec->y + mat->matrix[2][2] * vec->z + mat->matrix[3][2] * vec->w,
+        .w = mat->matrix[0][3] * vec->x + mat->matrix[1][3] * vec->y + mat->matrix[2][3] * vec->z + mat->matrix[3][3] * vec->w,
+    };
+}
+
 rlr_mat4x4_t rlr_mat4x4_mulf(const rlr_mat4x4_t* mat, float other) {
     rlr_mat4x4_t multiplied;
     for(int32_t row = 0; row < 4; row++) {

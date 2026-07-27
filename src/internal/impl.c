@@ -135,12 +135,14 @@ void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation) {
     const rlr_vec3_t up = rlr_vec3(0, 1, 0);
     rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)ctx->framebuffer_width / (float)ctx->framebuffer_height, 0.001, 100.0);
     rlr_mat4x4_t view = rlr_mat4x4_look_towards_quat(&pos, &rotation);
+    rlr_mat4x4_t view_projection = rlr_mat4x4_mul(&projection, &view);
     rlr_uniform_model_t ubo_model = {
-        .vp = rlr_mat4x4_mul(&projection, &view),
+        .vp = view_projection,
         .camera_pos = pos,
     };
     ctx->camera_pos = pos;
     ctx->camera_rot = rotation;
+    ctx->view_projection = view_projection;
     rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_MODEL], 0, &ubo_model, sizeof(rlr_uniform_model_t));
 }
 
@@ -159,6 +161,55 @@ void rlr_set_cube_map(rlr_res_t cube_map_id) {
 
 rlr_vec2_t rlr_get_framebuffer_size() {
     return rlr_vec2(ctx->framebuffer_width, ctx->framebuffer_height);
+}
+
+bool rlr_screen_pos_to_ground(rlr_vec2_t mouse_pos, rlr_vec3_t* out_position) {
+    float ndc_x = (2.0f * mouse_pos.x) / ctx->framebuffer_width - 1.0f;
+    float ndc_y = 1.0f - (2.0f * mouse_pos.y) / ctx->framebuffer_height;
+
+    rlr_vec4_t near_clip = {
+        .x = ndc_x,
+        .y = ndc_y,
+        .z = -1.0f,
+        .w = 1.0,
+    };
+    rlr_vec4_t far_clip = {
+        .x = ndc_x,
+        .y = ndc_y,
+        .z = 1.0f,
+        .w = 1.0,
+    };
+
+    rlr_mat4x4_t inverse_view_projection = rlr_mat4x4_inverse(&ctx->view_projection);
+    rlr_vec4_t near_world = rlr_mat4x4_mul_vec4(&inverse_view_projection, &near_clip);
+    rlr_vec4_t far_world = rlr_mat4x4_mul_vec4(&inverse_view_projection, &far_clip);
+
+    near_world.x /= near_world.w;
+    near_world.y /= near_world.w;
+    near_world.z /= near_world.w;
+
+    far_world.x /= far_world.w;
+    far_world.y /= far_world.w;
+    far_world.z /= far_world.w;
+
+    rlr_vec3_t direction = {
+        .x = far_world.x - near_world.x,
+        .y = far_world.y - near_world.y,
+        .z = far_world.z - near_world.z
+    };
+
+    if(fabsf(direction.y) < 0.000001f) {
+        return false;
+    }
+    float t = -near_world.y / direction.y;
+    if(t < 0.0f) {
+        return false;
+    }
+
+    out_position->x = near_world.x + direction.x * t;
+    out_position->y = 0.0f;
+    out_position->z = near_world.z + direction.z * t;
+    return true;
 }
 
 void rlr_set_user(void* user) {
@@ -230,14 +281,7 @@ bool rlr_update() {
         rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_UI], 0, &ui_uniform, sizeof(rlr_uniform_ui_t));
         rlr_backend()->set_viewport(0, 0, width, height);
 
-        const rlr_vec3_t up = rlr_vec3(0, 1, 0);
-        rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)ctx->framebuffer_width / (float)ctx->framebuffer_height, 0.001, 100.0);
-        rlr_mat4x4_t view = rlr_mat4x4_look_towards_quat(&ctx->camera_pos, &ctx->camera_rot);
-        rlr_uniform_model_t ubo_model = {
-            .vp = rlr_mat4x4_mul(&projection, &view),
-            .camera_pos = ctx->camera_pos,
-        };
-        rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_MODEL], 0, &ubo_model, sizeof(rlr_uniform_model_t));
+        rlr_set_camera(ctx->camera_pos, ctx->camera_rot);
     }
 
     rlr_backend()->set_clear_color(0.1, 0.2, 0.3, 1.0);
