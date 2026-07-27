@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
+#include "math/quat.h"
 #include "math/vec.h"
 #include "def.h"
 
