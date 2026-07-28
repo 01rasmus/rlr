@@ -25,25 +25,47 @@ rlr_vec3_t rlr_quat_to_euler(const rlr_quat_t* quat) {
 }
 
 rlr_quat_t rlr_quat_slerp(const rlr_quat_t* q1, const rlr_quat_t* q2, float t) {
-    float cos_half_theta = q1->w * q2->w + q1->x * q2->x + q1->y * q2->y + q1->z * q2->z;
-    if(fabsf(cos_half_theta) >= 1.0){
-        return rlr_quat(q1->w, q1->x, q1->y, q1->z);
+    rlr_quat_t end = *q2;
+
+    float dot = q1->w * end.w + q1->x * end.x + q1->y * end.y + q1->z * end.z;
+    if(dot < 0.0f) {
+        end.w = -end.w;
+        end.x = -end.x;
+        end.y = -end.y;
+        end.z = -end.z;
+        dot = -dot;
     }
 
-    // if(cos_half_theta < 0.0f) {
-    //     q2 = -q2;
-    //     cos_half_theta = -cos_half_theta;
-    // }
-
-    float half_theta = acos(cos_half_theta);
-    float sinhalf_theta = sqrt(1.0 - cos_half_theta*cos_half_theta);
-    if (fabs(sinhalf_theta) < 0.001){
-        return rlr_quat(q1->w * 0.5 + q2->w * 0.5, q1->x * 0.5 + q2->x * 0.5, q1->y * 0.5 + q2->y * 0.5, q1->z * 0.5 + q2->z * 0.5);
+    dot = fminf(fmaxf(dot, -1.0f), 1.0f);
+    if(dot > 0.9995f) {
+        rlr_quat_t result = rlr_quat(
+            q1->w + t * (end.w - q1->w),
+            q1->x + t * (end.x - q1->x),
+            q1->y + t * (end.y - q1->y),
+            q1->z + t * (end.z - q1->z)
+        );
+        float length = sqrtf(result.w * result.w + result.x * result.x + result.y * result.y + result.z * result.z);
+        if(length > 0.0f) {
+            float inverse_length = 1.0f / length;
+            result.w *= inverse_length;
+            result.x *= inverse_length;
+            result.y *= inverse_length;
+            result.z *= inverse_length;
+        }
+        return result;
     }
 
-    float ratio_1 = sin((1 - t) * half_theta) / sinhalf_theta;
-    float ratio_2 = sin(t * half_theta) / sinhalf_theta; 
-    return rlr_quat(q1->w * ratio_1 + q2->w * ratio_2, q1->x * ratio_1 + q2->x * ratio_2, q1->y * ratio_1 + q2->y * ratio_2, q1->z * ratio_1 + q2->z * ratio_2);
+    float theta = acosf(dot);
+    float sin_theta = sinf(theta);
+    float ratio_1 = sinf((1.0f - t) * theta) / sin_theta;
+    float ratio_2 = sinf(t * theta) / sin_theta;
+
+    return rlr_quat(
+        q1->w * ratio_1 + end.w * ratio_2,
+        q1->x * ratio_1 + end.x * ratio_2,
+        q1->y * ratio_1 + end.y * ratio_2,
+        q1->z * ratio_1 + end.z * ratio_2
+    );
 }
 
 rlr_quat_t rlr_quat_normalize(const rlr_quat_t* quat) {
