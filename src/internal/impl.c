@@ -1,7 +1,8 @@
 #include <stdlib.h>
+#include <float.h>
+#include <string.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <string.h>
 #include "../external/stb_ds.h"
 #include "backends/backend_selection.h"
 #include "backends/backend.h"
@@ -133,7 +134,7 @@ rlr_mem_man_t* rlr_mem_man() {
 
 void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation) {
     const rlr_vec3_t up = rlr_vec3(0, 1, 0);
-    rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)ctx->framebuffer_width / (float)ctx->framebuffer_height, 0.001, 100.0);
+    rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)ctx->framebuffer_width / (float)ctx->framebuffer_height, 0.001, 1000.0);
     rlr_mat4x4_t view = rlr_mat4x4_look_towards_quat(&pos, &rotation);
     rlr_mat4x4_t view_projection = rlr_mat4x4_mul(&projection, &view);
     rlr_uniform_model_t ubo_model = {
@@ -212,6 +213,24 @@ bool rlr_screen_pos_to_ground(rlr_vec2_t mouse_pos, rlr_vec3_t* out_position) {
     return true;
 }
 
+rlr_vec2_t rlr_world_to_screen(rlr_vec3_t world_pos) {
+    rlr_vec4_t clip = rlr_mat4x4_mul_vec4(&ctx->view_projection, &(rlr_vec4_t){
+        .x = world_pos.x,
+        .y = world_pos.y,
+        .z = world_pos.z,
+        .w = 1.0,
+    });
+    
+    if(clip.w <= 0.0) {
+        return rlr_vec2(-FLT_MAX, -FLT_MAX);
+    }
+
+    float inv_w = 1.0 / clip.w;
+    float ndc_x = clip.x * inv_w;
+    float ndc_y = clip.y * inv_w;
+    return rlr_vec2((ndc_x * 0.5 + 0.5) * ctx->framebuffer_width, (1.0 - (ndc_y * 0.5 + 0.5)) * ctx->framebuffer_height);
+}
+
 void rlr_set_user(void* user) {
     ctx->user = user;
 }
@@ -280,7 +299,6 @@ bool rlr_update() {
         ctx->framebuffer_height = height;
         rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_UI], 0, &ui_uniform, sizeof(rlr_uniform_ui_t));
         rlr_backend()->set_viewport(0, 0, width, height);
-
         rlr_set_camera(ctx->camera_pos, ctx->camera_rot);
     }
 
