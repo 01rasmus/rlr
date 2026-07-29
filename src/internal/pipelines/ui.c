@@ -57,12 +57,12 @@ static const char mtsdf_vertex[] = RLR_SHADER_INLINE(
 
 static const char sprite_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
-    in vec3 frag_color;
+    flat in vec4 frag_color;
     out vec4 final_color;
     uniform sampler2D tex;
 
     void main() {
-        final_color = texture(tex, frag_uv);
+        final_color = texture(tex, frag_uv) * frag_color;
     }
 );
 
@@ -73,6 +73,7 @@ static const char sprite_vertex[] = RLR_SHADER_INLINE(
     layout (location = 3) in vec2 uv;
     layout (location = 4) in vec2 uv_size;
     layout (location = 5) in int screen_anchor;
+    layout (location = 6) in vec4 color;
 
     layout(std140) uniform inv_screen_size {
         float inv_x;
@@ -82,7 +83,7 @@ static const char sprite_vertex[] = RLR_SHADER_INLINE(
     } ui_data;
 
     out vec2 frag_uv;
-    out vec3 frag_color;
+    flat out vec4 frag_color;
 
     const vec2 screen_anchor_vecs[9] = vec2[](
         vec2(0.0, 0.0),
@@ -97,6 +98,7 @@ static const char sprite_vertex[] = RLR_SHADER_INLINE(
     );
 
     void main() {
+        frag_color = color;
         frag_uv = vec2(uv.x + pos.x * uv_size.x, uv.y + pos.y * uv_size.y);
         float x = (rect_pos.x + screen_anchor_vecs[screen_anchor].x * ui_data.screen_width) + pos.x * rect_size.x;
         float y = (rect_pos.y + screen_anchor_vecs[screen_anchor].y * ui_data.screen_height) + pos.y * rect_size.y;
@@ -104,23 +106,17 @@ static const char sprite_vertex[] = RLR_SHADER_INLINE(
     }
 );
 
-typedef struct rlr_instance_data_ui_t {
-    rlr_vec2_t pos;
-    rlr_vec2_t size;
-    rlr_vec2_t uv;
-    rlr_vec2_t uv_size;
-    uint8_t screen_anchor;
-} rlr_instance_data_ui_t;
-
-static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
-    const rlr_obj_sprite_t* spr_a = a;
-    const rlr_obj_sprite_t* spr_b = b;
-
-    if(spr_a->layer != spr_b->layer) {
-        return (spr_a->layer > spr_b->layer) - (spr_a->layer < spr_b->layer);
+static int32_t rlr_pipeline_ui_draw_command_sorter(const void* a, const void* b) {
+    const rlr_pipeline_ui_draw_command_t* left = a;
+    const rlr_pipeline_ui_draw_command_t* right = b;
+    if(left->layer != right->layer) {
+        return (left->layer > right->layer) - (left->layer < right->layer);
     }
-    if(spr_a->texture != spr_b->texture) {
-        return (spr_a->texture > spr_b->texture) - (spr_a->texture < spr_b->texture);
+    if(left->texture != right->texture) {
+        return (left->texture > right->texture) - (left->texture < right->texture);
+    }
+    if(left->shader != right->shader) {
+        return (left->shader > right->shader) - (left->shader < right->shader);
     }
     return 0;
 }
@@ -128,6 +124,7 @@ static int32_t rlr_pipeline_ui_sorter_sprite(const void* a, const void* b) {
 bool rlr_pipeline_ui_init() {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
     (*pu) = (rlr_pipeline_ui_t){0};
+    pu->is_sorted = true;
     pu->shader_sprite = rlr_res_shader_create(sprite_vertex, sprite_fragment);
     pu->shader_text = rlr_res_shader_create(mtsdf_vertex, mtsdf_fragment);
     if(!pu->shader_sprite || !pu->shader_text) {
@@ -147,14 +144,18 @@ bool rlr_pipeline_ui_init() {
     rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_quad_vertices), rlr_quad_vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
     rlr_backend()->bind_buffer(pu->quad_ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
     rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ELEMENT_ARRAY, sizeof(rlr_quad_indices), rlr_quad_indices, RLR_BACKEND_BUFFER_USAGE_STATIC);
-    pu->is_dirty = true;
     return true;
 err:
     return false;
 }
 
-static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command() {
+static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_res_t texture, rlr_res_t shader, uint32_t layer) {
     rlr_pipeline_ui_draw_command_t command = {0};
+    command.instance_data = NULL;
+    command.texture = texture;
+    command.shader = shader;
+    command.layer = layer;
+    command.is_dirty = true;
     command.vao = rlr_backend()->create_vertex_array();
     command.instance_vbo = rlr_backend()->create_buffer();
     rlr_backend()->bind_vertex_array(command.vao);
@@ -166,94 +167,94 @@ static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command() {
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv));
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv_size));
     rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 1, RLR_BACKEND_BUFFER_TYPE_U8, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, screen_anchor));
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 6, 4, RLR_BACKEND_BUFFER_TYPE_U8, true, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, color));
     rlr_backend()->bind_buffer(RLR_PIPELINE_UI->quad_ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
     return command;
 }
 
-static void rlr_pipeline_ui_rebuild_commands() {
+rlr_pipeline_ui_draw_command_t* rlr_pipeline_ui_find_draw_command(rlr_res_t texture, rlr_res_t shader, uint32_t layer) {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
-    uint32_t sprites_count = rlr_mem_man_get_obj_sprites_count(rlr_mem_man());
-    uint32_t needed_commands = sprites_count;
-    uint32_t commands_available = arrlenu(pu->commands);
-    while(needed_commands > commands_available) {
-        arrpush(pu->commands, rlr_pipeline_ui_new_command(pu));
-        commands_available++;
-    }
 
-    rlr_instance_data_ui_t* instance_data = NULL;
-
-    rlr_obj_sprite_t* sprites = rlr_mem_man_get_obj_sprites(rlr_mem_man());
-    rlpp_sort(sprites, rlr_pipeline_ui_sorter_sprite);
-
-    int64_t current_command = 0;
-    rlr_res_t current_texture = RLR_NULL;
-
-    for(int64_t i = 0; i < sprites_count; i++) {
-        rlr_obj_sprite_t* sprite = &sprites[i];
-        if(current_texture == RLR_NULL) {
-            current_texture = sprite->texture;
+    for(size_t i = 0; i < rlpp_len(pu->commands); i++) {
+        rlr_pipeline_ui_draw_command_t* cmd = &pu->commands[i];
+        if(cmd->texture == texture && cmd->shader == shader && cmd->layer == layer) {
+            return cmd;
         }
-
-        if(current_texture != sprite->texture) {
-            rlr_pipeline_ui_draw_command_t* command = &pu->commands[current_command];
-            command->shader = pu->shader_sprite;
-            command->instance_count = arrlenu(instance_data);
-            command->should_scissor = false;
-            command->texture = current_texture;
-            rlr_backend()->bind_buffer(command->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_ui_t) * arrlenu(instance_data), instance_data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
-
-            current_texture = sprite->texture;
-            current_command++;
-            arrsetlen(instance_data, 0);
-        }
-
-        rlr_vec2_t local_anchor_vec = rlr_anchor_vec(sprite->local_anchor);
-        float width = sprite->rectangle.width;
-        float height = sprite->rectangle.height;
-        rlr_instance_data_ui_t data = {
-            .pos = rlr_vec2(sprite->rectangle.x - (width * local_anchor_vec.x), sprite->rectangle.y - (height * local_anchor_vec.y)),
-            .size = rlr_vec2(width, height),
-            .uv = rlr_vec2(sprite->uv.x, sprite->uv.y),
-            .uv_size = rlr_vec2(sprite->uv.width - sprite->uv.x, sprite->uv.height - sprite->uv.y),
-            .screen_anchor = sprite->screen_anchor,
-        };
-        arrpush(instance_data, data);
-    }
-    if(arrlenu(instance_data) > 0) {
-        rlr_pipeline_ui_draw_command_t* command = &pu->commands[current_command++];
-        command->shader = pu->shader_sprite;
-        command->instance_count = arrlenu(instance_data);
-        command->should_scissor = false;
-        command->texture = current_texture;
-        rlr_backend()->bind_buffer(command->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-        rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_ui_t) * arrlenu(instance_data), instance_data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
     }
 
-    pu->command_count = current_command;
-    pu->is_dirty = false;
-    arrfree(instance_data);
+    pu->is_sorted = false;
+    rlr_pipeline_ui_draw_command_t new_cmd = rlr_pipeline_ui_new_command(texture, shader, layer);
+    rlpp_id_t id = rlpp_alloc(pu->commands, new_cmd);
+    rlr_pipeline_ui_draw_command_t* cmd = &pu->commands[rlpp_len(pu->commands) - 1];
+    cmd->id = id;
+    return cmd;
+}
+
+uint64_t rlr_pipeline_ui_add_sprite_instance(rlr_pipeline_ui_draw_command_t* command, rlr_instance_data_ui_t data) {
+    command->is_dirty = true;
+    return rlpp_alloc(command->instance_data, data);
+}
+
+void rlr_pipeline_ui_remove_sprite_instance(uint64_t command_id, uint64_t instance_id) {
+    rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
+    rlr_pipeline_ui_draw_command_t* cmd = rlpp_get_unchecked(pu->commands, command_id);
+    cmd->is_dirty = true;
+    rlpp_remove(cmd->instance_data, instance_id);
+}
+
+rlr_instance_data_ui_t* rlr_pipeline_ui_get_and_dirty_sprite_instance(uint64_t cmd_id, uint64_t instance_id) {
+    rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
+    rlr_pipeline_ui_draw_command_t* cmd = rlpp_get_unchecked(pu->commands, cmd_id);
+    if(!cmd) {
+        return NULL;
+    }
+    cmd->is_dirty = true;
+    return rlpp_get_unchecked(cmd->instance_data, instance_id);
+}
+
+const rlr_instance_data_ui_t const* rlr_pipeline_ui_get_sprite_instance(uint64_t cmd_id, uint64_t instance_id) {
+    rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
+    rlr_pipeline_ui_draw_command_t* cmd = rlpp_get_unchecked(pu->commands, cmd_id);
+    if(!cmd) {
+        return NULL;
+    }
+    return rlpp_get_unchecked(cmd->instance_data, instance_id);
 }
 
 void rlr_pipeline_ui_draw() {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
-    if(pu->is_dirty) {
-        rlr_pipeline_ui_rebuild_commands(pu);
+
+    if(!pu->is_sorted) {
+        rlpp_sort(pu->commands, rlr_pipeline_ui_draw_command_sorter);
+        pu->is_sorted = true;
+    }
+
+    for(size_t i = 0; i < rlpp_len(pu->commands); i++) {
+        rlr_pipeline_ui_draw_command_t* cmd = &pu->commands[i];
+        if(cmd->is_dirty) {
+            rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_ui_t) * rlpp_len(cmd->instance_data), cmd->instance_data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+            cmd->is_dirty = false;
+        }
     }
 
     rlr_backend()->set_stencil_test(false);
     rlr_backend()->set_blending(true);
 
     rlr_backend()->set_depth_test(false);
-    for(uint64_t i = 0; i < pu->command_count; i++) {
-        rlr_res_shader_bind(pu->commands[i].shader);
-        rlr_res_texture_bind(pu->commands[i].texture, 0);
-        rlr_backend()->bind_vertex_array(pu->commands[i].vao);
-        rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U8, pu->commands[i].instance_count);
+    for(uint64_t i = 0; i < rlpp_len(pu->commands); i++) {
+        rlr_pipeline_ui_draw_command_t* cmd = &pu->commands[i];
+        uint64_t instance_len = rlpp_len(cmd->instance_data);
+        if(instance_len == 0) {
+            continue;
+        }
+        rlr_res_shader_bind(cmd->shader == RLR_NULL ? pu->shader_sprite : cmd->shader);
+        rlr_res_texture_bind(cmd->texture, 0);
+        rlr_backend()->bind_vertex_array(cmd->vao);
+        rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U8, instance_len);
     }
 
     rlr_res_shader_bind(pu->shader_text);
-
     for(uint32_t i = 0; i < rlr_mem_man_get_obj_labels_count(rlr_mem_man()); i++) {
         rlr_obj_label_t* label = &rlr_mem_man_get_obj_labels(rlr_mem_man())[i];
         if(!label->visible) {
