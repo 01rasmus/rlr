@@ -16,6 +16,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
 bool rlr_update();
 void rlr_free();
 
+void rlr_set_clear_color(float r, float g, float b, float a);
 void rlr_set_cube_map(rlr_res_t cube_map_id);
 rlr_vec2_t rlr_get_framebuffer_size();
 rlr_vec2_t rlr_get_mouse_position();
@@ -38,7 +39,6 @@ rlr_quat_t rlr_get_camera_rot();
 const char* rlr_get_backend_implementation();
 const char* rlr_get_backend_context();
 const char* rlr_get_gpu_name();
-
 
 //statistics
 rlr_statistics_t* rlr_get_total_statistics();

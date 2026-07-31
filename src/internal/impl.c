@@ -107,13 +107,14 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         }
     }
 
+    //setup default values
+    rlr_backend()->set_clear_color(0.0, 0.0, 0.0, 1.0);
+    ctx->last_time = glfwGetTime();
+
     //setup default resources
     ctx->texture_white = rlr_res_texture_default();
     ctx->cube_map_white = rlr_res_cube_map_default();
     rlr_res_cube_map_bind(ctx->cube_map_white, 4);
-
-    //setup timer
-    ctx->last_time = glfwGetTime();
     return;
 err:
     rlr_free();
@@ -153,6 +154,10 @@ rlr_vec3_t rlr_get_camera_pos() {
 
 rlr_quat_t rlr_get_camera_rot() {
     return ctx->camera_rot;
+}
+
+void rlr_set_clear_color(float r, float g, float b, float a) {
+    rlr_backend()->set_clear_color(r, g, b, a);
 }
 
 void rlr_set_cube_map(rlr_res_t cube_map_id) {
@@ -302,7 +307,6 @@ bool rlr_update() {
         rlr_set_camera(ctx->camera_pos, ctx->camera_rot);
     }
 
-    rlr_backend()->set_clear_color(0.1, 0.2, 0.3, 1.0);
     rlr_backend()->set_clear_stencil(0);
     rlr_backend()->set_stencil_mask(0xff);
     rlr_backend()->clear(RLR_BACKEND_CLEAR_BIT_COLOR | RLR_BACKEND_CLEAR_BIT_DEPTH | RLR_BACKEND_CLEAR_BIT_STENCIL);
