@@ -40,6 +40,8 @@ bool rlr_pipeline_ui_init();
 void rlr_pipeline_ui_draw();
 void rlr_pipeline_ui_deinit();
 
+rlr_res_t rlr_pipeline_ui_get_text_shader();
+
 rlr_pipeline_ui_draw_command_t* rlr_pipeline_ui_find_draw_command(rlr_res_t texture, rlr_res_t shader, uint32_t layer);
 uint64_t rlr_pipeline_ui_add_sprite_instance(rlr_pipeline_ui_draw_command_t* command, rlr_instance_data_ui_t data);
 void rlr_pipeline_ui_remove_sprite_instance(uint64_t command_id, uint64_t instance_id);

@@ -13,10 +13,10 @@
 
 static const char mtsdf_fragment[] = RLR_SHADER_INLINE(
     in vec2 frag_uv;
-    flat in vec3 frag_color;
-    flat in float screen_px_range;
+    flat in vec4 frag_color;
     out vec4 final_color;
     uniform sampler2D tex;
+    flat in float screen_px_range;
 
     float median(float r, float g, float b) {
         return max(min(r, g), min(max(r, g), b));
@@ -25,17 +25,21 @@ static const char mtsdf_fragment[] = RLR_SHADER_INLINE(
     void main() {
         vec3 msd = texture(tex, frag_uv).rgb;
         float sd = median(msd.r, msd.g, msd.b);
-        float screen_px_distance = screen_px_range * (sd - 0.5);
+        float screen_px_distance = 1.0 * (sd - 0.5);
         float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);
-        final_color = vec4(frag_color, alpha);
+        final_color = frag_color * vec4(1.0, 1.0, 1.0, alpha);
     }
 );
 
 static const char mtsdf_vertex[] = RLR_SHADER_INLINE(
-    layout (location = 0) in vec3 color;
-    layout (location = 1) in vec2 pos;
-    layout (location = 2) in vec2 uv;
-    layout (location = 3) in float spr;
+    layout (location = 0) in vec2 pos;
+    layout (location = 1) in vec2 rect_pos;
+    layout (location = 2) in vec2 rect_size;
+    layout (location = 3) in vec2 uv;
+    layout (location = 4) in vec2 uv_size;
+    layout (location = 5) in int screen_anchor;
+    layout (location = 6) in vec4 color;
+
     layout(std140) uniform inv_screen_size {
         float inv_x;
         float inv_y;
@@ -44,14 +48,27 @@ static const char mtsdf_vertex[] = RLR_SHADER_INLINE(
     } ui_data;
 
     out vec2 frag_uv;
-    flat out vec3 frag_color;
+    flat out vec4 frag_color;
     flat out float screen_px_range;
 
+    const vec2 screen_anchor_vecs[9] = vec2[](
+        vec2(0.0, 0.0),
+        vec2(0.5, 0.0),
+        vec2(1.0, 0.0),
+        vec2(0.0, 0.5),
+        vec2(0.5, 0.5),
+        vec2(1.0, 0.5),
+        vec2(0.0, 1.0),
+        vec2(0.5, 1.0),
+        vec2(1.0, 1.0)
+    );
+
     void main() {
-        frag_uv = uv;
         frag_color = color;
-        screen_px_range = spr;
-        gl_Position = vec4(pos.x * ui_data.inv_x * 2.0 - 1.0, 1.0 - pos.y * ui_data.inv_y * 2.0, 0.0, 1.0);
+        frag_uv = vec2(uv.x + pos.x * uv_size.x, uv.y + pos.y * uv_size.y);
+        float x = (rect_pos.x + screen_anchor_vecs[screen_anchor].x * ui_data.screen_width) + pos.x * rect_size.x;
+        float y = (rect_pos.y + screen_anchor_vecs[screen_anchor].y * ui_data.screen_height) + pos.y * rect_size.y;
+        gl_Position = vec4(x * ui_data.inv_x * 2.0 - 1.0, 1.0 - y * ui_data.inv_y * 2.0, 0.0, 1.0);
     }
 );
 
@@ -221,6 +238,11 @@ const rlr_instance_data_ui_t const* rlr_pipeline_ui_get_sprite_instance(uint64_t
     return rlpp_get_unchecked(cmd->instance_data, instance_id);
 }
 
+rlr_res_t rlr_pipeline_ui_get_text_shader() {
+    rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
+    return pu->shader_text;
+}
+
 void rlr_pipeline_ui_draw() {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
 
@@ -252,18 +274,6 @@ void rlr_pipeline_ui_draw() {
         rlr_res_texture_bind(cmd->texture, 0);
         rlr_backend()->bind_vertex_array(cmd->vao);
         rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U8, instance_len);
-    }
-
-    rlr_res_shader_bind(pu->shader_text);
-    for(uint32_t i = 0; i < rlr_mem_man_get_obj_labels_count(rlr_mem_man()); i++) {
-        rlr_obj_label_t* label = &rlr_mem_man_get_obj_labels(rlr_mem_man())[i];
-        if(!label->visible) {
-            continue;
-        }
-        rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), label->font);
-        rlr_res_texture_bind(font->texture, 0);
-        rlr_backend()->bind_vertex_array(label->vao);
-        rlr_backend()->draw_arrays(0, label->vertex_count);
     }
 
     rlr_backend()->set_blending(false);
