@@ -2,14 +2,14 @@
 
 typedef enum rlr_horizontal_alignment_t {
     RLR_HORIZONTAL_ALIGNMENT_LEFT = 0,
-    RLR_HORIZONTAL_ALIGNMENT_MIDDLE,
+    RLR_HORIZONTAL_ALIGNMENT_CENTER,
     RLR_HORIZONTAL_ALIGNMENT_RIGHT,
     RLR_HORIZONTAL_ALIGNMENT_JUSTIFIED,
 } rlr_horizontal_alignment_t;
 
 typedef enum rlr_vertical_alignment_t {
     RLR_VERTICAL_ALIGNMENT_TOP = 0,
-    RLR_VERTICAL_ALIGNMENT_MIDDLE,
+    RLR_VERTICAL_ALIGNMENT_CENTER,
     RLR_VERTICAL_ALIGNMENT_BOTTOM,
 } rlr_vertical_alignment_t;
 

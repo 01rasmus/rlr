@@ -134,7 +134,7 @@ float rlr_word_calculate_remaining_row_width(word_measure_context_t* c, float wi
 float rlr_word_calculate_space_width(float remaining_row_width, float real_space_width, uint32_t row_word_count, rlr_horizontal_alignment_t alignment) {
     switch(alignment) {
         case RLR_HORIZONTAL_ALIGNMENT_LEFT:
-        case RLR_HORIZONTAL_ALIGNMENT_MIDDLE:
+        case RLR_HORIZONTAL_ALIGNMENT_CENTER:
         case RLR_HORIZONTAL_ALIGNMENT_RIGHT:
             return real_space_width;
         case RLR_HORIZONTAL_ALIGNMENT_JUSTIFIED:
