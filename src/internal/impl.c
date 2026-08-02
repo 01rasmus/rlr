@@ -248,10 +248,20 @@ void rlr_set_key_input_callback(rlr_input_key_callback_t func) {
     ctx->callback_key_input = func;
 }
 
+//todo: precalculate the mouse position in the update function?
 rlr_vec2_t rlr_get_mouse_position() {
-    double x;
-    double y;
-    glfwGetCursorPos(ctx->window, &x, &y);
+
+    //get window size
+    int32_t window_width = 0.0;
+    int32_t window_height = 0.0;
+    glfwGetWindowSize(ctx->window, &window_width, &window_height);
+
+    double window_x;
+    double window_y;
+    glfwGetCursorPos(ctx->window, &window_x, &window_y);
+
+    double x = (window_x / (double)window_width) * ctx->framebuffer_width;
+    double y = (window_y / (double)window_height) * ctx->framebuffer_height;
     return (rlr_vec2_t){.x = x, .y = y};
 }
 
