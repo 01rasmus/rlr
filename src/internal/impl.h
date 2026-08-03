@@ -49,6 +49,7 @@ typedef struct rlr_t {
     //configuration
     int32_t framebuffer_width;
     int32_t framebuffer_height;
+    rlr_vec2_t mouse_pos;
     rlr_vec3_t camera_pos;
     rlr_quat_t camera_rot;
     rlr_mat4x4_t view_projection;

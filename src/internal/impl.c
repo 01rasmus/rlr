@@ -248,21 +248,8 @@ void rlr_set_key_input_callback(rlr_input_key_callback_t func) {
     ctx->callback_key_input = func;
 }
 
-//todo: precalculate the mouse position in the update function?
 rlr_vec2_t rlr_get_mouse_position() {
-
-    //get window size
-    int32_t window_width = 0.0;
-    int32_t window_height = 0.0;
-    glfwGetWindowSize(ctx->window, &window_width, &window_height);
-
-    double window_x;
-    double window_y;
-    glfwGetCursorPos(ctx->window, &window_x, &window_y);
-
-    double x = (window_x / (double)window_width) * ctx->framebuffer_width;
-    double y = (window_y / (double)window_height) * ctx->framebuffer_height;
-    return (rlr_vec2_t){.x = x, .y = y};
+    return ctx->mouse_pos;
 }
 
 rlr_statistics_t* rlr_get_total_statistics() {
@@ -317,6 +304,20 @@ bool rlr_update() {
         rlr_set_camera(ctx->camera_pos, ctx->camera_rot);
     }
 
+    //update mouse position
+    int32_t window_width = 1;
+    int32_t window_height = 1;
+    glfwGetWindowSize(ctx->window, &window_width, &window_height);
+
+    double window_mouse_x;
+    double window_mouse_y;
+    glfwGetCursorPos(ctx->window, &window_mouse_x, &window_mouse_y);
+
+    double x = (window_mouse_x / (double)window_width) * (double)ctx->framebuffer_width;
+    double y = (window_mouse_y / (double)window_height) * (double)ctx->framebuffer_height;
+    ctx->mouse_pos = (rlr_vec2_t){.x = x, .y = y};
+
+    //clear screen
     rlr_backend()->set_clear_stencil(0);
     rlr_backend()->set_stencil_mask(0xff);
     rlr_backend()->clear(RLR_BACKEND_CLEAR_BIT_COLOR | RLR_BACKEND_CLEAR_BIT_DEPTH | RLR_BACKEND_CLEAR_BIT_STENCIL);
