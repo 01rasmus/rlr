@@ -3,16 +3,16 @@
 
 ## Features
 - **Multiple Backends**<br>
-The renderer chooses either ___OpenGL 3.3___ or ___OpenGL ES 3.0___ at runtime depending on which of these two are supported by the system. This is fully dynamic.
+The renderer chooses either ___OpenGL 3.3___ or ___OpenGL ES 3.0___ dynamically at runtime depending on which of these two are supported by the system.
 - **Custom Shader Language**<br>
 [RLSL](https://github.com/rasu01/rlsl) is a shading language specifically written for RL Render. Since there are multiple backends a custom shader language makes sure a single shader can be used for any backend.
 - **MTSDF Fonts**<br>
 It is used together with texture atlases generated from [Chlumsky's atlas gen](https://github.com/Chlumsky/msdf-atlas-gen). The engine loads in the .csv file with the glyph data, and then the texture atlas image. It uses [stb image](https://github.com/nothings/stb/blob/master/stb_image.h) to load the image. Only the ___MTSDF___ variant is supported.
 - **GPU Skinning**<br>
-The poses of for the animations are prebaked and uploaded to the gpu as a texture to make it possible to do gpu skinning.
+The poses of the animations are prebaked and uploaded to the gpu as a texture to make it possible to do gpu skinning.
 
-## Libraries used
-Defined below are the libraries used in the renderer. It mostly depends on other single header libraries to try to minimize the complexity at compile time.
+## Libraries Used
+The libraries are mainly single header libraries to try to minimize the complexity at compile time.
 - [cgltf](https://github.com/jkuhlmann/cgltf)
 - [glad](https://gen.glad.sh/)
 - [glfw](https://github.com/glfw/glfw)
@@ -30,15 +30,15 @@ On linux you need to install some dependencies to build. On a debian based linux
 sudo apt install cmake gcc pkg-config libgl1-mesa-dev libwayland-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxkbcommon-dev
 ```
 
-## How to build
-The library can mainly be built in two ways. Either with cmake or make.
+## How to Build
+The library is built with cmake.
 
-## How to generate a font
-Using [msdf-atlas-gen](https://github.com/Chlumsky/msdf-atlas-gen) the folliwing is a sample command
+## How to Generate a Font
+Using [msdf-atlas-gen](https://github.com/Chlumsky/msdf-atlas-gen) the following example can be used to generate a compatible font
 ```
 msdf-atlas-gen -font font.ttf -type mtsdf -format png -pots -pxrange 2 -imageout font.png -csv font.csv -charset charset.txt
 ```
-The important thing is that the output is a csv file and that the output uses unicode codepoints(which it does if -charset is declared). [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h) is used to load the image so any image format that is supported by it could be used. The pxrange should be noted, since it is used when loading the font(and used when rendering).
+The important thing is that the output glyph information file is a `.csv` file and that the output uses unicode codepoints(which it does if -charset is declared). [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h) is used to load the image part of the font. The pxrange should be noted, since it is used when loading the font(and used when rendering).
 
 The `charset.txt` must include the unicode points that should be in the final font atlas/csv.
 To just get all of them, `charset.txt` could include the follow:
