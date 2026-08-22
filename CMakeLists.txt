@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(rl_render C)
+project(rlr C)
 set(CMAKE_C_STANDARD 11)
 
 if(WIN32)
@@ -26,7 +26,7 @@ file(GLOB_RECURSE RL_RENDER_SRC "${SRC_DIR}/*.c")
 set(SRC ${RL_RENDER_SRC})
 
 # binaries
-set(LIBRARY "rl_render")
+set(LIBRARY "rlr")
 add_library(${LIBRARY} ${SRC})
 
 # incudes
