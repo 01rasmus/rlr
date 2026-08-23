@@ -149,12 +149,19 @@
 #define RLR_INPUT_KEY_MENU              348
 #define RLR_INPUT_KEY_LAST              GLFW_KEY_MENU
 
+#define RLR_LOG_LEVEL_INFO              0x0
+#define RLR_LOG_LEVEL_WARNING           0x1
+#define RLR_LOG_LEVEL_ERROR             0x2
+#define RLR_LOG_LEVEL_DEBUG             0x3
+
 typedef uint64_t rlr_res_t;
 typedef uint64_t rlr_obj_t;
 typedef uint64_t rlr_handle_t;
+typedef uint8_t rlr_log_level_t;
 
 typedef void (*rlr_input_key_callback_t)(uint32_t key, uint32_t scancode, uint32_t action, uint32_t mods, void* user);
 typedef void (*rlr_input_mouse_callback_t)(uint32_t button, uint32_t action, uint32_t mods, rlr_vec2_t pos, void* user);
+typedef void (*rlr_log_callback_t)(rlr_log_level_t log_level, const char* log, const char* file, uint64_t line, void* user);
 
 typedef enum rlr_init_flags_t {
     RLR_INIT_FLAG_FULLSCREEN = 0x1,

@@ -19,12 +19,13 @@ rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {
 
     id = rlr_mem_man_allocate_res_static_model(rlr_mem_man(), (rlr_res_static_model_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for static model");
         goto err;
     }
 
     model = rlr_mem_man_get_res_static_model(rlr_mem_man(), id);
     if(!model) {
+        rlr_log_error("pointer to the static model handle is null");
         goto err;
     }
 
@@ -40,7 +41,7 @@ rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {
         for(size_t p = 0; p < mesh->primitives_count; p++) {
             cgltf_primitive* primitive = &mesh->primitives[p];
             if(primitive->type != cgltf_primitive_type_triangles) {
-                rlr_error_set(RLR_ERR_MODEL_PRIMITIVE_NOT_TRIANGLES);
+                rlr_log_error("the animated model did not contain triangle primitives");
                 goto err;
             }
 
@@ -77,15 +78,15 @@ rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {
             }
 
             if(!accessor_position || count_position == 0) {
-                rlr_error_set(RLR_ERR_MODEL_NO_POSITION_ATTRIBUTE);
+                rlr_log_error("the animated model did not have any position attributes");
                 goto err;
             }
             if(!accessor_normal || count_normal != count_position) {
-                rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
+                rlr_log_error("the normal count did not match the position count");
                 goto err;
             }
             if(accessor_uv && count_uv != count_position) {
-                rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
+                rlr_log_error("the uv count did not match the position count");
                 goto err;
             }
 
@@ -116,7 +117,7 @@ rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {
                 arrpush(indices, index);
             }
 
-            printf("mesh %s: vertices=%u indices=%u triangles=%u\n",
+            rlr_log_debug("mesh %s: vertices=%u indices=%u triangles=%u",
                 mesh->name,
                 count_position,
                 primitive->indices->count,
@@ -130,7 +131,7 @@ rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {
             mesh->ebo = rlr_backend()->create_buffer();
             mesh->index_count = arrlenu(indices);
             if(mesh->vbo == 0 || mesh->ebo == 0) {
-                rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
+                rlr_log_error("unable to create buffers");
                 goto err;
             }
 
@@ -151,6 +152,7 @@ rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {
     cgltf_free(data);
     arrfree(vertices);
     arrfree(indices);
+    rlr_log("loaded static model %s", glb_model_location);
     return id;
 err:
     cgltf_free(data);

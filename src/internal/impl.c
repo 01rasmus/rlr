@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
 #include <float.h>
 #include <string.h>
 #define GLFW_INCLUDE_NONE
@@ -15,7 +17,6 @@
 #include "../rlr/objects/label.h"
 #include "../rlr/objects/sprite.h"
 #include "../rlr/math/matrix.h"
-#include "../rlr/error.h"
 #include "../rlr/rlr.h"
 #include "impl.h"
 
@@ -34,20 +35,30 @@ uint8_t rlr_quad_indices[6] = {
 
 static void _rlr_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if(ctx->callback_key_input) {
-        ctx->callback_key_input(key, scancode, action, mods, ctx->user);
+        ctx->callback_key_input(key, scancode, action, mods, ctx->input_user);
     }
 }
 
 static void _rlr_mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if(ctx->callback_mouse_input) {
-        ctx->callback_mouse_input(button, action, mods, rlr_get_mouse_position(), ctx->user);
+        ctx->callback_mouse_input(button, action, mods, rlr_get_mouse_position(), ctx->input_user);
     }
+}
+
+static void _rlr_log_default_callback(rlr_log_level_t log_level, const char* log, const char* file, uint64_t line, void* user) {
+    const char* log_level_strings[4] = {
+        [RLR_LOG_LEVEL_INFO] =      "[INFO]",
+        [RLR_LOG_LEVEL_WARNING] =   "[WARN]",
+        [RLR_LOG_LEVEL_ERROR] =     "[ERRO]",
+        [RLR_LOG_LEVEL_DEBUG] =     "[DEBU]",
+    };
+    printf("%s %s:%d: %s", log_level_strings[log_level], file, line, log);
 }
 
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags) {
     ctx = malloc(sizeof(rlr_t));
     if(!ctx) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate memory for the rlr context");
         goto err;
     }
 
@@ -61,14 +72,14 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     ctx->statistics_timer = 0.0;
 
     if(!glfwInit()) {
-        rlr_error_set(RLR_ERR_WINDOW_CREATION);
+        rlr_log_error("could not initialize glfw");
         goto err;
     }
 
     //dynamic backend selection
     GLFWmonitor* monitor = ((RLR_INIT_FLAG_FULLSCREEN & flags) == RLR_INIT_FLAG_FULLSCREEN) ? glfwGetPrimaryMonitor() : NULL;
     if(!rlr_internal_backend_selection(&ctx->window, &ctx->backend, monitor, window_width, window_height, title)) {
-        rlr_error_set(RLR_ERR_COULD_NOT_FIND_SUITABLE_BACKEND);
+        rlr_log_error("could not find a suitable backend");
         goto err;
     }
     glfwSwapInterval((RLR_INIT_FLAG_VSYNC & flags) == RLR_INIT_FLAG_VSYNC ? 1 : 0);
@@ -77,7 +88,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
 
     //setup resource manager
     if(!rlr_mem_man_init(&ctx->res_man)) {
-        rlr_error_set(RLR_ERR_COULD_NOT_FIND_SUITABLE_BACKEND);
+        rlr_log_error("could not find a suitable backend");
         goto err;
     }
 
@@ -108,6 +119,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     }
 
     //setup default values
+    ctx->callback_log = _rlr_log_default_callback;
     rlr_backend()->set_clear_color(0.0, 0.0, 0.0, 1.0);
     ctx->last_time = glfwGetTime();
 
@@ -236,8 +248,12 @@ rlr_vec2_t rlr_world_to_screen(rlr_vec3_t world_pos) {
     return rlr_vec2((ndc_x * 0.5 + 0.5) * ctx->framebuffer_width, (1.0 - (ndc_y * 0.5 + 0.5)) * ctx->framebuffer_height);
 }
 
-void rlr_set_user(void* user) {
-    ctx->user = user;
+void rlr_set_input_user(void* user) {
+    ctx->input_user = user;
+}
+
+void rlr_set_log_user(void* user) {
+    ctx->log_user = user;
 }
 
 void rlr_set_mouse_input_callback(rlr_input_mouse_callback_t func) {
@@ -246,6 +262,10 @@ void rlr_set_mouse_input_callback(rlr_input_mouse_callback_t func) {
 
 void rlr_set_key_input_callback(rlr_input_key_callback_t func) {
     ctx->callback_key_input = func;
+}
+
+void rlr_set_log_callback(rlr_log_callback_t func) {
+    ctx->callback_log = func;
 }
 
 rlr_vec2_t rlr_get_mouse_position() {
@@ -274,6 +294,17 @@ const char* rlr_get_backend_context() {
 
 const char* rlr_get_backend_implementation() {
     return rlr_backend()->get_implementation();
+}
+
+void _rlr_log(const char* file, uint64_t line, rlr_log_level_t log_level, const char* format, ...) {
+    char string[16384];
+    va_list args;
+    va_start(args, format);
+    size_t len = vsnprintf(string, sizeof(string), format, args);
+    va_end(args);
+    string[len] = '\n';
+    string[len+1] = 0;
+    ctx->callback_log(log_level, string, file, line, ctx->log_user);
 }
 
 bool rlr_update() {

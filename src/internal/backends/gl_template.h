@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stb_image_resize2.h>
-#include "../../rlr/error.h"
+#include "../impl.h"
 #include "backend.h"
 
 #define RLR_BUILD_VERSION(MAJOR, MINOR)     (((uint64_t)(MAJOR) << 32) + (uint64_t)(MINOR))
@@ -626,7 +626,7 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     rlr_backend_t* backend = NULL;
     gl = malloc(sizeof(glad_context_t));
     if(!gl) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("not enough memory to allocate opengl context");
         goto err;
     }
     if(GL_LOADER_FUNCTION(gl, proc_loader) == 0) {
@@ -638,14 +638,14 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
 
     backend = malloc(sizeof(rlr_backend_t));
     if(!backend) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("not enough memory to allocate backend");
         goto err;
     }
     memset(backend, 0, sizeof(rlr_backend_t));
 
     texture_resize_buffer = malloc(TEXTURE_RESIZE_BUFFER);
     if(!texture_resize_buffer) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("not enough memory to allocate resize buffer");
         goto err;
     }
 

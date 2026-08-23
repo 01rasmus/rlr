@@ -12,21 +12,21 @@ cgltf_data* rlr_res_model_load_glb(const char* filename) {
     cgltf_data* data = NULL;
     cgltf_result result = cgltf_parse_file(&options, filename, &data);
     if(result != cgltf_result_success) {
-        rlr_error_set(RLR_ERR_MODEL_FAILED_TO_LOAD);
+        rlr_log_error("failed to parse glb file");
         goto err;
     }
     if(data->file_type != cgltf_file_type_glb) {
-        rlr_error_set(RLR_ERR_MODEL_IS_NOT_GLB);
+        rlr_log_error("the model file is not of the type \"glb\"");
         goto err;
     }
     result = cgltf_load_buffers(&options, data, filename);
     if(result != cgltf_result_success) {
-        rlr_error_set(RLR_ERR_MODEL_IS_NOT_GLB);
+        rlr_log_error("failed to load glb buffers");
         goto err;
     }
     result = cgltf_validate(data);
     if(result != cgltf_result_success) {
-        rlr_error_set(RLR_ERR_MODEL_IS_NOT_GLB);
+        rlr_log_error("glb model validation failed");
         goto err;
     }
     return data;

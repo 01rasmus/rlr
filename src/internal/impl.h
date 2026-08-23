@@ -55,9 +55,11 @@ typedef struct rlr_t {
     rlr_mat4x4_t view_projection;
 
     //callbacks
-    void* user;
+    void* input_user;
+    void* log_user;
     rlr_input_key_callback_t callback_key_input;
     rlr_input_mouse_callback_t callback_mouse_input;
+    rlr_log_callback_t callback_log;
 
     //timing
     double last_time;
@@ -82,7 +84,20 @@ typedef struct rlr_t {
 extern rlr_vec2_t rlr_quad_vertices[4];
 extern uint8_t rlr_quad_indices[6];
 
+#define rlr_log(...) \
+    _rlr_log(__FILE__, __LINE__, RLR_LOG_LEVEL_INFO, __VA_ARGS__)
+
+#define rlr_log_warning(...) \
+    _rlr_log(__FILE__, __LINE__, RLR_LOG_LEVEL_WARNING, __VA_ARGS__)
+
+#define rlr_log_error(...) \
+    _rlr_log(__FILE__, __LINE__, RLR_LOG_LEVEL_ERROR, __VA_ARGS__)
+
+#define rlr_log_debug(...) \
+    _rlr_log(__FILE__, __LINE__, RLR_LOG_LEVEL_DEBUG, __VA_ARGS__)
+
 rlr_t* rlr();
 rlr_backend_t* rlr_backend();
 rlr_mem_man_t* rlr_mem_man();
 rlr_res_t rlr_internal_get_white_texture();
+void _rlr_log(const char* file, uint64_t line, rlr_log_level_t log_level, const char* format, ...);

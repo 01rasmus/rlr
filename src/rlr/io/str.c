@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../error.h"
+#include "../../internal/impl.h"
 #include "str.h"
 
 int32_t _rlr_io_str_starts_with_any(const char* src, const char** substrings, int32_t substring_count) {
@@ -21,7 +21,7 @@ char* rlr_io_str_load_from_file(const char* filepath) {
 
     file = fopen(filepath, "rb");
     if(!file) {
-        rlr_error_setf(RLR_ERR_FILE_NOT_FOUND, "file \"%s\"", filepath);
+        rlr_log_error("file \"%s\" not found", filepath);
         goto err;
     }
 
@@ -31,13 +31,13 @@ char* rlr_io_str_load_from_file(const char* filepath) {
 
     str = malloc(length + 1);
     if(!str) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate memory to load string");
         goto err;
     }
 
     size_t read = fread(str, 1, length, file);
     if(read != length) {
-       rlr_error_setf(RLR_ERR_FILE_NOT_READ_PROPERLY, "file \"%s\"", filepath);
+       rlr_log_error("file is %d bytes but read %d", length, read);
        goto err;
     }
 

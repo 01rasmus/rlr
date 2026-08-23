@@ -10,13 +10,13 @@ rlr_res_t rlr_res_uniform_create_dynamic(uint64_t size) {
 
     id = rlr_mem_man_allocate_res_uniform(rlr_mem_man(), (rlr_res_uniform_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for uniform");
         goto err;
     }
 
     uniform = rlr_mem_man_get_res_uniform(rlr_mem_man(), id);
     if(!uniform) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("pointer to the uniform handle is null");
         goto err;
     }
     uniform->is_static = false;
@@ -36,13 +36,13 @@ rlr_res_t rlr_res_uniform_create_static(void* data, uint64_t size) {
 
     id = rlr_mem_man_allocate_res_uniform(rlr_mem_man(), (rlr_res_uniform_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for uniform");
         goto err;
     }
 
     uniform = rlr_mem_man_get_res_uniform(rlr_mem_man(), id);
     if(!uniform) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("pointer to the uniform handle is null");
         goto err;
     }
     uniform->is_static = true;

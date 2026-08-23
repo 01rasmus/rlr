@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../error.h"
+#include "../../internal/impl.h"
 #include "csv.h"
 
 #if defined(_WIN32)
@@ -14,7 +14,7 @@ bool rlr_io_csv_parse(csv_row_callback_t callback, const char* csv_string, const
     size_t csv_length = strlen(csv_string) + 1;
     char* copied = malloc(csv_length);
     if(!copied) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate memory for csv string");
         goto err;
     }
     memcpy(copied, csv_string, csv_length);
@@ -53,7 +53,7 @@ bool csv_parse_row(csv_row_callback_t callback, uint32_t row_index, char* row, c
     }
 
     if(count != column_count) {
-        rlr_error_setf(RLR_ERR_CSV_COLUMN_COUNT_MISMATCH, "at row %u, expected %ld columns but got %zd", row_index, column_count, count);
+        rlr_log_error("csv column count mismatch. at row %u, expected %ld columns but got %zd", row_index, column_count, count);
         goto err;
     }
 

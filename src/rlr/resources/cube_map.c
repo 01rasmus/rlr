@@ -24,13 +24,13 @@ rlr_res_t rlr_res_cube_map_load(const char* right, const char* left, const char*
 
     id = rlr_mem_man_allocate_res_cube_map(rlr_mem_man(), (rlr_res_cube_map_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for cube map");
         goto err;
     }
     
     cm = rlr_mem_man_get_res_cube_map(rlr_mem_man(), id);
     if(!cm) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("pointer to the cube map handle is null");
         goto err;
     }
 
@@ -42,7 +42,7 @@ rlr_res_t rlr_res_cube_map_load(const char* right, const char* left, const char*
         int32_t h;
         texture_data[i] = stbi_load(texture_locations[i], &w, &h, NULL, 3);
         if(!texture_data[i]) {
-            rlr_error_setf(RLR_ERR_IMAGE_NOT_LOADED, "file \"%s\"", texture_locations[i]);
+            rlr_log_error("the image \"%s\" did not load", texture_locations[i]);
             goto err;
         }
 
@@ -50,18 +50,19 @@ rlr_res_t rlr_res_cube_map_load(const char* right, const char* left, const char*
             width = w;
             height = h;
         } else if(width != w || height != h) {
-            rlr_error_set(RLR_ERR_BACKEND_TEXTURE_SIZES_ARE_DIFFERENT);
+            rlr_log_error("texture sizes are not the same");
             goto err;
         }
     }
 
     cm->texture = rlr_backend()->create_cube_map_texture(texture_data[0], texture_data[1], texture_data[2], texture_data[3], texture_data[4], texture_data[5], width, height, 3);
     if(!cm->texture) {
-        rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
+        rlr_log_error("backend texture handle is null");
         goto err;
     }
 
     FREE_TEXTURE_DATA(texture_data);
+    rlr_log("loaded cube map\n\tright:\t%s\n\tleft:\t%s\n\ttop:\t%s\n\tbottom:\t%s\n\tfront:\t%s\n\tback:\t%s", right, left, top, bottom, front, back);
     return id;
 err:
     FREE_TEXTURE_DATA(texture_data);
@@ -75,20 +76,20 @@ rlr_res_t rlr_res_cube_map_default() {
 
     id = rlr_mem_man_allocate_res_cube_map(rlr_mem_man(), (rlr_res_cube_map_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for cube map");
         goto err;
     }
     
     cm = rlr_mem_man_get_res_cube_map(rlr_mem_man(), id);
     if(!cm) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("pointer to the cube map handle is null");
         goto err;
     }
 
     const uint8_t white[3] = {255, 255, 255};
     cm->texture = rlr_backend()->create_cube_map_texture(white, white, white, white, white, white, 1, 1, 3);
     if(!cm->texture) {
-        rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
+        rlr_log_error("backend texture handle is null");
         goto err;
     }
 

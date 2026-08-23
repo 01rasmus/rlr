@@ -13,13 +13,13 @@ rlr_res_t rlr_res_texture_load(const char* texture_path, bool use_srgb_color_spa
 
     id = rlr_mem_man_allocate_res_texture(rlr_mem_man(), (rlr_res_texture_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for texture");
         goto err;
     }
 
     texture = rlr_mem_man_get_res_texture(rlr_mem_man(), id);
     if(!texture) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("pointer to the texture handle is null");
         goto err;
     }
 
@@ -32,7 +32,7 @@ rlr_res_t rlr_res_texture_load(const char* texture_path, bool use_srgb_color_spa
     int32_t channels = 0;
     data = stbi_load(texture_path, &w, &h, &channels, 0);
     if(!data) {
-        rlr_error_setf(RLR_ERR_IMAGE_NOT_LOADED, "file \"%s\"", texture_path);
+        rlr_log_error("failed to load file \"%s\"", texture_path);
         goto err;
     }
 
@@ -55,11 +55,12 @@ rlr_res_t rlr_res_texture_load(const char* texture_path, bool use_srgb_color_spa
     }
 
     if(texture->texture == 0) {
-        rlr_error_setf(RLR_ERR_BACKEND_NULL_HANDLE, "file \"%s\"", texture_path);
+        rlr_log_error("backend handle for the texture \"%s\" is null", texture_path);
         goto err;
     }
 
     stbi_image_free(data);
+    rlr_log("loaded texture %s", texture_path);
     return id;
 err:
     stbi_image_free(data);
@@ -96,24 +97,24 @@ rlr_res_t rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
 
     id = rlr_mem_man_allocate_res_texture(rlr_mem_man(), (rlr_res_texture_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for texture");
         goto err;
     }
 
     texture = rlr_mem_man_get_res_texture(rlr_mem_man(), id);
     if(!texture) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("pointer to the texture handle is null");
         goto err;
     }
 
     if(!tex || !tex->image || !tex->image->buffer_view) {
-        rlr_error_set(RLR_ERR_IMAGE_NOT_LOADED);
+        rlr_log_error("glb texture isn't loaded");
         goto err;
     }
 
     cgltf_buffer_view* view = tex->image->buffer_view;
     if(!view->buffer || !view->buffer->data) {
-        rlr_error_set(RLR_ERR_IMAGE_NOT_LOADED);
+        rlr_log_error("glb texture isn't loaded");
         goto err;
     }
 
@@ -129,7 +130,7 @@ rlr_res_t rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
     int32_t channels = 0;
     data = stbi_load_from_memory(texture_data, size, &w, &h, &channels, 0);
     if(!data) {
-        rlr_error_set(RLR_ERR_IMAGE_NOT_LOADED);
+        rlr_log_error("failed to parse glb texture");
         goto err;
     }
 
@@ -147,7 +148,7 @@ rlr_res_t rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
 
     texture->texture = rlr_backend()->create_texture(data, w, h, channels, true, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t);
     if(texture->texture == 0) {
-        rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
+        rlr_log_error("the backend texture handle is null");
         goto err;
     }
 

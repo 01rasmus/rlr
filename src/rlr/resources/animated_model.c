@@ -7,11 +7,8 @@
 #include "../resources/uniform.h"
 #include "../math/quat.h"
 #include "../math/matrix.h"
-#include "../error.h"
 #include "model_shared.h"
 #include "animated_model.h"
-
-#include <stdio.h>
 
 typedef struct animation_frame_joint_t {
     bool is_matrix;
@@ -189,7 +186,7 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     rlr_mat4x4_t* matrices = NULL;
 
     if(model->skins_count != 1) {
-        printf("err: more than 1 skin detected.. %d\n", model->skins_count);
+        rlr_log_error("err: more than 1 skin detected.. %d\n", model->skins_count);
         return (rlr_res_animations_t){0};
     }
     cgltf_skin* skin = &model->skins[0];
@@ -290,8 +287,8 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     }
 
     final.animation_texture = rlr_backend()->create_animation_texture(animation_matrices, arrlenu(animation_matrices), RLR_RES_ANIMATED_MODEL_ANIMATION_TEXTURE_SIZE);
-    printf("tex %d\n", final.animation_texture);
-    printf("baked animation data info: \nmatrix count=%d\nsize=%d\ntexel count=%d\n", arrlen(animation_matrices), arrlen(animation_matrices) * sizeof(rlr_affine_mat4x3_t), arrlen(animation_matrices) * 4);
+    rlr_log_debug("tex %d", final.animation_texture);
+    rlr_log_debug("baked animation data info: matrix count=%d; size=%d; texel count=%d", arrlen(animation_matrices), arrlen(animation_matrices) * sizeof(rlr_affine_mat4x3_t), arrlen(animation_matrices) * 4);
     return final;
 }
 
@@ -304,13 +301,13 @@ rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
 
     id = rlr_mem_man_allocate_res_animated_model(rlr_mem_man(), (rlr_res_animated_model_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for animated model");
         goto err;
     }
     
     model = rlr_mem_man_get_res_animated_model(rlr_mem_man(), id);
     if(!model) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("pointer to the animated model handle is null");
         goto err;
     }
     
@@ -329,14 +326,14 @@ rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
     //load the animations first
     model->animations = load_animations(data, RLR_RES_ANIMATED_MODEL_ANIMATION_FPS);
     if(model->animations.animation_texture == 0) {
-        rlr_error_set(RLR_ERR_MODEL_COULD_NOT_LOAD_ANIMATION);
+        rlr_log_error("could not load animation from \"%s\"", glb_model_location);
         goto err;
     }
 
-    printf("Animation count: %d with %d joints\n", arrlen(model->animations.metas), model->animations.joint_count);
+    rlr_log_debug("animation count: %d with %d joints", arrlen(model->animations.metas), model->animations.joint_count);
     for(int32_t i = 0; i < arrlen(model->animations.metas); i++) {
         rlr_res_animation_meta_t* meta = &model->animations.metas[i];
-        printf("Animation \"%s\" is %f seconds long. It's animation matrices starts at offset %d and it has %d animation keyframes\n", meta->name, meta->duration, meta->pose_offset, meta->pose_count);
+        rlr_log_debug("animation \"%s\" is %f seconds long. It's animation matrices starts at offset %d and it has %d animation keyframes", meta->name, meta->duration, meta->pose_offset, meta->pose_count);
     }
 
     for(size_t i = 0; i < data->meshes_count; i++) {
@@ -345,7 +342,7 @@ rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
         for(size_t p = 0; p < mesh->primitives_count; p++) {
             cgltf_primitive* primitive = &mesh->primitives[p];
             if(primitive->type != cgltf_primitive_type_triangles) {
-                rlr_error_set(RLR_ERR_MODEL_PRIMITIVE_NOT_TRIANGLES);
+                rlr_log_error("the animated model did not contain triangle primitives");
                 goto err;
             }
 
@@ -398,28 +395,28 @@ rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
             bool has_joints = accessor_joints != NULL;
             bool has_weights = accessor_weights != NULL;
             if(has_joints != has_weights) {
-                rlr_error_set(RLR_ERR_ANIMATED_MODEL_NEEDS_BOTH_JOINTS_AND_WEIGHTS_OR_NONE);
+                rlr_log_error("animated model needs both weights and joints or none of the two");
                 goto err;
             }
 
             if(!accessor_position || count_position == 0) {
-                rlr_error_set(RLR_ERR_MODEL_NO_POSITION_ATTRIBUTE);
+                rlr_log_error("the animated model did not have any position attributes");
                 goto err;
             }
             if(accessor_normal && count_normal != count_position) {
-                rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
+                rlr_log_error("the normal count did not match the position count");
                 goto err;
             }
             if(accessor_uv && count_uv != count_position) {
-                rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
+                rlr_log_error("the uv count did not match the position count");
                 goto err;
             }
             if(accessor_joints && count_joints != count_position) {
-                rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
+                rlr_log_error("the joint count did not match the position count");
                 goto err;
             }
             if(accessor_weights && count_weights != count_position) {
-                rlr_error_set(RLR_ERR_MODEL_ATTRIBUTE_COUNT_ARE_DIFFERENT);
+                rlr_log_error("the weight count did not match the position count");
                 goto err;
             }
 
@@ -482,13 +479,13 @@ rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
                     uint32_t index = cgltf_accessor_read_index(primitive->indices, ind);
                     arrpush(indices, index);
                 }
-                printf("mesh %s: vertices=%u indices=%u triangles=%u\n",
+                rlr_log_debug("mesh %s: vertices=%u indices=%u triangles=%u",
                     mesh->name,
                     count_position,
                     primitive->indices->count,
                     primitive->indices->count / 3);
             } else {
-                printf("mesh %s: vertices=%u indices=%u triangles=%u\n",
+                rlr_log_debug("mesh %s: vertices=%u indices=%u triangles=%u",
                     mesh->name,
                     count_position,
                     count_position,
@@ -507,7 +504,7 @@ rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
             mesh->ebo = rlr_backend()->create_buffer();
             mesh->index_count = arrlenu(indices);
             if(mesh->vbo == 0 || mesh->ebo == 0) {
-                rlr_error_set(RLR_ERR_BACKEND_NULL_HANDLE);
+                rlr_log_error("unable to create buffers");
                 goto err;
             }
 
@@ -526,6 +523,7 @@ rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
     }
 
     cgltf_free(data);
+    rlr_log("loaded animated model %s", glb_model_location);
     return id;
 err:
     cgltf_free(data);

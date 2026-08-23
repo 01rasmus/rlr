@@ -22,9 +22,11 @@ rlr_vec2_t rlr_get_framebuffer_size();
 rlr_vec2_t rlr_get_mouse_position();
 
 //callbacks
-void rlr_set_user(void* user);
+void rlr_set_input_user(void* user);
+void rlr_set_log_user(void* user);
 void rlr_set_mouse_input_callback(rlr_input_mouse_callback_t func);
 void rlr_set_key_input_callback(rlr_input_key_callback_t func);
+void rlr_set_log_callback(rlr_log_callback_t func);
 
 //screen / world convertions
 bool rlr_screen_pos_to_ground(rlr_vec2_t mouse_pos, rlr_vec3_t* out_position);

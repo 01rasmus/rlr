@@ -12,20 +12,20 @@ rlr_res_t rlr_res_shader_create(const char* vertex_string, const char* fragment_
 
     id = rlr_mem_man_allocate_res_shader(rlr_mem_man(), (rlr_res_shader_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for shader");
         goto err;
     }
 
     shader = rlr_mem_man_get_res_shader(rlr_mem_man(), id);
     if(!shader) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("pointer to the shader handle is null");
         goto err;
     }
     
     char error_str[RLR_SHADER_ERROR_LENGTH];
     shader->shader = rlr_backend()->create_shader(vertex_string, fragment_string, error_str, RLR_SHADER_ERROR_LENGTH);
     if(!shader->shader) {
-        rlr_error_setf(RLR_ERR_BACKEND_SHADER_COMPILATION, "%s", error_str);
+        rlr_log_error("failed to compile shader:\n%s", error_str);
         goto err;
     }
     return id;

@@ -18,52 +18,52 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
     char* end = NULL;
     uint32_t unicode = strtoul(columns[0], &end, 10);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_UNSIGNED_INT, "at row %u, column 1, \"%s\" was not a valid unsigned integer", row, columns[0]);
+        rlr_log_error("failed to parse uint at row %u, column 1, \"%s\" was not a valid unsigned integer", row, columns[0]);
         return;
     }
     float advance = strtof(columns[1], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 2, \"%s\" was not a valid float", row, columns[1]);
+        rlr_log_error("failed to parse float at row %u, column 2, \"%s\" was not a valid float", row, columns[1]);
         return;
     }
     float plane_bound_left = strtof(columns[2], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 3, \"%s\" was not a valid float", row, columns[2]);
+        rlr_log_error("failed to parse float at row %u, column 3, \"%s\" was not a valid float", row, columns[2]);
         return;
     }
     float plane_bound_bottom = strtof(columns[3], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 4, \"%s\" was not a valid float", row, columns[3]);
+        rlr_log_error("failed to parse float at row %u, column 4, \"%s\" was not a valid float", row, columns[3]);
         return;
     }
     float plane_bound_right = strtof(columns[4], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 5, \"%s\" was not a valid float", row, columns[4]);
+        rlr_log_error("failed to parse float at row %u, column 5, \"%s\" was not a valid float", row, columns[4]);
         return;
     }
     float plane_bound_top = strtof(columns[5], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 6, \"%s\" was not a valid float", row, columns[5]);
+        rlr_log_error("failed to parse float at row %u, column 6, \"%s\" was not a valid float", row, columns[5]);
         return;
     }
     float atlas_bound_left = strtof(columns[6], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 7, \"%s\" was not a valid float", row, columns[6]);
+        rlr_log_error("failed to parse float at row %u, column 7, \"%s\" was not a valid float", row, columns[6]);
         return;
     }
     float atlas_bound_bottom = strtof(columns[7], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 8, \"%s\" was not a valid float", row, columns[7]);
+        rlr_log_error("failed to parse float at row %u, column 8, \"%s\" was not a valid float", row, columns[7]);
         return;
     }
     float atlas_bound_right = strtof(columns[8], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 9, \"%s\" was not a valid float", row, columns[8]);
+        rlr_log_error("failed to parse float at row %u, column 9, \"%s\" was not a valid float", row, columns[8]);
         return;
     }
     float atlas_bound_top = strtof(columns[9], &end);
     if(*end != 0) {
-        rlr_error_setf(RLR_ERR_PARSE_FLOAT, "at row %u, column 10, \"%s\" was not a valid float", row, columns[9]);
+        rlr_log_error("failed to parse float at row %u, column 10, \"%s\" was not a valid float", row, columns[9]);
         return;
     }
 
@@ -89,13 +89,13 @@ rlr_res_t rlr_res_font_load(const char* csv_path, const char* texture_atlas_path
 
     id = rlr_mem_man_allocate_res_font(rlr_mem_man(), (rlr_res_font_t){0});
     if(id == RLR_NULL) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("could not allocate rlr handle for font");
         goto err;
     }
 
     font = rlr_mem_man_get_res_font(rlr_mem_man(), id);
     if(!font) {
-        rlr_error_set(RLR_ERR_NO_MEMORY);
+        rlr_log_error("pointer to the font handle is null");
         goto err;
     }
 
@@ -123,6 +123,7 @@ rlr_res_t rlr_res_font_load(const char* csv_path, const char* texture_atlas_path
     }
 
     free(csv);
+    rlr_log("loaded mtsdf font\n\tmeta:\t%s\n\tatlas:\t%s", csv_path, texture_atlas_path);
     return id;
 err:
     free(csv);
