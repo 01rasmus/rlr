@@ -6,6 +6,7 @@
 #include "../../rlr/resources/font.h"
 #include "../../rlr/resources/shader.h"
 #include "../../rlr/resources/static_model.h"
+#include "../../rlr/resources/texture_atlas.h"
 #include "../../rlr/resources/texture.h"
 #include "../../rlr/resources/uniform.h"
 #include "../../rlr/objects/animated_model.h"
@@ -27,6 +28,8 @@
     X(res, font) \
     X(res, shader) \
     X(res, static_model) \
+    X(res, texture_atlas_tile) \
+    X(res, texture_atlas) \
     X(res, texture) \
     X(res, uniform)
 

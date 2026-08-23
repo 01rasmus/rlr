@@ -279,6 +279,11 @@ err:
     return 0;
 }
 
+static void gl_copy_sub_texture(uint64_t texture, uint32_t u, uint32_t v, uint32_t width, uint32_t height, uint32_t channels, const uint8_t* data) {
+    gl->BindTexture(GL_TEXTURE_2D, texture);
+    gl->TexSubImage2D(GL_TEXTURE_2D, 0, u, v, width, height, texture_format(channels), GL_UNSIGNED_BYTE, data);
+}
+
 static void gl_bind_texture(uint64_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot) {
     if(current_textures[texture_slot] == texture) {
         return;

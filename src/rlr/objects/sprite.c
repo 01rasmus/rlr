@@ -21,6 +21,11 @@ rlr_obj_t rlr_obj_sprite_create(rlr_res_t texture_id, rlr_rect_t rectangle, rlr_
     return rlr_obj_sprite_create_ext(texture_id, rectangle, screen_anchor, local_anchor, layer, rlr_rect(0, 0, texture->width, texture->height), rlr_rect(0, 0, 0, 0));
 }
 
+rlr_obj_t rlr_obj_sprite_create_from_atlas_tile(rlr_res_t texture_atlas_tile, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
+    rlr_res_texture_atlas_tile_t* tile = rlr_mem_man_get_res_texture_atlas_tile(rlr_mem_man(), texture_atlas_tile);
+    return rlr_obj_sprite_create_ext(tile->texture, rectangle, screen_anchor, local_anchor, layer, rlr_rect(tile->uv.x, tile->uv.y, tile->size.x, tile->size.y), rlr_rect(0, 0, 0, 0));
+}
+
 rlr_obj_t rlr_obj_sprite_create_ext(rlr_res_t texture_id, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer, rlr_rect_t uv, rlr_rect_t scissor) {
     rlr_res_texture_t* texture = rlr_mem_man_get_res_texture(rlr_mem_man(), texture_id == RLR_NULL ? rlr_res_texture_default() : texture_id);
 

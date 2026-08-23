@@ -38,6 +38,7 @@ rlr_res_t rlr_res_texture_load(const char* texture_path, bool use_srgb_color_spa
 
     texture->width = w;
     texture->height = h;
+    texture->channels = channels;
     switch(filter) {
         case RLR_RES_TEXTURE_FILTER_NEAREST: {
             texture->texture = rlr_backend()->create_nearest_texture(data, w, h, channels, use_srgb_color_space);
@@ -68,6 +69,47 @@ err:
     return RLR_NULL;
 }
 
+rlr_res_t rlr_res_texture_create_empty(rlr_vec2_t size, bool use_srgb_color_space, rlr_res_texture_filter_t filter, uint32_t channels) {
+    uint64_t texture_handle = 0;
+    switch(filter) {
+        case RLR_RES_TEXTURE_FILTER_NEAREST: {
+            texture_handle = rlr_backend()->create_nearest_texture(NULL, size.x, size.y, channels, use_srgb_color_space);
+            break;
+        }
+        case RLR_RES_TEXTURE_FILTER_LINEAR: {
+            texture_handle = rlr_backend()->create_linear_texture(NULL, size.x, size.y, channels, use_srgb_color_space);
+            break;
+        }
+        case RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP: {
+            texture_handle = rlr_backend()->create_linear_mipmap_texture(NULL, size.x, size.y, channels, use_srgb_color_space);
+            break;
+        }
+    }
+    if(texture_handle == 0) {
+        return RLR_NULL;
+    }
+    rlr_res_t id = rlr_mem_man_allocate_res_texture(rlr_mem_man(), (rlr_res_texture_t){
+        .height = size.x,
+        .width = size.y,
+        .channels = channels,
+        .texture = texture_handle
+    });
+    if(id == RLR_NULL) {
+        rlr_backend()->free_texture(texture_handle);
+        return RLR_NULL;
+    }
+    return id;
+}
+
+void rlr_res_texture_copy_subtex(rlr_res_t texture_handle, const uint8_t* texture_data, uint32_t u, uint32_t v, uint32_t width, uint32_t height) {
+    rlr_res_texture_t* tex = rlr_mem_man_get_res_texture(rlr_mem_man(), texture_handle);
+    if(!tex) {
+        rlr_log_warning("texture is invalid, no copy will be made");
+        return;
+    }
+    rlr_backend()->copy_sub_texture(tex->texture, u, v, width, height, tex->channels, texture_data);
+}
+
 rlr_res_t rlr_res_texture_default() {
     uint8_t data[3] = {255, 255, 255};
     uint64_t texture_handle = rlr_backend()->create_nearest_texture(data, 1, 1, 3, false);
@@ -77,6 +119,7 @@ rlr_res_t rlr_res_texture_default() {
     rlr_res_t id = rlr_mem_man_allocate_res_texture(rlr_mem_man(), (rlr_res_texture_t){
         .height = 1,
         .width = 1,
+        .channels = 3,
         .texture = texture_handle
     });
     if(id == RLR_NULL) {
@@ -154,6 +197,7 @@ rlr_res_t rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
 
     texture->width = w;
     texture->height = h;
+    texture->channels = channels;
 
     stbi_image_free(data);
     return id;

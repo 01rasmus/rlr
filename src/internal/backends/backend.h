@@ -76,6 +76,7 @@ typedef enum rlr_backend_type_t {
     X(uint64_t,     create_cube_map_texture,        (const uint8_t* right, const uint8_t* left, const uint8_t* top, const uint8_t* bottom, const uint8_t* front, const uint8_t* back, uint32_t width, uint32_t height, int32_t channels)) \
     X(uint64_t,     create_animation_texture,       (rlr_mat4x4_t* matrices, uint32_t matrix_count, uint32_t width)) \
     X(uint64_t,     create_shader,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
+    X(void,         copy_sub_texture,               (uint64_t texture, uint32_t u, uint32_t v, uint32_t width, uint32_t height, uint32_t channels, const uint8_t* data)) \
     X(void,         bind_vertex_array,              (uint64_t vao)) \
     X(void,         bind_buffer,                    (uint64_t buffer, rlr_backend_buffer_target_t target)) \
     X(void,         bind_texture,                   (uint64_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot)) \
