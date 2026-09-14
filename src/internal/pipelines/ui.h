@@ -10,6 +10,7 @@ typedef struct rlr_instance_data_ui_t {
     rlr_vec2_t uv;
     rlr_vec2_t uv_size;
     uint32_t color;
+    float italic_sheer;
     uint8_t screen_anchor;
 } rlr_instance_data_ui_t;
 

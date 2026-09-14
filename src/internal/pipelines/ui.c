@@ -39,6 +39,7 @@ static const char mtsdf_vertex[] = RLR_SHADER_INLINE(
     layout (location = 4) in vec2 uv_size;
     layout (location = 5) in int screen_anchor;
     layout (location = 6) in vec4 color;
+    layout (location = 7) in float italic_shear;
 
     layout(std140) uniform inv_screen_size {
         float inv_x;
@@ -64,10 +65,14 @@ static const char mtsdf_vertex[] = RLR_SHADER_INLINE(
     );
 
     void main() {
+        float local_x = pos.x * rect_size.x;
+        float local_y = pos.y * rect_size.y;
+        local_x += (1.0 - pos.y) * rect_size.y * italic_shear;
+
         frag_color = color;
         frag_uv = vec2(uv.x + pos.x * uv_size.x, uv.y + pos.y * uv_size.y);
-        float x = (rect_pos.x + screen_anchor_vecs[screen_anchor].x * ui_data.screen_width) + pos.x * rect_size.x;
-        float y = (rect_pos.y + screen_anchor_vecs[screen_anchor].y * ui_data.screen_height) + pos.y * rect_size.y;
+        float x = (rect_pos.x + screen_anchor_vecs[screen_anchor].x * ui_data.screen_width) + local_x;
+        float y = (rect_pos.y + screen_anchor_vecs[screen_anchor].y * ui_data.screen_height) + local_y;
         gl_Position = vec4(x * ui_data.inv_x * 2.0 - 1.0, 1.0 - y * ui_data.inv_y * 2.0, 0.0, 1.0);
     }
 );
@@ -185,6 +190,7 @@ static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_res_t text
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 4, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, uv_size));
     rlr_backend()->set_vertex_array_attribi(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 5, 1, RLR_BACKEND_BUFFER_TYPE_U8, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, screen_anchor));
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 6, 4, RLR_BACKEND_BUFFER_TYPE_U8, true, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, color));
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 7, 1, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_ui_t), offsetof(rlr_instance_data_ui_t, italic_sheer));
     rlr_backend()->bind_buffer(RLR_PIPELINE_UI->quad_ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
     return command;
 }

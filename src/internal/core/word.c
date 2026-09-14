@@ -30,7 +30,6 @@ static int32_t hex_value(char c) {
     return -1;
 }
 
-#include <stdio.h>
 static bool try_parse_color(const char* p, const char** end, uint32_t* color) {
     if(p[0] != '[' || p[1] != 'c' || p[2] != '=' || p[3] != '#') {
         return false;
@@ -72,6 +71,38 @@ static bool try_parse_color(const char* p, const char** end, uint32_t* color) {
     return true;
 }
 
+static bool try_parse_color_reset(const char* p, const char** end) {
+    if(p[0] != '[' || p[1] != '/' || p[2] != 'c' || p[3] != ']') {
+        return false;
+    }
+    *end = p + 4;
+    return true;
+}
+
+static bool try_parse_italic_on(const char* p, const char** end) {
+    if(p[0] != '[' || p[1] != 'i' || p[2] != ']') {
+        return false;
+    }
+    *end = p + 3;
+    return true;
+}
+
+static bool try_parse_italic_off(const char* p, const char** end) {
+    if(p[0] != '[' || p[1] != '/' || p[2] != 'i' || p[3] != ']') {
+        return false;
+    }
+    *end = p + 4;
+    return true;
+}
+
+static bool try_parse_turn_off_rich_text(const char* p, const char** end) {
+    if(p[0] != '[' || p[1] != 'o' || p[2] != 'f' || p[3] != 'f' || p[4] != ']') {
+        return false;
+    }
+    *end = p + 5;
+    return true;
+}
+
 word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rlr_res_t font, float font_size, float space_width, float height, float width, const char* text) {
     
     //reset
@@ -86,22 +117,39 @@ word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rl
     uint32_t current_offset = 0;
     uint32_t current_word_id = 0;
     uint32_t current_color = UINT32_MAX;
+    float current_shear = 0.0;
+    bool do_rich_text = true;
 
     const void* p = text;
     utf8_int32_t unicode;
     while(p && *(const char*)p) {
 
         const char* start = p;
-        if(*start == '[') {
+        if(*start == '[' && do_rich_text) {
             const char* end;
             uint32_t new_color = current_color;
             
             if(try_parse_color(start, &end, &new_color)) {
-                printf("current color %d old col %d\n", new_color, current_color);
                 current_color = new_color;
                 p = end;
                 continue;
-            } 
+            } else if(try_parse_italic_on(start, &end)) {
+                current_shear = 0.25;
+                p = end;
+                continue;
+            } else if(try_parse_italic_off(start, &end)) {
+                current_shear = 0.0;
+                p = end;
+                continue;
+            } else if(try_parse_color_reset(start, &end)) {
+                current_color = UINT32_MAX;
+                p = end;
+                continue;
+            } else if(try_parse_turn_off_rich_text(start, &end)) {
+                do_rich_text = false;
+                p = end;
+                continue;
+            }
         }
 
         p = utf8codepoint(p, &unicode);
@@ -155,6 +203,7 @@ word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rl
 
         rlr_measured_glyph_t g = (rlr_measured_glyph_t){
             .color = current_color,
+            .shear = current_shear,
             .word_id = current_word_id,
             .glyph = glyph,
         };
@@ -264,6 +313,7 @@ bool rlr_word_generate(rlr_res_t font_id, rlr_vec2_t* out_measured_size, float t
             gen_callback(
                 user,
                 g->color,
+                g->shear,
                 rlr_vec2(draw_x1, draw_y1),
                 rlr_vec2(draw_x2 - draw_x1, draw_y2 - draw_y1),
                 screen_anchor,
