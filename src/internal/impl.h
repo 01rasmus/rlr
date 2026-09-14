@@ -99,5 +99,4 @@ extern uint8_t rlr_quad_indices[6];
 rlr_t* rlr();
 rlr_backend_t* rlr_backend();
 rlr_mem_man_t* rlr_mem_man();
-rlr_res_t rlr_internal_get_white_texture();
 void _rlr_log(const char* file, uint64_t line, rlr_log_level_t log_level, const char* format, ...);

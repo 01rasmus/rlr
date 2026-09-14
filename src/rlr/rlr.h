@@ -32,6 +32,9 @@ void rlr_set_log_callback(rlr_log_callback_t func);
 bool rlr_screen_pos_to_ground(rlr_vec2_t mouse_pos, rlr_vec3_t* out_position);
 rlr_vec2_t rlr_world_to_screen(rlr_vec3_t world_pos);
 
+//default resources
+rlr_res_t rlr_default_texture();
+
 //camera
 void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation);
 rlr_vec3_t rlr_get_camera_pos();

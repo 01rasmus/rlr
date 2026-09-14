@@ -280,7 +280,7 @@ rlr_statistics_t* rlr_get_statistics() {
     return &ctx->statistics_interval;
 }
 
-rlr_res_t rlr_internal_get_white_texture() {
+rlr_res_t rlr_default_texture() {
     return ctx->texture_white;
 }
 
