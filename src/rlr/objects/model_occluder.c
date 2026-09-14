@@ -7,6 +7,7 @@ rlr_obj_t rlr_obj_model_occluder_create(rlr_rect_t rectangle, rlr_anchor_t scree
     if(id == RLR_NULL) {
         goto err;
     }
+    rlr()->pipeline_stencil.is_dirty = true;
     return id;
 err:
     rlr_obj_model_occluder_free(id);
@@ -18,4 +19,5 @@ void rlr_obj_model_occluder_free(rlr_obj_t obj) {
         return;
     }
     rlr_mem_man_free_obj_model_occluder(rlr_mem_man(), obj);
+    rlr()->pipeline_stencil.is_dirty = true;
 }
