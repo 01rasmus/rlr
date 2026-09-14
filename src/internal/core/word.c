@@ -17,6 +17,61 @@ bool rlr_word_unicode_is_new_line(int32_t u) {
     return u == '\n';
 }
 
+static int32_t hex_value(char c) {
+    if(c >= '0' && c <= '9') {
+        return c - '0';
+    }
+    if(c >= 'a' && c <= 'f') {
+        return c - 'a' + 10;
+    }
+    if(c >= 'A' && c <= 'F') {
+        return c - 'A' + 10;
+    }
+    return -1;
+}
+
+#include <stdio.h>
+static bool try_parse_color(const char* p, const char** end, uint32_t* color) {
+    if(p[0] != '[' || p[1] != 'c' || p[2] != '=' || p[3] != '#') {
+        return false;
+    }
+
+    union {
+        struct {
+            uint8_t r;
+            uint8_t g;
+            uint8_t b;
+            uint8_t a;
+        } comps;
+        uint32_t uint;
+    } col = {0};
+
+    int32_t values[6];
+    for(int32_t i = 0; i < 6; i++) {
+        if(p[i + 4] == '\0') {
+            return false;
+        }
+        int32_t h = hex_value(p[i + 4]);
+        if(h < 0) {
+            return false;
+        }
+        values[i] = h;
+    }
+
+    if(p[10] != ']') {
+        return false;
+    }
+
+    col.comps.r = (uint8_t)((values[0] << 4) | values[1]);
+    col.comps.g = (uint8_t)((values[2] << 4) | values[3]);
+    col.comps.b = (uint8_t)((values[4] << 4) | values[5]);
+    col.comps.a = 255;
+
+    *color = col.uint;
+    *end = p + 11;
+    return true;
+}
+
 word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rlr_res_t font, float font_size, float space_width, float height, float width, const char* text) {
     
     //reset
@@ -30,10 +85,25 @@ word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rl
     uint32_t current_word_glyph_count = 0;
     uint32_t current_offset = 0;
     uint32_t current_word_id = 0;
+    uint32_t current_color = UINT32_MAX;
 
     const void* p = text;
     utf8_int32_t unicode;
     while(p && *(const char*)p) {
+
+        const char* start = p;
+        if(*start == '[') {
+            const char* end;
+            uint32_t new_color = current_color;
+            
+            if(try_parse_color(start, &end, &new_color)) {
+                printf("current color %d old col %d\n", new_color, current_color);
+                current_color = new_color;
+                p = end;
+                continue;
+            } 
+        }
+
         p = utf8codepoint(p, &unicode);
 
         if(y + font_size > height) {
@@ -84,7 +154,7 @@ word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rl
         current_word_glyph_count++;
 
         rlr_measured_glyph_t g = (rlr_measured_glyph_t){
-            .color = UINT32_MAX,
+            .color = current_color,
             .word_id = current_word_id,
             .glyph = glyph,
         };
@@ -193,7 +263,7 @@ bool rlr_word_generate(rlr_res_t font_id, rlr_vec2_t* out_measured_size, float t
         if(gen_callback) {
             gen_callback(
                 user,
-                UINT32_MAX,
+                g->color,
                 rlr_vec2(draw_x1, draw_y1),
                 rlr_vec2(draw_x2 - draw_x1, draw_y2 - draw_y1),
                 screen_anchor,
