@@ -60,7 +60,7 @@ word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rl
             current_word_id++;
             x += word_width;
 
-            //force new row on newline if the word fit
+            //force new row on newline if the word fits
             if(rlr_word_unicode_is_new_line(unicode) && !too_large) {
                 x = 0.0;
                 y += font_size;

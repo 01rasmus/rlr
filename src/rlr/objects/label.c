@@ -18,12 +18,12 @@ static bool generate_instances_from_text(rlr_obj_label_t* label, rlr_res_font_t*
     rlr_res_font_glyph_t* space_glyph = rlr_res_font_get_glyph(label->font, ' ');
     rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_get_glyph(label->font, '?');
     float x = label->rectangle.x - (label->rectangle.width * local_anchor_vec.x);
-    float y = (label->rectangle.y + label->size) - (label->rectangle.height * local_anchor_vec.y);
+    float start_y = (label->rectangle.y + label->size) - (label->rectangle.height * local_anchor_vec.y);
     float space_width = space_glyph ? ((space_glyph->advance * label->size)) : label->size;
     float start_x = x;
 
     word_measure_context_t* ctx = rlr_word_measure(unknown_glyph, label->font, label->size, space_width, label->rectangle.height, label->rectangle.width, text);
-    y += rlr_vertical_start_position(label->vertical_alignment, label->rectangle.height - (ctx->row_count * label->size));
+    start_y += rlr_vertical_start_position(label->vertical_alignment, label->rectangle.height - (ctx->row_count * label->size));
 
     uint32_t current_word = 0;
     uint32_t current_row = 0;
@@ -40,17 +40,17 @@ static bool generate_instances_from_text(rlr_obj_label_t* label, rlr_res_font_t*
 
     for(uint32_t i = 0; i < arrlenu(ctx->glyphs); i++) {
         rlr_measured_glyph_t* g = &ctx->glyphs[i];
+        float y = start_y + label->size * g->row;
 
         if(current_word != g->word_id) {
             x += sw;
             current_word = g->word_id;
         }
-        
+
         if(current_row != g->row) {
             rem_width = rlr_word_calculate_remaining_row_width(ctx, label->rectangle.width, i, label->horizontal_alignment, label->size, space_width, &row_word_count);
             sw = rlr_word_calculate_space_width(rem_width, space_width, row_word_count, label->horizontal_alignment);
             current_row = g->row;
-            y += label->size;
             x = start_x + rlr_horizontal_start_position(label->horizontal_alignment, rem_width);
         }
 
