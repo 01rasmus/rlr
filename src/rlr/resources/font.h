@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "../math/rect.h"
 #include "../def.h"
 #include "texture.h"
 
@@ -33,6 +34,7 @@ typedef struct rlr_res_font_t {
 } rlr_res_font_t;
 
 rlr_res_t rlr_res_font_load(const char* csv_path, const char* texture_atlas_path, float px_range);
+rlr_vec2_t rlr_res_font_measure(rlr_res_t font, rlr_rect_t rectangle, float text_size, const char* format, ...);
 rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_t font, uint32_t unicode);
 int32_t rlr_res_font_get_glyph_count(rlr_res_t font);
 void rlr_res_font_free(rlr_res_t font);

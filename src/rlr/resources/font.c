@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "../../internal/core/word.h"
 #include "../../external/stb_ds.h"
 #include "../../internal/impl.h"
 #include "../io/csv.h"
@@ -129,6 +130,14 @@ err:
     free(csv);
     rlr_res_font_free(id);
     return RLR_NULL;
+}
+
+rlr_vec2_t rlr_res_font_measure(rlr_res_t font, rlr_rect_t rectangle, float text_size, const char* format, ...) {
+    rlr_vec2_t size = {0};
+    if(!rlr_word_generate(font, &size, text_size, rectangle, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, RLR_ANCHOR_TOP_LEFT, RLR_ANCHOR_TOP_LEFT, NULL, format, NULL)) {
+        return (rlr_vec2_t){0};
+    }
+    return size;
 }
 
 rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_t id, uint32_t unicode) {
