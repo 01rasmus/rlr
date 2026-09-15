@@ -143,6 +143,12 @@ static int32_t rlr_pipeline_ui_draw_command_sorter(const void* a, const void* b)
     return 0;
 }
 
+static int32_t rlr_pipeline_ui_instance_visability_sorter(const void* a, const void* b) {
+    const rlr_instance_data_ui_t* left = a;
+    const rlr_instance_data_ui_t* right = b;
+    return (int32_t)right->visible - (int32_t)left->visible;
+}
+
 bool rlr_pipeline_ui_init() {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
     (*pu) = (rlr_pipeline_ui_t){0};
@@ -180,6 +186,7 @@ static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_res_t text
     command.is_dirty = true;
     command.vao = rlr_backend()->create_vertex_array();
     command.instance_vbo = rlr_backend()->create_buffer();
+    command.visible_instances = 0;
     rlr_backend()->bind_vertex_array(command.vao);
     rlr_backend()->bind_buffer(RLR_PIPELINE_UI->quad_vbo, RLR_BACKEND_BUFFER_ARRAY);
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_vec2_t), 0);
@@ -215,14 +222,37 @@ rlr_pipeline_ui_draw_command_t* rlr_pipeline_ui_find_draw_command(rlr_res_t text
 
 uint64_t rlr_pipeline_ui_add_sprite_instance(rlr_pipeline_ui_draw_command_t* command, rlr_instance_data_ui_t data) {
     command->is_dirty = true;
+    command->visible_instances++;
     return rlpp_alloc(command->instance_data, data);
 }
 
 void rlr_pipeline_ui_remove_sprite_instance(uint64_t command_id, uint64_t instance_id) {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
     rlr_pipeline_ui_draw_command_t* cmd = rlpp_get_unchecked(pu->commands, command_id);
+    rlr_instance_data_ui_t* instance = rlpp_get_unchecked(cmd->instance_data, instance_id);
     cmd->is_dirty = true;
+
     rlpp_remove(cmd->instance_data, instance_id);
+    if(instance->visible) {
+        cmd->visible_instances--;
+    }
+}
+
+void rlr_pipeline_ui_set_sprite_instance_visability(uint64_t command_id, uint64_t instance_id, bool visible) {
+    rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
+    rlr_pipeline_ui_draw_command_t* cmd = rlpp_get_unchecked(pu->commands, command_id);
+    rlr_instance_data_ui_t* instance = rlpp_get_unchecked(cmd->instance_data, instance_id);
+
+    if(instance->visible != visible) {
+        cmd->is_dirty = true;
+        instance->visible = visible;
+
+        if(!visible) {
+            cmd->visible_instances--;
+        } else {
+            cmd->visible_instances++;
+        }
+    }
 }
 
 rlr_instance_data_ui_t* rlr_pipeline_ui_get_and_dirty_sprite_instance(uint64_t cmd_id, uint64_t instance_id) {
@@ -259,9 +289,11 @@ void rlr_pipeline_ui_draw() {
 
     for(size_t i = 0; i < rlpp_len(pu->commands); i++) {
         rlr_pipeline_ui_draw_command_t* cmd = &pu->commands[i];
+
         if(cmd->is_dirty) {
+            rlpp_sort(cmd->instance_data, rlr_pipeline_ui_instance_visability_sorter);
             rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_ui_t) * rlpp_len(cmd->instance_data), cmd->instance_data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_ui_t) * cmd->visible_instances, cmd->instance_data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
             cmd->is_dirty = false;
         }
     }
@@ -272,7 +304,7 @@ void rlr_pipeline_ui_draw() {
     rlr_backend()->set_depth_test(false);
     for(uint64_t i = 0; i < rlpp_len(pu->commands); i++) {
         rlr_pipeline_ui_draw_command_t* cmd = &pu->commands[i];
-        uint64_t instance_len = rlpp_len(cmd->instance_data);
+        uint64_t instance_len = cmd->visible_instances;
         if(instance_len == 0) {
             continue;
         }

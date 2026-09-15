@@ -48,6 +48,9 @@ static void rlr_pipeline_stencil_rebuild() {
 
     for(uint32_t i = 0; i < rlr_mem_man_get_obj_model_occluders_count(rlr_mem_man()); i++) {
         rlr_obj_model_occluder_t* mo = &rlr_mem_man_get_obj_model_occluders(rlr_mem_man())[i];
+        if(!mo->visible) {
+            continue;
+        }
 
         rlr_vec2_t screen_anchor_vec = rlr_anchor_vec(mo->screen_anchor);
         rlr_vec2_t local_anchor_vec = rlr_anchor_vec(mo->local_anchor);

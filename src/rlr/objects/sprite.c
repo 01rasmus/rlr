@@ -40,6 +40,7 @@ rlr_obj_t rlr_obj_sprite_create_ext(rlr_res_t texture_id, rlr_rect_t rectangle, 
         .uv = rlr_vec2(uv.x / texture->width, uv.y / texture->height),
         .uv_size = rlr_vec2(uv.width / texture->width, uv.height / texture->height),
         .screen_anchor = screen_anchor,
+        .visible = true,
     };
     uint64_t instance_index = rlr_pipeline_ui_add_sprite_instance(cmd, data);
     rlr_obj_t id = rlr_mem_man_allocate_obj_sprite(rlr_mem_man(), (rlr_obj_sprite_t){
@@ -61,6 +62,11 @@ void rlr_obj_sprite_set_color(rlr_obj_t obj, uint8_t r, uint8_t g, uint8_t b, ui
     rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
     rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
     instance->color = (a << 24) | (b << 16) | (g << 8) | r;
+}
+
+void rlr_obj_sprite_set_visability(rlr_obj_t obj, bool visible) {
+    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+    rlr_pipeline_ui_set_sprite_instance_visability(sprite->cmd_id, sprite->instance_index, visible);
 }
 
 void rlr_obj_sprite_set_rectangle(rlr_obj_t obj, rlr_rect_t rect) {

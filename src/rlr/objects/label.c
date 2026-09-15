@@ -23,15 +23,18 @@ void gen_text(void* user, uint32_t color, float shear, rlr_vec2_t pos, rlr_vec2_
         .screen_anchor = screen_anchor,
         .uv = uv,
         .uv_size = uv_size,
-        .italic_sheer = shear
+        .italic_sheer = shear,
+        .visible = true,
     };
-    arrpush(ctx->label->instance_indices, rlr_pipeline_ui_add_sprite_instance(ctx->cmd, instance));
+    uint64_t id = rlr_pipeline_ui_add_sprite_instance(ctx->cmd, instance);
+    arrpush(ctx->label->instance_indices, id);
 }
 
-static void remove_instances(uint64_t cmd, uint64_t* instance_ids, uint32_t instance_count) {
-    for(uint32_t i = 0; i < instance_count; i++) {
-        rlr_pipeline_ui_remove_sprite_instance(cmd, instance_ids[i]);
+static void remove_instances(rlr_obj_label_t* label) {
+    for(size_t i = 0; i < arrlenu(label->instance_indices); i++) {
+        rlr_pipeline_ui_remove_sprite_instance(label->cmd_id, label->instance_indices[i]);
     }
+    arrsetlen(label->instance_indices, 0);
 }
 
 rlr_obj_t rlr_obj_label_create(rlr_rect_t rect, float size, uint32_t layer, const char* text, rlr_res_t font_id) {
@@ -59,6 +62,7 @@ rlr_obj_t rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size, uint32
     label->local_anchor = local_anhor;
     label->horizontal_alignment = horizontal_alignment;
     label->vertical_alignment = vertical_alignment;
+    label->instance_indices = NULL;
 
     struct text_gen_ctx_t ctx = {
         .cmd = cmd,
@@ -76,7 +80,7 @@ err:
 
 void rlr_obj_label_set_text(rlr_obj_t id, const char* text) {
     rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), id);
-    remove_instances(label->cmd_id, label->instance_indices, arrlenu(label->instance_indices));
+    remove_instances(label);
     rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), label->font);
 
     struct text_gen_ctx_t ctx = {
@@ -86,8 +90,11 @@ void rlr_obj_label_set_text(rlr_obj_t id, const char* text) {
     rlr_word_generate(label->font, NULL, label->size, label->rectangle, label->horizontal_alignment, label->vertical_alignment, label->local_anchor, label->screen_anchor, gen_text, text, &ctx);
 }
 
-void rlr_obj_label_set_visability(rlr_obj_t label, bool visible) {
-
+void rlr_obj_label_set_visability(rlr_obj_t id, bool visible) {
+    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), id);
+    for(uint32_t i = 0; i < arrlenu(label->instance_indices); i++) {
+        rlr_pipeline_ui_set_sprite_instance_visability(label->cmd_id, label->instance_indices[i], visible);
+    }
 }
 
 void rlr_obj_label_free(rlr_obj_t obj) {
@@ -95,7 +102,7 @@ void rlr_obj_label_free(rlr_obj_t obj) {
     if(!label || obj == RLR_NULL) {
         return;
     }
-    remove_instances(label->cmd_id, label->instance_indices, arrlenu(label->instance_indices));
+    remove_instances(label);
     arrfree(label->instance_indices);
     rlr_mem_man_free_obj_label(rlr_mem_man(), obj);
 }
