@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "pipelines/stencil.h"
 #include "pipelines/model.h"
+#include "pipelines/input.h"
 #include "pipelines/ui.h"
 #include "core/memory_manager.h"
 #include "../rlr/math/matrix.h"
@@ -67,6 +68,7 @@ typedef struct rlr_t {
     //pipelines
     rlr_pipeline_stencil_t pipeline_stencil;
     rlr_pipeline_model_t pipeline_model;
+    rlr_pipeline_input_t pipeline_input;
     rlr_pipeline_ui_t pipeline_ui;
 
     //built in resources

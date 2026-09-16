@@ -22,6 +22,12 @@ void rlr_obj_model_occluder_set_visiblity(rlr_obj_t id, bool visible) {
     }
 }
 
+void rlr_obj_model_occluder_set_rectangle(rlr_obj_t id, rlr_rect_t rectangle) {
+    rlr_obj_model_occluder_t* mo = rlr_mem_man_get_obj_model_occluder(rlr_mem_man(), id);
+    rlr()->pipeline_stencil.is_dirty = true;
+    mo->rectangle = rectangle;
+}
+
 void rlr_obj_model_occluder_free(rlr_obj_t obj) {
     if(!obj) {
         return;

@@ -97,6 +97,11 @@ void rlr_obj_label_set_visability(rlr_obj_t id, bool visible) {
     }
 }
 
+void rlr_obj_label_set_rectangle(rlr_obj_t id, rlr_rect_t rect) {
+    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), id);
+    label->rectangle = rect;
+}
+
 void rlr_obj_label_free(rlr_obj_t obj) {
     rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), obj);
     if(!label || obj == RLR_NULL) {

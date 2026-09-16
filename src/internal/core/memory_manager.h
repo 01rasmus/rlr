@@ -10,6 +10,7 @@
 #include "../../rlr/resources/texture.h"
 #include "../../rlr/resources/uniform.h"
 #include "../../rlr/objects/animated_model.h"
+#include "../../rlr/objects/mouse_input_area.h"
 #include "../../rlr/objects/label.h"
 #include "../../rlr/objects/model_occluder.h"
 #include "../../rlr/objects/sprite.h"
@@ -37,6 +38,7 @@
     X(obj, animated_model) \
     X(obj, label) \
     X(obj, model_occluder) \
+    X(obj, mouse_input_area) \
     X(obj, sprite) \
     X(obj, static_model)
 

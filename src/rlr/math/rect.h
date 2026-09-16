@@ -1,4 +1,6 @@
 #pragma once
+#include <stdbool.h>
+#include "vec.h"
 
 typedef struct rlr_rect_t {
     float x;
@@ -8,3 +10,5 @@ typedef struct rlr_rect_t {
 } rlr_rect_t;
 
 #define rlr_rect(X, Y, WIDTH, HEIGHT)           ((rlr_rect_t){.x = (X), .y = (Y), .width = (WIDTH), .height = (HEIGHT)})
+
+bool rlr_rect_contains_position(const rlr_rect_t* rect, const rlr_vec2_t pos);

@@ -106,10 +106,11 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     }
 
     //setup pipelines
-    static const rlr_pipeline_init_function_t pipeline_init_functions[3] = {
+    static const rlr_pipeline_init_function_t pipeline_init_functions[4] = {
         rlr_pipeline_ui_init,
         rlr_pipeline_stencil_init,
         rlr_pipeline_model_init,
+        rlr_pipeline_input_init,
     };
     for(size_t i = 0; i < sizeof(pipeline_init_functions) / sizeof(pipeline_init_functions[0]); i++) {
         rlr_pipeline_init_function_t pipeline_init = pipeline_init_functions[i];
@@ -356,6 +357,7 @@ bool rlr_update() {
     rlr_pipeline_stencil_draw();
     rlr_pipeline_model_draw(delta_time);
     rlr_pipeline_ui_draw();
+    rlr_pipeline_input_update(ctx->mouse_pos, rlr_vec2(ctx->framebuffer_width, ctx->framebuffer_height));
 
     //statistics
     uint64_t draw_calls = rlr_backend()->get_draw_call_count();
@@ -390,6 +392,7 @@ void rlr_free() {
     rlr_pipeline_ui_deinit();
     rlr_pipeline_stencil_deinit();
     rlr_pipeline_model_deinit();
+    rlr_pipeline_input_deinit();
 
     //free resources
     rlr_res_texture_free(ctx->texture_white);

@@ -162,6 +162,10 @@ typedef uint8_t rlr_log_level_t;
 typedef void (*rlr_input_key_callback_t)(uint32_t key, uint32_t scancode, uint32_t action, uint32_t mods, void* user);
 typedef void (*rlr_input_mouse_callback_t)(uint32_t button, uint32_t action, uint32_t mods, rlr_vec2_t pos, void* user);
 typedef void (*rlr_log_callback_t)(rlr_log_level_t log_level, const char* log, const char* file, uint64_t line, void* user);
+typedef void (*rlr_input_area_on_enter_t)(void* user);
+typedef void (*rlr_input_area_on_leave_t)(void* user);
+typedef void (*rlr_input_area_on_pressed_t)(void* user);
+typedef void (*rlr_input_area_on_release_t)(void* user);
 
 typedef enum rlr_init_flags_t {
     RLR_INIT_FLAG_FULLSCREEN = 0x1,
