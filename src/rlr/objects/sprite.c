@@ -1,3 +1,5 @@
+#include "../../internal/core/obj_types.h"
+#include "../../internal/core/res_types.h"
 #include "../../external/stb_ds.h"
 #include "../../internal/impl.h"
 #include "../resources/texture.h"
@@ -16,20 +18,17 @@ static rlr_rect_t _rlr_obj_sprite_make_instance_rectangle(rlr_anchor_t local_anc
     };
 }
 
-rlr_obj_t rlr_obj_sprite_create(rlr_res_t texture_id, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
-    rlr_res_texture_t* texture = rlr_mem_man_get_res_texture(rlr_mem_man(), texture_id == RLR_NULL ? rlr_res_texture_default() : texture_id);
-    return rlr_obj_sprite_create_ext(texture_id, rectangle, screen_anchor, local_anchor, layer, rlr_rect(0, 0, texture->width, texture->height), rlr_rect(0, 0, 0, 0));
+rlr_obj_sprite_t* rlr_obj_sprite_create(rlr_res_texture_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
+    return rlr_obj_sprite_create_ext(texture == NULL ? rlr_res_texture_default() : texture, rectangle, screen_anchor, local_anchor, layer, rlr_rect(0, 0, texture->width, texture->height), rlr_rect(0, 0, 0, 0));
 }
 
-rlr_obj_t rlr_obj_sprite_create_from_atlas_tile(rlr_res_t texture_atlas_tile, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
-    rlr_res_texture_atlas_tile_t* tile = rlr_mem_man_get_res_texture_atlas_tile(rlr_mem_man(), texture_atlas_tile);
+rlr_obj_sprite_t* rlr_obj_sprite_create_from_atlas_tile(rlr_res_texture_atlas_tile_t* tile, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
     return rlr_obj_sprite_create_ext(tile->texture, rectangle, screen_anchor, local_anchor, layer, rlr_rect(tile->uv.x, tile->uv.y, tile->size.x, tile->size.y), rlr_rect(0, 0, 0, 0));
 }
 
-rlr_obj_t rlr_obj_sprite_create_ext(rlr_res_t texture_id, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer, rlr_rect_t uv, rlr_rect_t scissor) {
-    rlr_res_texture_t* texture = rlr_mem_man_get_res_texture(rlr_mem_man(), texture_id == RLR_NULL ? rlr_res_texture_default() : texture_id);
-
-    rlr_res_t tex = texture_id == RLR_NULL ? rlr_default_texture() : texture_id;
+rlr_obj_sprite_t* rlr_obj_sprite_create_ext(rlr_res_texture_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer, rlr_rect_t uv, rlr_rect_t scissor) {
+    rlr_obj_sprite_t* sprite = NULL;
+    rlr_res_texture_t* tex = texture == NULL ? rlr_default_texture() : texture;
     rlr_pipeline_ui_draw_command_t* cmd = rlr_pipeline_ui_find_draw_command(tex, RLR_NULL, layer);
 
     rlr_rect_t instance_rect = _rlr_obj_sprite_make_instance_rectangle(local_anchor, rectangle);
@@ -43,34 +42,34 @@ rlr_obj_t rlr_obj_sprite_create_ext(rlr_res_t texture_id, rlr_rect_t rectangle, 
         .visible = true,
     };
     uint64_t instance_index = rlr_pipeline_ui_add_sprite_instance(cmd, data);
-    rlr_obj_t id = rlr_mem_man_allocate_obj_sprite(rlr_mem_man(), (rlr_obj_sprite_t){
+    sprite = malloc(sizeof(rlr_obj_sprite_t));
+    if(!sprite) {
+        goto err;
+    }
+
+    *sprite = (rlr_obj_sprite_t){
         .rect = rectangle,
         .local_anchor = local_anchor,
         .cmd_id = cmd->id,
         .instance_index = instance_index,
-    });
-    if(id == RLR_NULL) {
-        goto err;
-    }
-    return id;
+    };
+
+    return sprite;
 err:
-    rlr_obj_sprite_free(id);
-    return RLR_NULL;
+    rlr_obj_sprite_free(sprite);
+    return sprite;
 }
 
-void rlr_obj_sprite_set_color(rlr_obj_t obj, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+void rlr_obj_sprite_set_color(rlr_obj_sprite_t* sprite, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
     instance->color = (a << 24) | (b << 16) | (g << 8) | r;
 }
 
-void rlr_obj_sprite_set_visability(rlr_obj_t obj, bool visible) {
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+void rlr_obj_sprite_set_visability(rlr_obj_sprite_t* sprite, bool visible) {
     rlr_pipeline_ui_set_sprite_instance_visability(sprite->cmd_id, sprite->instance_index, visible);
 }
 
-void rlr_obj_sprite_set_rectangle(rlr_obj_t obj, rlr_rect_t rect) {
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+void rlr_obj_sprite_set_rectangle(rlr_obj_sprite_t* sprite, rlr_rect_t rect) {
     rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
     rlr_rect_t instance_rect = _rlr_obj_sprite_make_instance_rectangle(sprite->local_anchor, rect);
     instance->pos = rlr_vec2(instance_rect.x, instance_rect.y);
@@ -78,8 +77,7 @@ void rlr_obj_sprite_set_rectangle(rlr_obj_t obj, rlr_rect_t rect) {
     sprite->rect = rect;
 }
 
-void rlr_obj_sprite_set_local_anchor(rlr_obj_t obj, rlr_anchor_t anchor) {
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+void rlr_obj_sprite_set_local_anchor(rlr_obj_sprite_t* sprite, rlr_anchor_t anchor) {
     rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
     rlr_rect_t instance_rect = _rlr_obj_sprite_make_instance_rectangle(anchor, sprite->rect);
     instance->pos = rlr_vec2(instance_rect.x, instance_rect.y);
@@ -87,42 +85,33 @@ void rlr_obj_sprite_set_local_anchor(rlr_obj_t obj, rlr_anchor_t anchor) {
     sprite->local_anchor = anchor;
 }
 
-void rlr_obj_sprite_set_screen_anchor(rlr_obj_t obj, rlr_anchor_t anchor) {
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+void rlr_obj_sprite_set_screen_anchor(rlr_obj_sprite_t* sprite, rlr_anchor_t anchor) {
     rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
     instance->screen_anchor = anchor;
 }
 
-rlr_rect_t rlr_obj_sprite_get_rectangle(rlr_obj_t obj) {
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+rlr_rect_t rlr_obj_sprite_get_rectangle(const rlr_obj_sprite_t* sprite) {
     return sprite->rect;
 }
 
-rlr_anchor_t rlr_obj_sprite_get_local_anchor(rlr_obj_t obj) {
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+rlr_anchor_t rlr_obj_sprite_get_local_anchor(const rlr_obj_sprite_t* sprite) {
     return sprite->local_anchor;
 }
 
-rlr_anchor_t rlr_obj_sprite_get_screen_anchor(rlr_obj_t obj) {
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+rlr_anchor_t rlr_obj_sprite_get_screen_anchor(const rlr_obj_sprite_t* sprite) {
     const rlr_instance_data_ui_t const* instance = rlr_pipeline_ui_get_sprite_instance(sprite->cmd_id, sprite->instance_index);
     return instance->screen_anchor;
 }
 
-uint32_t rlr_obj_sprite_get_color(rlr_obj_t obj) {
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+uint32_t rlr_obj_sprite_get_color(const rlr_obj_sprite_t* sprite) {
     const rlr_instance_data_ui_t const* instance = rlr_pipeline_ui_get_sprite_instance(sprite->cmd_id, sprite->instance_index);
     return instance->color;
 }
 
-void rlr_obj_sprite_free(rlr_obj_t obj) {
-    if(obj == RLR_NULL) {
-        return;
-    }
-    rlr_obj_sprite_t* sprite = rlr_mem_man_get_obj_sprite(rlr_mem_man(), obj);
+void rlr_obj_sprite_free(rlr_obj_sprite_t* sprite) {
     if(!sprite) {
         return;
     }
     rlr_pipeline_ui_remove_sprite_instance(sprite->cmd_id, sprite->instance_index);
-    rlr_mem_man_free_obj_sprite(rlr_mem_man(), obj);
+    free(sprite);
 }

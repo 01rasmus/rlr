@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "../../internal/core/res_types.h"
 #include "../../internal/core/word.h"
 #include "../../external/stb_ds.h"
 #include "../../internal/impl.h"
@@ -68,7 +69,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
         return;
     }
 
-    rlr_res_font_glyph_t glyph = (rlr_res_font_glyph_t) {
+    const rlr_res_font_glyph_t glyph = (rlr_res_font_glyph_t) {
         .key = unicode,
         .advance = advance,
         .plane_bottom = plane_bound_bottom,
@@ -80,21 +81,13 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
         .atlas_top = (ctx->tex->height - atlas_bound_top) / ctx->tex->height,
         .atlas_bottom = (ctx->tex->height - atlas_bound_bottom) / ctx->tex->height,
     };
-
     hmputs(ctx->font->glyphs, glyph);
 }
 
-rlr_res_t rlr_res_font_load(const char* csv_path, const char* texture_atlas_path, float px_range) {
-    rlr_res_t id = RLR_NULL;
+rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atlas_path, float px_range) {
     rlr_res_font_t* font = NULL;
 
-    id = rlr_mem_man_allocate_res_font(rlr_mem_man(), (rlr_res_font_t){0});
-    if(id == RLR_NULL) {
-        rlr_log_error("could not allocate rlr handle for font");
-        goto err;
-    }
-
-    font = rlr_mem_man_get_res_font(rlr_mem_man(), id);
+    font = malloc(sizeof(rlr_res_font_t));
     if(!font) {
         rlr_log_error("pointer to the font handle is null");
         goto err;
@@ -117,7 +110,7 @@ rlr_res_t rlr_res_font_load(const char* csv_path, const char* texture_atlas_path
 
     rlr_res_font_load_context_t ctx = {
         .font = font,
-        .tex = rlr_mem_man_get_res_texture(rlr_mem_man(), font->texture),
+        .tex = font->texture,
     };
     if(!rlr_io_csv_parse(_rlr_font_csv_callback, csv, 10, ",", &ctx)) {
         goto err;
@@ -125,14 +118,14 @@ rlr_res_t rlr_res_font_load(const char* csv_path, const char* texture_atlas_path
 
     free(csv);
     rlr_log("loaded mtsdf font\n\tmeta:\t%s\n\tatlas:\t%s", csv_path, texture_atlas_path);
-    return id;
+    return font;
 err:
     free(csv);
-    rlr_res_font_free(id);
-    return RLR_NULL;
+    rlr_res_font_free(font);
+    return NULL;
 }
 
-rlr_vec2_t rlr_res_font_measure(rlr_res_t font, rlr_rect_t rectangle, float text_size, const char* format, ...) {
+rlr_vec2_t rlr_res_font_measure(const rlr_res_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...) {
     rlr_vec2_t size = {0};
     if(!rlr_word_generate(font, &size, text_size, rectangle, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, RLR_ANCHOR_TOP_LEFT, RLR_ANCHOR_TOP_LEFT, NULL, format, NULL)) {
         return (rlr_vec2_t){0};
@@ -140,24 +133,19 @@ rlr_vec2_t rlr_res_font_measure(rlr_res_t font, rlr_rect_t rectangle, float text
     return size;
 }
 
-rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_t id, uint32_t unicode) {
-    rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), id);
+const rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_font_t* font, uint32_t unicode) {
     return hmgetp_null(font->glyphs, unicode);
 }
 
-int32_t rlr_res_font_get_glyph_count(rlr_res_t id) {
-    rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), id);
+int32_t rlr_res_font_get_glyph_count(const rlr_res_font_t* font) {
     return hmlen(font->glyphs);
 }
 
-void rlr_res_font_free(rlr_res_t id) {
-    if(id == RLR_NULL) {
+void rlr_res_font_free(rlr_res_font_t* font) {
+    if(!font) {
         return;
     }
-    rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), id);
-    if(font) {
-        rlr_res_texture_free(font->texture);
-        hmfree(font->glyphs);
-    }
-    rlr_mem_man_free_res_font(rlr_mem_man(), id);
+    rlr_res_texture_free(font->texture);
+    hmfree(font->glyphs);
+    free(font);
 }

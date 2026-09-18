@@ -36,47 +36,19 @@ static const char stencil_vertex[] = RLR_SHADER_INLINE(
     }
 );
 
-typedef struct rlr_instance_data_stencil_t {
-    rlr_vec2_t pos;
-    rlr_vec2_t size;
-    rlr_vec2_t screen_anchor;
-} rlr_instance_data_stencil_t;
-
-static void rlr_pipeline_stencil_rebuild() {
-    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
-    rlr_instance_data_stencil_t* instances = NULL;
-
-    for(uint32_t i = 0; i < rlr_mem_man_get_obj_model_occluders_count(rlr_mem_man()); i++) {
-        rlr_obj_model_occluder_t* mo = &rlr_mem_man_get_obj_model_occluders(rlr_mem_man())[i];
-        if(!mo->visible) {
-            continue;
-        }
-
-        rlr_vec2_t screen_anchor_vec = rlr_anchor_vec(mo->screen_anchor);
-        rlr_vec2_t local_anchor_vec = rlr_anchor_vec(mo->local_anchor);
-        float width = mo->rectangle.width;
-        float height = mo->rectangle.height;
-        rlr_instance_data_stencil_t instance = {
-            .pos = rlr_vec2(mo->rectangle.x - (width * local_anchor_vec.x), mo->rectangle.y - (height * local_anchor_vec.y)),
-            .size = rlr_vec2(width, height),
-            .screen_anchor = screen_anchor_vec,
-        };
-        arrpush(instances, instance);
-    }
-
-    rlr_backend()->bind_buffer(ps->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_instance_data_stencil_t) * arrlen(instances), instances, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
-
-    ps->instance_count = arrlenu(instances);
-    ps->is_dirty = false;
-    arrfree(instances);
+static int32_t rlr_pipeline_stencil_occluder_instance_visability_sorter(const void* a, const void* b) {
+    const rlr_pipeline_stencil_occluder_instance_t* left = a;
+    const rlr_pipeline_stencil_occluder_instance_t* right = b;
+    return (int32_t)right->visible - (int32_t)left->visible;
 }
 
 bool rlr_pipeline_stencil_init() {
     rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     (*ps) = (rlr_pipeline_stencil_t){0};
 
-    ps->is_dirty = true;
+    ps->is_dirty = false;
+    ps->occluder_instances = NULL;
+    ps->visible_occluder_instances = 0;
     ps->vao = rlr_backend()->create_vertex_array();
     ps->vbo = rlr_backend()->create_buffer();
     ps->ebo = rlr_backend()->create_buffer();
@@ -96,9 +68,9 @@ bool rlr_pipeline_stencil_init() {
     rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_quad_vertices), rlr_quad_vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
     rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_VERTEX, 0, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_vec2_t), 0);
     rlr_backend()->bind_buffer(ps->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_stencil_t), offsetof(rlr_instance_data_stencil_t, pos));
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_stencil_t), offsetof(rlr_instance_data_stencil_t, size));
-    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_instance_data_stencil_t), offsetof(rlr_instance_data_stencil_t, screen_anchor));
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 1, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_stencil_occluder_instance_t), offsetof(rlr_pipeline_stencil_occluder_instance_t, pos));
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 2, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_stencil_occluder_instance_t), offsetof(rlr_pipeline_stencil_occluder_instance_t, size));
+    rlr_backend()->set_vertex_array_attrib(RLR_BACKEND_VERTEX_ARRAY_ATTRIB_PER_INSTANCE, 3, 2, RLR_BACKEND_BUFFER_TYPE_FLOAT, false, sizeof(rlr_pipeline_stencil_occluder_instance_t), offsetof(rlr_pipeline_stencil_occluder_instance_t, screen_anchor));
     rlr_backend()->bind_buffer(ps->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
     rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ELEMENT_ARRAY, sizeof(rlr_quad_indices), rlr_quad_indices, RLR_BACKEND_BUFFER_USAGE_STATIC);
     return true;
@@ -110,7 +82,15 @@ err:
 void rlr_pipeline_stencil_draw() {
     rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
     if(ps->is_dirty) {
-        rlr_pipeline_stencil_rebuild();
+        rlpp_sort(ps->occluder_instances, rlr_pipeline_stencil_occluder_instance_visability_sorter);
+        size_t size = sizeof(rlr_pipeline_stencil_occluder_instance_t) * ps->visible_occluder_instances;
+        rlr_backend()->bind_buffer(ps->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+        rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, size, ps->occluder_instances, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+        ps->is_dirty = false;
+    }
+
+    if(ps->visible_occluder_instances == 0) {
+        return;
     }
 
     rlr_backend()->set_stencil_test(true);
@@ -123,7 +103,7 @@ void rlr_pipeline_stencil_draw() {
 
     rlr_res_shader_bind(ps->shader);
     rlr_backend()->bind_vertex_array(ps->vao);
-    rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U8, ps->instance_count);
+    rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U8, ps->visible_occluder_instances);
 
     rlr_backend()->set_stencil_mask(0x0);
     rlr_backend()->set_stencil_func(RLR_BACKEND_STENCIL_FUNC_NOTEQUAL, 1, 0xFF);
@@ -144,4 +124,46 @@ void rlr_pipeline_stencil_deinit() {
     rlr_backend()->free_buffer(ps->vbo);
     rlr_backend()->free_buffer(ps->ebo);
     rlr_backend()->free_buffer(ps->instance_vbo);
+    rlpp_free(ps->occluder_instances);
+}
+
+bool rlr_pipeline_stencil_add_model_occluder_instance(rlr_pipeline_stencil_occluder_instance_t data, rlpp_ref_t* out_ref) {
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
+    *out_ref = rlpp_alloc_to_ref(ps->occluder_instances, data);
+    if(rlpp_deref(ps->occluder_instances, *out_ref) != NULL) {
+        ps->is_dirty = true;
+        ps->visible_occluder_instances++;
+        return true;
+    }
+    return false;
+}
+
+void rlr_pipeline_stencil_set_model_occluder_instance_visability(rlpp_ref_t ref, bool visible) {
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
+    rlr_pipeline_stencil_occluder_instance_t* mo = rlpp_deref(ps->occluder_instances, ref);
+    uint8_t vis = visible == true ? 1 : 0;
+
+    if(mo->visible != vis) {
+        ps->is_dirty = true;
+        mo->visible = vis;
+
+        if(visible) {
+            ps->visible_occluder_instances++;
+        } else {
+            ps->visible_occluder_instances--;
+        }
+    }
+}
+
+rlr_pipeline_stencil_occluder_instance_t* rlr_pipeline_stencil_get_and_dirty_model_occluder_instance(rlpp_ref_t ref) {
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
+    ps->is_dirty = true;
+    return rlpp_deref(ps->occluder_instances, ref);
+}
+
+void rlr_pipeline_stencil_remove_model_occluder_instance(rlpp_ref_t ref) {
+    rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
+    rlpp_remove_by_ref(ps->occluder_instances, ref);
+    ps->visible_occluder_instances--;
+    ps->is_dirty = true;
 }

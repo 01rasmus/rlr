@@ -8,8 +8,8 @@
 #include "../external/stb_ds.h"
 #include "backends/backend_selection.h"
 #include "backends/backend.h"
+#include "core/res_types.h"
 #include "../rlr/resources/static_model.h"
-#include "../rlr/resources/model_shared.h"
 #include "../rlr/resources/cube_map.h"
 #include "../rlr/resources/uniform.h"
 #include "../rlr/resources/shader.h"
@@ -86,20 +86,14 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     glfwSetMouseButtonCallback(ctx->window, _rlr_mouse_button_callback);
     glfwSetKeyCallback(ctx->window, _rlr_key_callback);
 
-    //setup resource manager
-    if(!rlr_mem_man_init(&ctx->res_man)) {
-        rlr_log_error("could not find a suitable backend");
-        goto err;
-    }
-
     //setup uniform buffer objects
     rlr()->ubos[RLR_INTERNAL_UBO_MODEL]         = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_model_t));
     rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL]      = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_material_t));
     rlr()->ubos[RLR_INTERNAL_UBO_ENVIRONMENT]   = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_environment_t));
     rlr()->ubos[RLR_INTERNAL_UBO_UI]            = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_ui_t));
     for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {
-        rlr_res_t ubo = rlr()->ubos[i];
-        if(ubo == RLR_NULL) {
+        rlr_res_uniform_t* ubo = rlr()->ubos[i];
+        if(ubo == NULL) {
             goto err;
         }
         rlr_res_uniform_bind(ubo, i);
@@ -142,10 +136,6 @@ rlr_backend_t* rlr_backend() {
     return ctx->backend;
 }
 
-rlr_mem_man_t* rlr_mem_man() {
-    return &ctx->res_man;
-}
-
 void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation) {
     const rlr_vec3_t up = rlr_vec3(0, 1, 0);
     rlr_mat4x4_t projection = rlr_mat4x4_perspective(1, (float)ctx->framebuffer_width / (float)ctx->framebuffer_height, 0.001, 1000.0);
@@ -173,8 +163,7 @@ void rlr_set_clear_color(float r, float g, float b, float a) {
     rlr_backend()->set_clear_color(r, g, b, a);
 }
 
-void rlr_set_cube_map(rlr_res_t cube_map_id) {
-    rlr_res_t cube_map = cube_map_id == RLR_NULL ? ctx->cube_map_white : cube_map_id;
+void rlr_set_cube_map(rlr_res_cube_map_t* cube_map) {
     rlr_res_cube_map_bind(cube_map, 4);
 }
 
@@ -281,7 +270,7 @@ rlr_statistics_t* rlr_get_statistics() {
     return &ctx->statistics_interval;
 }
 
-rlr_res_t rlr_default_texture() {
+rlr_res_texture_t* rlr_default_texture() {
     return ctx->texture_white;
 }
 
@@ -410,9 +399,6 @@ void rlr_free() {
     if(ctx->window) {
         glfwDestroyWindow(ctx->window);
     }
-
-    //free resource manager
-    rlr_mem_man_deinit(&ctx->res_man);
 
     free(ctx);
     glfwTerminate();

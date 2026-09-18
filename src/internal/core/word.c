@@ -103,7 +103,7 @@ static bool try_parse_turn_off_rich_text(const char* p, const char** end) {
     return true;
 }
 
-word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rlr_res_t font, float font_size, float space_width, float height, float width, const char* text) {
+word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_glyph, rlr_res_font_t* font, float font_size, float space_width, float height, float width, const char* text) {
     
     //reset
     arrsetlen(ctx.glyphs, 0);
@@ -189,7 +189,7 @@ word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rl
             continue;
         }
 
-        rlr_res_font_glyph_t* glyph = rlr_res_font_get_glyph(font, unicode);
+        const rlr_res_font_glyph_t* glyph = rlr_res_font_get_glyph(font, unicode);
         if(!glyph) {
             if(!unknown_glyph) {
                 continue;
@@ -223,22 +223,17 @@ word_measure_context_t* rlr_word_measure(rlr_res_font_glyph_t* unknown_glyph, rl
     return &ctx;
 }
 
-bool rlr_word_generate(rlr_res_t font_id, rlr_vec2_t* out_measured_size, float text_size, rlr_rect_t rectangle, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
-    if(font_id == RLR_NULL) {
-        goto err;
-    }
-    rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), font_id);
+bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, float text_size, rlr_rect_t rectangle, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
     if(!font) {
         goto err;
     }
-    rlr_res_texture_t* font_texture = rlr_mem_man_get_res_texture(rlr_mem_man(), font->texture);
-    if(!font_texture) {
+    if(!font->texture) {
         goto err;
     }
 
     rlr_vec2_t local_anchor_vec = rlr_anchor_vec(local_anchor);
-    rlr_res_font_glyph_t* space_glyph = rlr_res_font_get_glyph(font_id, ' ');
-    rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_get_glyph(font_id, '?');
+    const rlr_res_font_glyph_t* space_glyph = rlr_res_font_get_glyph(font, ' ');
+    const rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_get_glyph(font, '?');
     float x = rectangle.x - (rectangle.width * local_anchor_vec.x);
     float start_y = (rectangle.y + text_size) - (rectangle.height * local_anchor_vec.y);
     float space_width = space_glyph ? ((space_glyph->advance * text_size)) : text_size;
@@ -247,7 +242,7 @@ bool rlr_word_generate(rlr_res_t font_id, rlr_vec2_t* out_measured_size, float t
     float max_width = 0.0;
     float current_width = 0.0;
 
-    word_measure_context_t* ctx = rlr_word_measure(unknown_glyph, font_id, text_size, space_width, rectangle.height, rectangle.width, text);
+    word_measure_context_t* ctx = rlr_word_measure(unknown_glyph, font, text_size, space_width, rectangle.height, rectangle.width, text);
     start_y += rlr_vertical_start_position(vertical_alignment, rectangle.height - (ctx->row_count * text_size));
 
     uint32_t current_word = 0;
@@ -290,7 +285,7 @@ bool rlr_word_generate(rlr_res_t font_id, rlr_vec2_t* out_measured_size, float t
             current_width = start_pos;
         }
 
-        rlr_res_font_glyph_t* glyph = g->glyph;
+        const rlr_res_font_glyph_t* glyph = g->glyph;
         float draw_x1 = x + glyph->plane_left * text_size;
         float draw_y1 = y - glyph->plane_top * text_size;
         float draw_x2 = x + glyph->plane_right * text_size;
@@ -302,7 +297,7 @@ bool rlr_word_generate(rlr_res_t font_id, rlr_vec2_t* out_measured_size, float t
         float v1 = glyph->atlas_top;
 
         //calculate the screen px range
-        float texture_width = (u2 - u1) * font_texture->width;
+        float texture_width = (u2 - u1) * font->texture->width;
         float quad_width = draw_x2 - draw_x1;
         float screen_px_range = quad_width / texture_width * (font->px_range);
         if(screen_px_range < 1.0) {

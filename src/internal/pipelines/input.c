@@ -79,9 +79,9 @@ void rlr_pipeline_input_deinit() {
     rlpp_free(pi->mouse_areas);
 }
 
-uint64_t rlr_pipeline_input_add_area(rlr_pipeline_input_mouse_area_t input_area) {
+rlpp_id_t rlr_pipeline_input_add_area(rlr_pipeline_input_mouse_area_t input_area) {
     rlr_pipeline_input_t* pi = RLR_PIPELINE_INPUT;
-    uint64_t id = rlpp_alloc(pi->mouse_areas, (rlr_pipeline_input_mouse_area_t){0});
+    rlpp_id_t id = rlpp_alloc(pi->mouse_areas, (rlr_pipeline_input_mouse_area_t){0});
     rlr_pipeline_input_mouse_area_t* area = rlpp_get_unchecked(pi->mouse_areas, id);
 
     (*area) = (rlr_pipeline_input_mouse_area_t){

@@ -1,23 +1,17 @@
 #include <stdint.h>
 #include <stb_image.h>
 #include <cgltf.h>
+#include "../../internal/core/res_types.h"
 #include "../../internal/impl.h"
 #include "../error.h"
 #include "../rlr.h"
 #include "texture.h"
 
-rlr_res_t rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter) {
+rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter) {
     uint8_t* data = NULL;
-    rlr_res_t id = RLR_NULL;
     rlr_res_texture_t* texture = NULL;
 
-    id = rlr_mem_man_allocate_res_texture(rlr_mem_man(), (rlr_res_texture_t){0});
-    if(id == RLR_NULL) {
-        rlr_log_error("could not allocate rlr handle for texture");
-        goto err;
-    }
-
-    texture = rlr_mem_man_get_res_texture(rlr_mem_man(), id);
+    texture = malloc(sizeof(rlr_res_texture_t));
     if(!texture) {
         rlr_log_error("pointer to the texture handle is null");
         goto err;
@@ -62,14 +56,15 @@ rlr_res_t rlr_res_texture_load(const char* texture_path, bool use_srgb_color_spa
 
     stbi_image_free(data);
     rlr_log("loaded texture %s", texture_path);
-    return id;
+    return texture;
 err:
     stbi_image_free(data);
-    rlr_res_texture_free(id);
-    return RLR_NULL;
+    rlr_res_texture_free(texture);
+    return NULL;
 }
 
-rlr_res_t rlr_res_texture_create_empty(rlr_vec2_t size, bool use_srgb_color_space, rlr_res_texture_filter_t filter, uint32_t channels) {
+rlr_res_texture_t* rlr_res_texture_create_empty(rlr_vec2_t size, bool use_srgb_color_space, rlr_res_texture_filter_t filter, uint32_t channels) {
+    rlr_res_texture_t* texture = NULL;
     uint64_t texture_handle = 0;
     switch(filter) {
         case RLR_RES_TEXTURE_FILTER_NEAREST: {
@@ -86,65 +81,60 @@ rlr_res_t rlr_res_texture_create_empty(rlr_vec2_t size, bool use_srgb_color_spac
         }
     }
     if(texture_handle == 0) {
-        return RLR_NULL;
+        goto err;
     }
-    rlr_res_t id = rlr_mem_man_allocate_res_texture(rlr_mem_man(), (rlr_res_texture_t){
+    texture = malloc(sizeof(rlr_res_texture_t));
+    if(!texture) {
+        goto err;
+    }
+    *texture = (rlr_res_texture_t){
         .height = size.x,
         .width = size.y,
         .channels = channels,
         .texture = texture_handle
-    });
-    if(id == RLR_NULL) {
-        rlr_backend()->free_texture(texture_handle);
-        return RLR_NULL;
-    }
-    return id;
+    };
+    return texture;
+err:
+    rlr_res_texture_free(texture);
+    return NULL;
 }
 
-void rlr_res_texture_copy_subtex(rlr_res_t texture_handle, const uint8_t* texture_data, uint32_t u, uint32_t v, uint32_t width, uint32_t height) {
-    rlr_res_texture_t* tex = rlr_mem_man_get_res_texture(rlr_mem_man(), texture_handle);
-    if(!tex) {
-        rlr_log_warning("texture is invalid, no copy will be made");
-        return;
-    }
-    rlr_backend()->copy_sub_texture(tex->texture, u, v, width, height, tex->channels, texture_data);
+void rlr_res_texture_copy_subtex(rlr_res_texture_t* texture, const uint8_t* texture_data, uint32_t u, uint32_t v, uint32_t width, uint32_t height) {
+    rlr_backend()->copy_sub_texture(texture->texture, u, v, width, height, texture->channels, texture_data);
 }
 
-rlr_res_t rlr_res_texture_default() {
+rlr_res_texture_t* rlr_res_texture_default() {
+    rlr_res_texture_t* texture = NULL;
     uint8_t data[3] = {255, 255, 255};
     uint64_t texture_handle = rlr_backend()->create_nearest_texture(data, 1, 1, 3, false);
     if(texture_handle == 0) {
-        return RLR_NULL;
+        goto err;
     }
-    rlr_res_t id = rlr_mem_man_allocate_res_texture(rlr_mem_man(), (rlr_res_texture_t){
+    texture = malloc(sizeof(rlr_res_texture_t));
+    if(!texture) {
+        goto err;
+    }
+    *texture = (rlr_res_texture_t){
         .height = 1,
         .width = 1,
         .channels = 3,
         .texture = texture_handle
-    });
-    if(id == RLR_NULL) {
-        rlr_backend()->free_texture(texture_handle);
-        return RLR_NULL;
-    }
-    return id;
+    };
+    return texture;
+err:
+    rlr_res_texture_free(texture);
+    return NULL;
 }
 
-rlr_res_t rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
+rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
     if(!tex) {
-        return RLR_NULL;
+        return NULL;
     }
 
     uint8_t* data = NULL;
-    rlr_res_t id = RLR_NULL;
     rlr_res_texture_t* texture = NULL;
 
-    id = rlr_mem_man_allocate_res_texture(rlr_mem_man(), (rlr_res_texture_t){0});
-    if(id == RLR_NULL) {
-        rlr_log_error("could not allocate rlr handle for texture");
-        goto err;
-    }
-
-    texture = rlr_mem_man_get_res_texture(rlr_mem_man(), id);
+    texture = malloc(sizeof(rlr_res_texture_t));
     if(!texture) {
         rlr_log_error("pointer to the texture handle is null");
         goto err;
@@ -200,25 +190,21 @@ rlr_res_t rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
     texture->channels = channels;
 
     stbi_image_free(data);
-    return id;
+    return texture;
 err:
     stbi_image_free(data);
-    rlr_res_texture_free(id);
-    return RLR_NULL;
+    rlr_res_texture_free(texture);
+    return NULL;
 }
 
-void rlr_res_texture_bind(rlr_res_t id, uint8_t texture_slot) {
-    rlr_res_texture_t* texture = rlr_mem_man_get_res_texture(rlr_mem_man(), id);
+void rlr_res_texture_bind(const rlr_res_texture_t* texture, uint8_t texture_slot) {
     rlr_backend()->bind_texture(texture->texture, RLR_BACKEND_TEXTURE_2D, texture_slot);
 }
 
-void rlr_res_texture_free(rlr_res_t id) {
-    if(id == RLR_NULL) {
+void rlr_res_texture_free(rlr_res_texture_t* texture) {
+    if(!texture) {
         return;
     }
-    rlr_res_texture_t* texture = rlr_mem_man_get_res_texture(rlr_mem_man(), id);
-    if(texture) {
-        rlr_backend()->free_texture(texture->texture);
-    }
-    rlr_mem_man_free_res_texture(rlr_mem_man(), id);
+    rlr_backend()->free_texture(texture->texture);
+    free(texture);
 }

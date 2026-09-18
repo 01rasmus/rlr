@@ -1,20 +1,14 @@
 #include <stdlib.h>
+#include "../../internal/core/res_types.h"
 #include "../../internal/impl.h"
 #include "../error.h"
 #include "../rlr.h"
 #include "uniform.h"
 
-rlr_res_t rlr_res_uniform_create_dynamic(uint64_t size) {
-    rlr_res_t id = RLR_NULL;
+rlr_res_uniform_t* rlr_res_uniform_create_dynamic(uint64_t size) {
     rlr_res_uniform_t* uniform = NULL;
 
-    id = rlr_mem_man_allocate_res_uniform(rlr_mem_man(), (rlr_res_uniform_t){0});
-    if(id == RLR_NULL) {
-        rlr_log_error("could not allocate rlr handle for uniform");
-        goto err;
-    }
-
-    uniform = rlr_mem_man_get_res_uniform(rlr_mem_man(), id);
+    uniform = malloc(sizeof(rlr_res_uniform_t));
     if(!uniform) {
         rlr_log_error("pointer to the uniform handle is null");
         goto err;
@@ -24,23 +18,16 @@ rlr_res_t rlr_res_uniform_create_dynamic(uint64_t size) {
     uniform->buffer = rlr_backend()->create_buffer();
     rlr_backend()->bind_buffer(uniform->buffer, RLR_BACKEND_BUFFER_UNIFORM);
     rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_UNIFORM, size, NULL, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
-    return id;
+    return uniform;
 err:
-    rlr_res_uniform_free(id);
-    return RLR_NULL;
+    rlr_res_uniform_free(uniform);
+    return NULL;
 }
 
-rlr_res_t rlr_res_uniform_create_static(void* data, uint64_t size) {
-    rlr_res_t id = RLR_NULL;
+rlr_res_uniform_t* rlr_res_uniform_create_static(void* data, uint64_t size) {
     rlr_res_uniform_t* uniform = NULL;
 
-    id = rlr_mem_man_allocate_res_uniform(rlr_mem_man(), (rlr_res_uniform_t){0});
-    if(id == RLR_NULL) {
-        rlr_log_error("could not allocate rlr handle for uniform");
-        goto err;
-    }
-
-    uniform = rlr_mem_man_get_res_uniform(rlr_mem_man(), id);
+    uniform = malloc(sizeof(rlr_res_uniform_t));
     if(!uniform) {
         rlr_log_error("pointer to the uniform handle is null");
         goto err;
@@ -50,14 +37,13 @@ rlr_res_t rlr_res_uniform_create_static(void* data, uint64_t size) {
     uniform->buffer = rlr_backend()->create_buffer();
     rlr_backend()->bind_buffer(uniform->buffer, RLR_BACKEND_BUFFER_UNIFORM);
     rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_UNIFORM, size, data, RLR_BACKEND_BUFFER_USAGE_STATIC);
-    return id;
+    return uniform;
 err:
-    rlr_res_uniform_free(id);
-    return RLR_NULL;
+    rlr_res_uniform_free(uniform);
+    return NULL;
 }
 
-void rlr_res_uniform_update(rlr_res_t ubo_id, uint64_t offset, void* data, uint64_t size) {
-    rlr_res_uniform_t* ubo = rlr_mem_man_get_res_uniform(rlr_mem_man(), ubo_id);
+void rlr_res_uniform_update(rlr_res_uniform_t* ubo, uint64_t offset, void* data, uint64_t size) {
     if(ubo->is_static) {
         return;
     }
@@ -65,20 +51,14 @@ void rlr_res_uniform_update(rlr_res_t ubo_id, uint64_t offset, void* data, uint6
     rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_UNIFORM, size, data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
 }
 
-void rlr_res_uniform_bind(rlr_res_t ubo_id, uint8_t ubo_slot) {
-    rlr_res_uniform_t* ubo = rlr_mem_man_get_res_uniform(rlr_mem_man(), ubo_id);
+void rlr_res_uniform_bind(const rlr_res_uniform_t* ubo, uint8_t ubo_slot) {
     rlr_backend()->bind_uniform_buffer(ubo->buffer, ubo_slot);
 }
 
-void rlr_res_uniform_free(rlr_res_t id) {
-    if(id == RLR_NULL) {
-        return;
-    }
-
-    rlr_res_uniform_t* ubo = rlr_mem_man_get_res_uniform(rlr_mem_man(), id);
+void rlr_res_uniform_free(rlr_res_uniform_t* ubo) {
     if(!ubo) {
         return;
     }
     rlr_backend()->free_buffer(ubo->buffer);
-    rlr_mem_man_free_res_uniform(rlr_mem_man(), id);
+    free(ubo);
 }

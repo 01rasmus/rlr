@@ -17,7 +17,7 @@ bool rlr_update();
 void rlr_free();
 
 void rlr_set_clear_color(float r, float g, float b, float a);
-void rlr_set_cube_map(rlr_res_t cube_map_id);
+void rlr_set_cube_map(rlr_res_cube_map_t* cube_map_id);
 rlr_vec2_t rlr_get_framebuffer_size();
 rlr_vec2_t rlr_get_mouse_position();
 
@@ -33,7 +33,7 @@ bool rlr_screen_pos_to_ground(rlr_vec2_t mouse_pos, rlr_vec3_t* out_position);
 rlr_vec2_t rlr_world_to_screen(rlr_vec3_t world_pos);
 
 //default resources
-rlr_res_t rlr_default_texture();
+rlr_res_texture_t* rlr_default_texture();
 
 //camera
 void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation);

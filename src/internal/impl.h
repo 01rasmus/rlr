@@ -4,7 +4,6 @@
 #include "pipelines/model.h"
 #include "pipelines/input.h"
 #include "pipelines/ui.h"
-#include "core/memory_manager.h"
 #include "../rlr/math/matrix.h"
 #include "../rlr/math/quat.h"
 #include "../rlr/rlr.h"
@@ -45,7 +44,6 @@ typedef rlr_res_material_t rlr_uniform_material_t;
 typedef struct rlr_t {
     GLFWwindow* window;
     rlr_backend_t* backend;
-    rlr_mem_man_t res_man;
 
     //configuration
     int32_t framebuffer_width;
@@ -72,9 +70,9 @@ typedef struct rlr_t {
     rlr_pipeline_ui_t pipeline_ui;
 
     //built in resources
-    rlr_res_t texture_white;
-    rlr_res_t cube_map_white;
-    rlr_res_t ubos[RLR_INTERNAL_UBO_COUNT];
+    rlr_res_texture_t* texture_white;
+    rlr_res_cube_map_t* cube_map_white;
+    rlr_res_uniform_t* ubos[RLR_INTERNAL_UBO_COUNT];
 
     //statistics
     rlr_statistics_t statistics_total;
@@ -100,5 +98,4 @@ extern uint8_t rlr_quad_indices[6];
 
 rlr_t* rlr();
 rlr_backend_t* rlr_backend();
-rlr_mem_man_t* rlr_mem_man();
 void _rlr_log(const char* file, uint64_t line, rlr_log_level_t log_level, const char* format, ...);

@@ -154,10 +154,25 @@
 #define RLR_LOG_LEVEL_ERROR             0x2
 #define RLR_LOG_LEVEL_DEBUG             0x3
 
-typedef uint64_t rlr_res_t;
-typedef uint64_t rlr_obj_t;
 typedef uint64_t rlr_handle_t;
 typedef uint8_t rlr_log_level_t;
+
+typedef struct rlr_res_animated_model_t rlr_res_animated_model_t;
+typedef struct rlr_res_cube_map_t rlr_res_cube_map_t;
+typedef struct rlr_res_font_t rlr_res_font_t;
+typedef struct rlr_res_shader_t rlr_res_shader_t;
+typedef struct rlr_res_static_model_t rlr_res_static_model_t;
+typedef struct rlr_res_texture_atlas_t rlr_res_texture_atlas_t;
+typedef struct rlr_res_texture_atlas_tile_t rlr_res_texture_atlas_tile_t;
+typedef struct rlr_res_texture_t rlr_res_texture_t;
+typedef struct rlr_res_uniform_t rlr_res_uniform_t;
+
+typedef struct rlr_obj_animated_model_t rlr_obj_animated_model_t;
+typedef struct rlr_obj_label_t rlr_obj_label_t;
+typedef struct rlr_obj_model_occluder_t rlr_obj_model_occluder_t;
+typedef struct rlr_obj_mouse_input_area_t rlr_obj_mouse_input_area_t;
+typedef struct rlr_obj_sprite_t rlr_obj_sprite_t;
+typedef struct rlr_obj_static_model_t rlr_obj_static_model_t;
 
 typedef void (*rlr_input_key_callback_t)(uint32_t key, uint32_t scancode, uint32_t action, uint32_t mods, void* user);
 typedef void (*rlr_input_mouse_callback_t)(uint32_t button, uint32_t action, uint32_t mods, rlr_vec2_t pos, void* user);

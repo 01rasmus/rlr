@@ -1,11 +1,11 @@
 #include <string.h>
 #include <math.h>
 #include <cgltf.h>
-#include "../../internal/impl.h"
-#include "../resources/texture.h"
-#include "../resources/uniform.h"
+#include "../../rlr/resources/texture.h"
+#include "../../rlr/resources/uniform.h"
+#include "res_types.h"
 #include "../error.h"
-#include "model_shared.h"
+#include "../impl.h"
 
 cgltf_data* rlr_res_model_load_glb(const char* filename) {
     cgltf_options options = {0};
@@ -35,12 +35,13 @@ err:
     return NULL;
 }
 
-bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_t* out_material_ubo, rlr_res_t* out_base_texture) {
-    rlr_res_t ubo = RLR_NULL;
-    rlr_res_t tex = RLR_NULL;
+bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_uniform_t** out_material_ubo, rlr_res_texture_t** out_base_texture) {
     if(!out_material_ubo || !out_base_texture) {
         goto err;
     }
+
+    rlr_res_texture_t* tex = NULL;
+    rlr_res_uniform_t* ubo = NULL;
 
     rlr_res_material_t mat;
     if(material) {
@@ -58,7 +59,7 @@ bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_t* out
         mat.reflectiveness = 0.0;
     }
     ubo = rlr_res_uniform_create_static(&mat, sizeof(mat));
-    if(ubo == RLR_NULL) {
+    if(ubo == NULL) {
         goto err;
     }
 

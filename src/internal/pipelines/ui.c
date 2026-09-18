@@ -177,7 +177,7 @@ err:
     return false;
 }
 
-static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_res_t texture, rlr_res_t shader, uint32_t layer) {
+static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_res_texture_t* texture, rlr_res_shader_t* shader, uint32_t layer) {
     rlr_pipeline_ui_draw_command_t command = {0};
     command.instance_data = NULL;
     command.texture = texture;
@@ -202,7 +202,7 @@ static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_res_t text
     return command;
 }
 
-rlr_pipeline_ui_draw_command_t* rlr_pipeline_ui_find_draw_command(rlr_res_t texture, rlr_res_t shader, uint32_t layer) {
+rlr_pipeline_ui_draw_command_t* rlr_pipeline_ui_find_draw_command(rlr_res_texture_t* texture, rlr_res_shader_t* shader, uint32_t layer) {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
 
     for(size_t i = 0; i < rlpp_len(pu->commands); i++) {
@@ -274,7 +274,7 @@ const rlr_instance_data_ui_t const* rlr_pipeline_ui_get_sprite_instance(uint64_t
     return rlpp_get_unchecked(cmd->instance_data, instance_id);
 }
 
-rlr_res_t rlr_pipeline_ui_get_text_shader() {
+rlr_res_shader_t* rlr_pipeline_ui_get_text_shader() {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
     return pu->shader_text;
 }

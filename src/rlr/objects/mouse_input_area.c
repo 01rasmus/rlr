@@ -1,12 +1,8 @@
 #include "../../internal/impl.h"
 #include "mouse_input_area.h"
 
-rlr_obj_t rlr_obj_mouse_input_area_create(rlr_rect_t rect, int32_t layer, void* user, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_input_area_on_enter_t on_enter, rlr_input_area_on_leave_t on_leave, rlr_input_area_on_pressed_t on_pressed, rlr_input_area_on_release_t on_release) {
-    rlr_obj_t id = rlr_mem_man_allocate_obj_mouse_input_area(rlr_mem_man(), (rlr_obj_mouse_input_area_t){0});
-    if(id == RLR_NULL) {
-        goto err;
-    }
-    rlr_obj_mouse_input_area_t* obj = rlr_mem_man_get_obj_mouse_input_area(rlr_mem_man(), id);
+rlr_obj_mouse_input_area_t* rlr_obj_mouse_input_area_create(rlr_rect_t rect, int32_t layer, void* user, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_input_area_on_enter_t on_enter, rlr_input_area_on_leave_t on_leave, rlr_input_area_on_pressed_t on_pressed, rlr_input_area_on_release_t on_release) {
+    rlr_obj_mouse_input_area_t* obj = malloc(sizeof(rlr_obj_mouse_input_area_t));
     if(!obj) {
         goto err;
     }
@@ -27,25 +23,20 @@ rlr_obj_t rlr_obj_mouse_input_area_create(rlr_rect_t rect, int32_t layer, void* 
         goto err;
     }
 
-    return id;
+    return obj;
 err:
-    rlr_obj_mouse_input_area_free(id);
-    return RLR_NULL;
+    rlr_obj_mouse_input_area_free(obj);
+    return NULL;
 }
 
-void rlr_obj_mouse_input_area_set_enabled(rlr_obj_t id, bool enabled) {
-    rlr_obj_mouse_input_area_t* mi = rlr_mem_man_get_obj_mouse_input_area(rlr_mem_man(), id);
-    rlpp_get_unchecked(rlr()->pipeline_input.mouse_areas, mi->id)->enabled = enabled;
+void rlr_obj_mouse_input_area_set_enabled(rlr_obj_mouse_input_area_t* obj, bool enabled) {
+    rlpp_get_unchecked(rlr()->pipeline_input.mouse_areas, obj->id)->enabled = enabled;
 }
 
-void rlr_obj_mouse_input_area_free(rlr_obj_t id) {
-    if(id == RLR_NULL) {
+void rlr_obj_mouse_input_area_free(rlr_obj_mouse_input_area_t* obj) {
+    if(!obj) {
         return;
     }
-    rlr_obj_mouse_input_area_t* mi = rlr_mem_man_get_obj_mouse_input_area(rlr_mem_man(), id);
-    if(mi) {
-        return;
-    }
-    rlr_pipeline_input_remove_area(mi->id);
-    rlr_mem_man_free_obj_mouse_input_area(rlr_mem_man(), id);
+    rlr_pipeline_input_remove_area(obj->id);
+    free(obj);
 }

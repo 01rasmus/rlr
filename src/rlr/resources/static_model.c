@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <cgltf.h>
+#include "../../internal/core/res_types.h"
 #include "../../external/stb_ds.h"
 #include "../../internal/impl.h"
-#include "../resources/model_shared.h"
 #include "../resources/texture.h"
 #include "../resources/uniform.h"
 #include "../math/vec.h"
@@ -10,22 +10,15 @@
 #include "../rlr.h"
 #include "static_model.h"
 
-rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {
-    rlr_res_t id = RLR_NULL;
+rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_location) {
     cgltf_data* data = NULL;
     rlr_res_static_model_t* model = NULL;
     rlr_static_model_vertex_t* vertices = NULL;
     uint32_t* indices = NULL;
 
-    id = rlr_mem_man_allocate_res_static_model(rlr_mem_man(), (rlr_res_static_model_t){0});
-    if(id == RLR_NULL) {
-        rlr_log_error("could not allocate rlr handle for static model");
-        goto err;
-    }
-
-    model = rlr_mem_man_get_res_static_model(rlr_mem_man(), id);
+    model = malloc(sizeof(rlr_res_static_model_t));
     if(!model) {
-        rlr_log_error("pointer to the static model handle is null");
+        rlr_log_error("pointer to the static model is null");
         goto err;
     }
 
@@ -153,21 +146,16 @@ rlr_res_t rlr_res_static_model_load_glb(const char* glb_model_location) {
     arrfree(vertices);
     arrfree(indices);
     rlr_log("loaded static model %s", glb_model_location);
-    return id;
+    return model;
 err:
     cgltf_free(data);
     arrfree(vertices);
     arrfree(indices);
-    rlr_res_static_model_free(id);
-    return RLR_NULL;
+    rlr_res_static_model_free(model);
+    return NULL;
 }
 
-void rlr_res_static_model_free(rlr_res_t id) {
-    if(id == RLR_NULL) {
-        return;
-    }
-
-    rlr_res_static_model_t* model = rlr_mem_man_get_res_static_model(rlr_mem_man(), id);
+void rlr_res_static_model_free(rlr_res_static_model_t* model) {
     if(!model) {
         return;
     }
@@ -180,5 +168,5 @@ void rlr_res_static_model_free(rlr_res_t id) {
         rlr_res_uniform_free(mesh->material_ubo);
     }
     arrfree(model->meshes);
-    rlr_mem_man_free_res_static_model(rlr_mem_man(), id);
+    free(model);
 }

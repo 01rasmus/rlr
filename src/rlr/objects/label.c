@@ -1,6 +1,8 @@
 #include <utf8.h>
 #include "../../external/stb_ds.h"
 #include "../../internal/backends/backend.h"
+#include "../../internal/core/obj_types.h"
+#include "../../internal/core/res_types.h"
 #include "../../internal/core/word.h"
 #include "../../internal/impl.h"
 #include "../resources/font.h"
@@ -37,16 +39,14 @@ static void remove_instances(rlr_obj_label_t* label) {
     arrsetlen(label->instance_indices, 0);
 }
 
-rlr_obj_t rlr_obj_label_create(rlr_rect_t rect, float size, uint32_t layer, const char* text, rlr_res_t font_id) {
+rlr_obj_label_t* rlr_obj_label_create(rlr_rect_t rect, float size, uint32_t layer, const char* text, rlr_res_font_t* font_id) {
     return rlr_obj_label_create_ext(rect, size, layer, font_id, RLR_ANCHOR_TOP_LEFT, RLR_ANCHOR_TOP_LEFT, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, text);
 }
 
-rlr_obj_t rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size, uint32_t layer, rlr_res_t font_id, rlr_anchor_t screen_anchor, rlr_anchor_t local_anhor, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, const char* format, ...) {
-    rlr_obj_t id = rlr_mem_man_allocate_obj_label(rlr_mem_man(), (rlr_obj_label_t){0});
-    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), id);
-    rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), font_id);
-    rlr_res_t text_shader_id = rlr_pipeline_ui_get_text_shader();
-    if(id == RLR_NULL || label == NULL || font_id == RLR_NULL || font == NULL || text_shader_id == RLR_NULL) {
+rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size, uint32_t layer, rlr_res_font_t* font, rlr_anchor_t screen_anchor, rlr_anchor_t local_anhor, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, const char* format, ...) {
+    rlr_obj_label_t* label = malloc(sizeof(rlr_obj_label_t));
+    rlr_res_shader_t* text_shader_id = rlr_pipeline_ui_get_text_shader();
+    if(label == NULL  || font == NULL || text_shader_id == NULL) {
         goto err;
     }
 
@@ -55,7 +55,7 @@ rlr_obj_t rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size, uint32
         goto err;
     }
     label->cmd_id = cmd->id;
-    label->font = font_id;
+    label->font = font;
     label->rectangle = rectangle;
     label->size = text_size;
     label->screen_anchor = screen_anchor;
@@ -72,17 +72,14 @@ rlr_obj_t rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size, uint32
         goto err;
     }
 
-    return id;
+    return label;
 err:
-    rlr_obj_label_free(id);
-    return RLR_NULL;
+    rlr_obj_label_free(label);
+    return NULL;
 }
 
-void rlr_obj_label_set_text(rlr_obj_t id, const char* text) {
-    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), id);
+void rlr_obj_label_set_text(rlr_obj_label_t* label, const char* text) {
     remove_instances(label);
-    rlr_res_font_t* font = rlr_mem_man_get_res_font(rlr_mem_man(), label->font);
-
     struct text_gen_ctx_t ctx = {
         .cmd = rlpp_get_unchecked(rlr()->pipeline_ui.commands, label->cmd_id),
         .label = label,
@@ -90,24 +87,21 @@ void rlr_obj_label_set_text(rlr_obj_t id, const char* text) {
     rlr_word_generate(label->font, NULL, label->size, label->rectangle, label->horizontal_alignment, label->vertical_alignment, label->local_anchor, label->screen_anchor, gen_text, text, &ctx);
 }
 
-void rlr_obj_label_set_visability(rlr_obj_t id, bool visible) {
-    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), id);
+void rlr_obj_label_set_visability(rlr_obj_label_t* label, bool visible) {
     for(uint32_t i = 0; i < arrlenu(label->instance_indices); i++) {
         rlr_pipeline_ui_set_sprite_instance_visability(label->cmd_id, label->instance_indices[i], visible);
     }
 }
 
-void rlr_obj_label_set_rectangle(rlr_obj_t id, rlr_rect_t rect) {
-    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), id);
+void rlr_obj_label_set_rectangle(rlr_obj_label_t* label, rlr_rect_t rect) {
     label->rectangle = rect;
 }
 
-void rlr_obj_label_free(rlr_obj_t obj) {
-    rlr_obj_label_t* label = rlr_mem_man_get_obj_label(rlr_mem_man(), obj);
-    if(!label || obj == RLR_NULL) {
+void rlr_obj_label_free(rlr_obj_label_t* label) {
+    if(!label) {
         return;
     }
     remove_instances(label);
     arrfree(label->instance_indices);
-    rlr_mem_man_free_obj_label(rlr_mem_man(), obj);
+    free(label);
 }

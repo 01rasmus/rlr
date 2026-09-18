@@ -8,6 +8,7 @@
 #include "../../rlr/resources/texture.h"
 #include "../../rlr/resources/shader.h"
 #include "../../rlr/math/scalar.h"
+#include "../core/res_types.h"
 #include "../impl.h"
 #include "model.h"
 
@@ -286,11 +287,11 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
     }
 );
 
-static rlr_pipeline_static_model_draw_command_t rlr_pipeline_model_create_static_model_draw_command(rlr_res_t model_id, rlr_res_t shader, uint64_t new_index) {
+static rlr_pipeline_static_model_draw_command_t rlr_pipeline_model_create_static_model_draw_command(rlr_res_static_model_t* model, rlr_res_shader_t* shader, uint64_t new_index) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
 
     rlr_pipeline_static_model_draw_command_t cmd = {
-        .model = model_id,
+        .model = model,
         .shader = shader,
         .instances = NULL,
         .mesh_vaos = NULL,
@@ -300,7 +301,6 @@ static rlr_pipeline_static_model_draw_command_t rlr_pipeline_model_create_static
         .instance_vbo = rlr_backend()->create_buffer(),
     };
 
-    rlr_res_static_model_t* model = rlr_mem_man_get_res_static_model(rlr_mem_man(), model_id);
     for(int64_t i = 0; i < arrlen(model->meshes); i++) {
         rlr_res_static_mesh_t* mesh = &model->meshes[i];
         uint64_t vao = rlr_backend()->create_vertex_array();
@@ -321,11 +321,11 @@ static rlr_pipeline_static_model_draw_command_t rlr_pipeline_model_create_static
     return cmd;
 }
 
-static rlr_pipeline_animated_model_draw_command_t rlr_pipeline_model_create_animated_model_draw_command(rlr_res_t model_id, rlr_res_t shader, uint64_t new_index) {
+static rlr_pipeline_animated_model_draw_command_t rlr_pipeline_model_create_animated_model_draw_command(rlr_res_animated_model_t* model, rlr_res_shader_t* shader, uint64_t new_index) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
 
     rlr_pipeline_animated_model_draw_command_t cmd = {
-        .model = model_id,
+        .model = model,
         .shader = shader,
         .instances = NULL,
         .mesh_vaos = NULL,
@@ -335,7 +335,6 @@ static rlr_pipeline_animated_model_draw_command_t rlr_pipeline_model_create_anim
         .instance_vbo = rlr_backend()->create_buffer(),
     };
 
-    rlr_res_animated_model_t* model = rlr_mem_man_get_res_animated_model(rlr_mem_man(), model_id);
     for(int64_t i = 0; i < arrlen(model->meshes); i++) {
         rlr_res_animated_mesh_t* mesh = &model->meshes[i];
         uint64_t vao = rlr_backend()->create_vertex_array();
@@ -393,15 +392,14 @@ err:
     return false;
 }
 
-static inline bool rlr_pipeline_update_animation_state(rlr_pipeline_model_t* pm, rlr_obj_animated_model_t* model, rlr_pipeline_animated_model_draw_command_t* cmd, rlr_obj_animation_state_t* state, double delta_time, float* out_lerp, uint32_t* out_pose_a, uint32_t* out_pose_b) {
+static inline bool rlr_pipeline_update_animation_state(rlr_pipeline_model_t* pm, rlr_pipeline_animated_model_draw_command_t* cmd, rlr_obj_animation_state_t* state, double delta_time, float* out_lerp, uint32_t* out_pose_a, uint32_t* out_pose_b) {
     if(state->animation_index == -1) {
         return false;
     }
 
-    rlr_res_animated_model_t* model_res = rlr_mem_man_get_res_animated_model(rlr_mem_man(), cmd->model);
-    rlr_res_animation_meta_t* meta = &model_res->animations.metas[state->animation_index];
+    rlr_res_animation_meta_t* meta = &cmd->model->animations.metas[state->animation_index];
     float frame_interval = 1.0 / meta->fps;
-    uint32_t joint_count = model_res->animations.joint_count;
+    uint32_t joint_count = cmd->model->animations.joint_count;
 
     float current_pose = state->animation_time / frame_interval;
     uint32_t pose_index_upper = rlr_clamp(ceilf(current_pose), 0, meta->pose_count - 1);
@@ -424,11 +422,11 @@ static inline bool rlr_pipeline_update_animation_state(rlr_pipeline_model_t* pm,
 }
 
 static inline void rlr_pipeline_update_animations(rlr_pipeline_model_t* pm, double delta_time) {
-    rlr_obj_animated_model_t* models = rlr_mem_man_get_obj_animated_models(rlr_mem_man());
-    for(uint32_t i = 0; i < rlr_mem_man_get_obj_animated_models_count(rlr_mem_man()); i++) {
-        rlr_obj_animated_model_t* model = &models[i];
-        rlr_pipeline_animated_model_draw_command_t* cmd = &pm->opaque_animated_model_commands[model->cmd_index];
-        if(cmd->generation != model->cmd_generation) {
+    for(size_t i = 0; i < rlpp_len(pm->animation_states); i++) {
+        rlr_pipeline_animated_model_animation_state_t* state = &pm->animation_states[i];
+
+        rlr_pipeline_animated_model_draw_command_t* cmd = &pm->opaque_animated_model_commands[state->cmd_index];
+        if(cmd->generation != state->cmd_generation) {
             continue;
         }
 
@@ -438,24 +436,24 @@ static inline void rlr_pipeline_update_animations(rlr_pipeline_model_t* pm, doub
         uint32_t pose_b_primary;
         uint32_t pose_a_secondary;
         uint32_t pose_b_secondary;
-        if(rlr_pipeline_update_animation_state(pm, model, cmd, &model->animation_states[RLR_OBJ_ANIMATION_PRIMARY], delta_time, &lerp_primary, &pose_a_primary, &pose_b_primary)) {
-            cmd->instances[model->instance_index].lerp_primary = lerp_primary * UINT8_MAX;
-            cmd->instances[model->instance_index].pose_a_offset_primary = pose_a_primary;
-            cmd->instances[model->instance_index].pose_b_offset_primary = pose_b_primary;
+        if(rlr_pipeline_update_animation_state(pm, cmd, &state->animation_states[RLR_OBJ_ANIMATION_PRIMARY], delta_time, &lerp_primary, &pose_a_primary, &pose_b_primary)) {
+            cmd->instances[state->instance_index].lerp_primary = lerp_primary * UINT8_MAX;
+            cmd->instances[state->instance_index].pose_a_offset_primary = pose_a_primary;
+            cmd->instances[state->instance_index].pose_b_offset_primary = pose_b_primary;
         }
-        if(rlr_pipeline_update_animation_state(pm, model, cmd, &model->animation_states[RLR_OBJ_ANIMATION_SECONDARY], delta_time, &lerp_secondary, &pose_a_secondary, &pose_b_secondary)) {
-            cmd->instances[model->instance_index].lerp_secondary = lerp_secondary * UINT8_MAX;
-            cmd->instances[model->instance_index].pose_a_offset_secondary = pose_a_secondary;
-            cmd->instances[model->instance_index].pose_b_offset_secondary = pose_b_secondary;
+        if(rlr_pipeline_update_animation_state(pm, cmd, &state->animation_states[RLR_OBJ_ANIMATION_SECONDARY], delta_time, &lerp_secondary, &pose_a_secondary, &pose_b_secondary)) {
+            cmd->instances[state->instance_index].lerp_secondary = lerp_secondary * UINT8_MAX;
+            cmd->instances[state->instance_index].pose_a_offset_secondary = pose_a_secondary;
+            cmd->instances[state->instance_index].pose_b_offset_secondary = pose_b_secondary;
         }
 
         uint16_t transition_amount = 0;
-        model->current_transition_time += delta_time;
-        if(model->transition_time > 0.0) {
-            transition_amount = (1.0 - rlr_smoothstep(rlr_clampf(model->current_transition_time, 0.0, model->transition_time) / model->transition_time)) * UINT16_MAX;
+        state->current_transition_time += delta_time;
+        if(state->transition_time > 0.0) {
+            transition_amount = (1.0 - rlr_smoothstep(rlr_clampf(state->current_transition_time, 0.0, state->transition_time) / state->transition_time)) * UINT16_MAX;
         }
         
-        cmd->instances[model->instance_index].transition_lerp = transition_amount;
+        cmd->instances[state->instance_index].transition_lerp = transition_amount;
         cmd->dirty = true;
     }
 }
@@ -487,13 +485,12 @@ void rlr_pipeline_model_draw(double delta_time) {
     //draw
     for(int64_t i = 0; i < arrlen(pm->opaque_animated_model_commands); i++) {
         rlr_pipeline_animated_model_draw_command_t* command = &pm->opaque_animated_model_commands[i];
-        rlr_res_animated_model_t* model_res = rlr_mem_man_get_res_animated_model(rlr_mem_man(), command->model);
         rlr_res_shader_bind(pm->shader_opaque_animated_model);
         
         for(int64_t j = 0; j < arrlen(command->mesh_vaos); j++) {
-            rlr_res_animated_mesh_t* mesh = &model_res->meshes[j];
+            rlr_res_animated_mesh_t* mesh = &command->model->meshes[j];
             rlr_res_uniform_bind(mesh->material_ubo, RLR_INTERNAL_UBO_MATERIAL);
-            rlr_backend()->bind_texture(model_res->animations.animation_texture, RLR_BACKEND_TEXTURE_2D, 1);
+            rlr_backend()->bind_texture(command->model->animations.animation_texture, RLR_BACKEND_TEXTURE_2D, 1);
             if(mesh->texture_base) {
                 rlr_res_texture_bind(mesh->texture_base, 0);
             } else {
@@ -506,11 +503,10 @@ void rlr_pipeline_model_draw(double delta_time) {
     }
     for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
         rlr_pipeline_static_model_draw_command_t* command = &pm->opaque_static_model_commands[i];
-        rlr_res_static_model_t* model_res = rlr_mem_man_get_res_static_model(rlr_mem_man(), command->model);
         rlr_res_shader_bind(pm->shader_opaque_static_model);
         
         for(int64_t j = 0; j < arrlen(command->mesh_vaos); j++) {
-            rlr_res_static_mesh_t* mesh = &model_res->meshes[j];
+            rlr_res_static_mesh_t* mesh = &command->model->meshes[j];
             rlr_res_uniform_bind(mesh->material_ubo, RLR_INTERNAL_UBO_MATERIAL);
             if(mesh->texture_base) {
                 rlr_res_texture_bind(mesh->texture_base, 0);
@@ -536,7 +532,7 @@ void rlr_pipeline_model_deinit() {
     rlr_res_shader_free(pm->shader_opaque_animated_model);
 }
 
-rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_draw_command(rlr_res_t model, rlr_res_t shader) {
+rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_draw_command(rlr_res_static_model_t* model, rlr_res_shader_t* shader) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
 
     //todo: use binary search instead
@@ -553,7 +549,7 @@ rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_d
     return &arrlast(pm->opaque_static_model_commands);
 }
 
-rlr_pipeline_animated_model_draw_command_t* rlr_pipeline_model_find_animated_model_draw_command(rlr_res_t model, rlr_res_t shader) {
+rlr_pipeline_animated_model_draw_command_t* rlr_pipeline_model_find_animated_model_draw_command(rlr_res_animated_model_t* model, rlr_res_shader_t* shader) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
 
     //todo: use binary search instead
@@ -595,6 +591,23 @@ uint32_t rlr_pipeline_model_add_animated_model_instance(rlr_pipeline_animated_mo
     arrpush(command->instances, data);
     command->dirty = true;
     return arrlen(command->instances) - 1;
+}
+
+bool rlpp_pipeline_model_set_animated_model_animation_state(rlr_obj_animated_model_t* model) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+    rlpp_ref_t ref = rlpp_alloc_to_ref(pm->animation_states, ((rlr_pipeline_animated_model_animation_state_t){
+        .animation_states = {
+            {.animation_index = -1, .animation_loop = false, .animation_speed = 1.0, .animation_time = 0.0 },
+            {.animation_index = -1, .animation_loop = false, .animation_speed = 1.0, .animation_time = 0.0 },
+        },
+        .cmd_generation = model->cmd_generation,
+        .cmd_index = model->cmd_index,
+        .instance_index = model->instance_index,
+        .current_transition_time = 0.0,
+        .transition_time = 0.0,
+    }));
+    rlr_pipeline_animated_model_animation_state_t* state = rlpp_deref(pm->animation_states, ref);
+    return state != NULL;
 }
 
 void rlr_pipeline_model_update_animated_model_instance(uint32_t cmd_index, uint32_t cmd_generation, uint32_t instance_index, rlr_pipeline_animated_model_instance_t data) {

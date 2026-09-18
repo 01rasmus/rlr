@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cgltf.h>
+#include "../../internal/core/res_types.h"
 #include "../../external/stb_ds.h"
 #include "../../internal/impl.h"
 #include "../resources/texture.h"
 #include "../resources/uniform.h"
 #include "../math/quat.h"
 #include "../math/matrix.h"
-#include "model_shared.h"
 #include "animated_model.h"
 
 typedef struct animation_frame_joint_t {
@@ -292,20 +292,13 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     return final;
 }
 
-rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
+rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_location) {
     cgltf_data* data = NULL;
-    rlr_res_t id = RLR_NULL;
     rlr_res_animated_model_t* model = NULL;
     rlr_animated_model_vertex_t* vertices = NULL;
     uint32_t* indices = NULL;
-
-    id = rlr_mem_man_allocate_res_animated_model(rlr_mem_man(), (rlr_res_animated_model_t){0});
-    if(id == RLR_NULL) {
-        rlr_log_error("could not allocate rlr handle for animated model");
-        goto err;
-    }
     
-    model = rlr_mem_man_get_res_animated_model(rlr_mem_man(), id);
+    model = malloc(sizeof(rlr_res_animated_model_t));
     if(!model) {
         rlr_log_error("pointer to the animated model handle is null");
         goto err;
@@ -499,7 +492,7 @@ rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
             arrpush(model->meshes, (rlr_res_animated_mesh_t){0});
             rlr_res_animated_mesh_t* mesh = &arrlast(model->meshes);
             mesh->is_skinned = has_joints && has_weights;
-            mesh->material_ubo = RLR_NULL;
+            mesh->material_ubo = NULL;
             mesh->vbo = rlr_backend()->create_buffer();
             mesh->ebo = rlr_backend()->create_buffer();
             mesh->index_count = arrlenu(indices);
@@ -524,15 +517,14 @@ rlr_res_t rlr_res_animated_model_load_glb(const char* glb_model_location) {
 
     cgltf_free(data);
     rlr_log("loaded animated model %s", glb_model_location);
-    return id;
+    return model;
 err:
     cgltf_free(data);
-    rlr_res_animated_model_free(id);
-    return RLR_NULL;
+    rlr_res_animated_model_free(model);
+    return NULL;
 }
 
-int32_t rlr_res_animated_model_get_animation_index(rlr_res_t id, const char* animation_name) {
-    rlr_res_animated_model_t* model = rlr_mem_man_get_res_animated_model(rlr_mem_man(), id);
+int32_t rlr_res_animated_model_get_animation_index(const rlr_res_animated_model_t* model, const char* animation_name) {
     for(int32_t i = 0; i < arrlen(model->animations.metas); i++) {
         if(strcmp(model->animations.metas[i].name, animation_name) == 0) {
             return i;
@@ -541,11 +533,7 @@ int32_t rlr_res_animated_model_get_animation_index(rlr_res_t id, const char* ani
     return -1;
 }
 
-void rlr_res_animated_model_free(rlr_res_t id) {
-    if(id == RLR_NULL) {
-        return;
-    }
-    rlr_res_animated_model_t* model = rlr_mem_man_get_res_animated_model(rlr_mem_man(), id);
+void rlr_res_animated_model_free(rlr_res_animated_model_t* model) {
     if(!model) {
         return;
     }
@@ -560,5 +548,5 @@ void rlr_res_animated_model_free(rlr_res_t id) {
         rlr_res_texture_free(mesh->texture_base);
     }
     arrfree(model->meshes);
-    rlr_mem_man_free_res_animated_model(rlr_mem_man(), id);
+    free(model);
 }
