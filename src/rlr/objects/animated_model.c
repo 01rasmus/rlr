@@ -60,12 +60,12 @@ rlr_vec3_t rlr_obj_animated_model_get_scale(const rlr_obj_animated_model_t* mode
     return model->scale;
 }
 
-int32_t rlr_obj_animated_model_get_current_animation(const rlr_obj_animated_model_t* model) {
+int32_t rlr_obj_animated_model_get_current_animation(rlr_obj_animated_model_t* model) {
     rlr_pipeline_animated_model_animation_state_t* state = rlr_pipeline_model_get_animation_state(model);
     return state->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_index;
 }
 
-bool rlr_obj_animated_model_is_animating(const rlr_obj_animated_model_t* model) {
+bool rlr_obj_animated_model_is_animating(rlr_obj_animated_model_t* model) {
     rlr_pipeline_animated_model_animation_state_t* state = rlr_pipeline_model_get_animation_state(model);
     return state->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_index != -1;
 }

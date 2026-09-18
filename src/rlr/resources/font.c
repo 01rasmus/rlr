@@ -69,7 +69,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
         return;
     }
 
-    const rlr_res_font_glyph_t glyph = (rlr_res_font_glyph_t) {
+    hmputs(ctx->font->glyphs, ((rlr_res_font_glyph_t) {
         .key = unicode,
         .advance = advance,
         .plane_bottom = plane_bound_bottom,
@@ -80,8 +80,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
         .atlas_right = atlas_bound_right / ctx->tex->width,
         .atlas_top = (ctx->tex->height - atlas_bound_top) / ctx->tex->height,
         .atlas_bottom = (ctx->tex->height - atlas_bound_bottom) / ctx->tex->height,
-    };
-    hmputs(ctx->font->glyphs, glyph);
+    }));
 }
 
 rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atlas_path, float px_range) {
@@ -125,7 +124,7 @@ err:
     return NULL;
 }
 
-rlr_vec2_t rlr_res_font_measure(const rlr_res_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...) {
+rlr_vec2_t rlr_res_font_measure(rlr_res_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...) {
     rlr_vec2_t size = {0};
     if(!rlr_word_generate(font, &size, text_size, rectangle, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, RLR_ANCHOR_TOP_LEFT, RLR_ANCHOR_TOP_LEFT, NULL, format, NULL)) {
         return (rlr_vec2_t){0};

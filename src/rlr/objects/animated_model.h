@@ -11,12 +11,12 @@ rlr_obj_animated_model_t* rlr_obj_animated_model_create(rlr_res_animated_model_t
 rlr_vec3_t rlr_obj_animated_model_get_translation(const rlr_obj_animated_model_t* model);
 rlr_quat_t rlr_obj_animated_model_get_rotation(const rlr_obj_animated_model_t* model);
 rlr_vec3_t rlr_obj_animated_model_get_scale(const rlr_obj_animated_model_t* model);
-bool rlr_obj_animated_model_is_animating(const rlr_obj_animated_model_t* model);
+bool rlr_obj_animated_model_is_animating(rlr_obj_animated_model_t* model);
 
 /*
     returns -1 if no animation is running
 */
-int32_t rlr_obj_animated_model_get_current_animation(const rlr_obj_animated_model_t* model);
+int32_t rlr_obj_animated_model_get_current_animation(rlr_obj_animated_model_t* model);
 
 void rlr_obj_animated_model_set_animation(rlr_obj_animated_model_t* model, int32_t animation_index, float speed, bool loop);
 void rlr_obj_animated_model_set_animation_blended(rlr_obj_animated_model_t* model, int32_t animation_index, float speed, float transition_time, bool loop);
