@@ -171,6 +171,7 @@ typedef struct rlr_obj_animated_model_t rlr_obj_animated_model_t;
 typedef struct rlr_obj_label_t rlr_obj_label_t;
 typedef struct rlr_obj_model_occluder_t rlr_obj_model_occluder_t;
 typedef struct rlr_obj_mouse_input_area_t rlr_obj_mouse_input_area_t;
+typedef struct rlr_obj_nine_patch_t rlr_obj_nine_patch_t;
 typedef struct rlr_obj_sprite_t rlr_obj_sprite_t;
 typedef struct rlr_obj_static_model_t rlr_obj_static_model_t;
 
