@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
+#include "../../rlr/objects/nine_patch.h"
 #include "../../external/rlpp.h"
 #include "../../rlr/math/alignment.h"
 #include "../../rlr/math/anchor.h"
@@ -106,3 +107,12 @@ typedef struct rlr_obj_model_occluder_t {
 typedef struct rlr_obj_mouse_input_area_t {
     rlpp_id_t id;
 } rlr_obj_mouse_input_area_t;
+
+/*
+    nine patch
+*/
+typedef struct rlr_obj_nine_patch_t {
+    uint64_t cmd_id;
+    uint64_t instances[9];
+    rlr_nine_patch_t nine_patch;
+} rlr_obj_nine_patch_t;

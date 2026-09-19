@@ -29,7 +29,7 @@ rlr_obj_sprite_t* rlr_obj_sprite_create_from_atlas_tile(rlr_res_texture_atlas_ti
 rlr_obj_sprite_t* rlr_obj_sprite_create_ext(rlr_res_texture_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer, rlr_rect_t uv, rlr_rect_t scissor) {
     rlr_obj_sprite_t* sprite = NULL;
     rlr_res_texture_t* tex = texture == NULL ? rlr_default_texture() : texture;
-    rlr_pipeline_ui_draw_command_t* cmd = rlr_pipeline_ui_find_draw_command(tex, RLR_NULL, layer);
+    rlr_pipeline_ui_draw_command_t* cmd = rlr_pipeline_ui_find_draw_command(tex, NULL, layer);
 
     rlr_rect_t instance_rect = _rlr_obj_sprite_make_instance_rectangle(local_anchor, rectangle);
     rlr_instance_data_ui_t data = {

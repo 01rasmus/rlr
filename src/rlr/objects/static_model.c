@@ -12,7 +12,7 @@ rlr_obj_static_model_t* rlr_obj_static_model_create(rlr_res_static_model_t* mode
         goto err;
     }
 
-    rlr_pipeline_static_model_draw_command_t* cmd = rlr_pipeline_model_find_static_model_draw_command(model, RLR_NULL);
+    rlr_pipeline_static_model_draw_command_t* cmd = rlr_pipeline_model_find_static_model_draw_command(model, NULL);
     if(!cmd) {
         goto err;
     }

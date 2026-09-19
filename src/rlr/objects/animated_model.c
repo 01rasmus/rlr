@@ -11,7 +11,7 @@ rlr_obj_animated_model_t* rlr_obj_animated_model_create(rlr_res_animated_model_t
         goto err;
     }
     
-    rlr_pipeline_animated_model_draw_command_t* cmd = rlr_pipeline_model_find_animated_model_draw_command(model, RLR_NULL);
+    rlr_pipeline_animated_model_draw_command_t* cmd = rlr_pipeline_model_find_animated_model_draw_command(model, NULL);
     if(!cmd) {
         goto err;
     }

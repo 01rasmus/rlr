@@ -45,12 +45,12 @@ rlr_obj_label_t* rlr_obj_label_create(rlr_rect_t rect, float size, uint32_t laye
 
 rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size, uint32_t layer, rlr_res_font_t* font, rlr_anchor_t screen_anchor, rlr_anchor_t local_anhor, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, const char* format, ...) {
     rlr_obj_label_t* label = malloc(sizeof(rlr_obj_label_t));
-    rlr_res_shader_t* text_shader_id = rlr_pipeline_ui_get_text_shader();
-    if(label == NULL  || font == NULL || text_shader_id == NULL) {
+    rlr_res_shader_t* text_shader = rlr_pipeline_ui_get_text_shader();
+    if(label == NULL  || font == NULL || text_shader == NULL) {
         goto err;
     }
 
-    rlr_pipeline_ui_draw_command_t* cmd = rlr_pipeline_ui_find_draw_command(font->texture, text_shader_id, layer);
+    rlr_pipeline_ui_draw_command_t* cmd = rlr_pipeline_ui_find_draw_command(font->texture, text_shader, layer);
     if(!cmd) {
         goto err;
     }
