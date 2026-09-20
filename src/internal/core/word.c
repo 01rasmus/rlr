@@ -6,7 +6,7 @@
 
 static _Thread_local word_measure_context_t ctx = {
     .glyphs = NULL,
-    .row_count = 0,
+    .row_count = 1,
 };
 
 bool rlr_word_unicode_is_space(int32_t u) {
@@ -107,7 +107,7 @@ word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_gly
     
     //reset
     arrsetlen(ctx.glyphs, 0);
-    ctx.row_count = 0;
+    ctx.row_count = 1;
 
     float x = 0.0;
     float y = 0.0;
@@ -235,7 +235,7 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
     const rlr_res_font_glyph_t* space_glyph = rlr_res_font_get_glyph(font, ' ');
     const rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_get_glyph(font, '?');
     float x = rectangle.x - (rectangle.width * local_anchor_vec.x);
-    float start_y = (rectangle.y + text_size) - (rectangle.height * local_anchor_vec.y);
+    float start_y = (rectangle.y + text_size) - (rectangle.height * local_anchor_vec.y) - (font->vertical_offset * text_size);
     float space_width = space_glyph ? ((space_glyph->advance * text_size)) : text_size;
     float start_x = x;
 
@@ -243,7 +243,7 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
     float current_width = 0.0;
 
     word_measure_context_t* ctx = rlr_word_measure(unknown_glyph, font, text_size, space_width, rectangle.height, rectangle.width, text);
-    start_y += rlr_vertical_start_position(vertical_alignment, rectangle.height - (ctx->row_count * text_size));
+    start_y += rlr_vertical_start_position(vertical_alignment, rectangle.height - ctx->row_count * text_size);
 
     uint32_t current_word = 0;
     uint32_t current_row = 0;

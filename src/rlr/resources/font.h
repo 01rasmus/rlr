@@ -18,6 +18,7 @@ typedef struct rlr_res_font_t rlr_res_font_t;
 typedef struct rlr_res_font_glyph_t rlr_res_font_glyph_t;
 
 rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atlas_path, float px_range);
+void rlr_res_font_set_vertical_offset(rlr_res_font_t* font, float vertical_offset_fraction);
 rlr_vec2_t rlr_res_font_measure(rlr_res_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...);
 const rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_font_t* font, uint32_t unicode);
 int32_t rlr_res_font_get_glyph_count(const rlr_res_font_t* font);
