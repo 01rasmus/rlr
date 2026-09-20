@@ -9,7 +9,7 @@ typedef struct callback_ctx_t {
     rlr_pipeline_ui_draw_command_t* cmd;
 } callback_ctx_t;
 
-static void generate_instance_data(rlr_res_texture_t* texture, rlr_nine_patch_t nine_patch, rlr_rect_t rect, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, void* user, void (*on_instance)(uint8_t index, rlr_instance_data_ui_t data, void* user)) {
+static void generate_instance_data(rlr_res_texture_t* texture, bool visible, rlr_nine_patch_t nine_patch, rlr_rect_t rect, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, void* user, void (*on_instance)(uint8_t index, rlr_instance_data_ui_t data, void* user)) {
 
     //rectangle coordinates
     float x0 = 0.0;
@@ -70,7 +70,7 @@ static void generate_instance_data(rlr_res_texture_t* texture, rlr_nine_patch_t 
                 .uv = rlr_vec2(cuv.x / texture->width, cuv.y / texture->height),
                 .uv_size = rlr_vec2(cuv.width / texture->width, cuv.height / texture->height),
                 .screen_anchor = screen_anchor,
-                .visible = true,
+                .visible = visible,
             }),
             user
         );
@@ -104,7 +104,8 @@ rlr_obj_nine_patch_t* rlr_obj_nine_patch_create(rlr_res_texture_t* texture, rlr_
         .nine_patch = nine_patch,
         .screen_anchor = screen_anchor,
         .local_anchor = local_anchor,
-        .texture = texture
+        .texture = texture,
+        .visible = true,
     };
 
     //generate instances
@@ -112,13 +113,14 @@ rlr_obj_nine_patch_t* rlr_obj_nine_patch_create(rlr_res_texture_t* texture, rlr_
         .np = np,
         .cmd = cmd,
     };
-    generate_instance_data(texture, nine_patch, rectangle, screen_anchor, local_anchor, &ctx, callback_instance_create);
+    generate_instance_data(texture, np->visible, nine_patch, rectangle, screen_anchor, local_anchor, &ctx, callback_instance_create);
     return np;
 err:
     return NULL;
 }
 
 void rlr_obj_nine_patch_set_visability(rlr_obj_nine_patch_t* np, bool visible) {
+    np->visible = visible;
     size_t count = sizeof(np->instances) / sizeof(np->instances[0]);
     if(!np->nine_patch.show_middle) {
         count--;
@@ -130,7 +132,7 @@ void rlr_obj_nine_patch_set_visability(rlr_obj_nine_patch_t* np, bool visible) {
 }
 
 void rlr_obj_nine_patch_set_rectangle(rlr_obj_nine_patch_t* np, rlr_rect_t rect) {
-    generate_instance_data(np->texture, np->nine_patch, rect, np->screen_anchor, np->local_anchor, np, callback_instance_update);
+    generate_instance_data(np->texture, np->visible, np->nine_patch, rect, np->screen_anchor, np->local_anchor, np, callback_instance_update);
 }
 
 void rlr_obj_nine_patch_free(rlr_obj_nine_patch_t* np) {

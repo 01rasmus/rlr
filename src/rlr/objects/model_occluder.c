@@ -39,6 +39,7 @@ err:
 }
 
 void rlr_obj_model_occluder_set_visiblity(rlr_obj_model_occluder_t* mo, bool visible) {
+    mo->visible = visible;
     rlr_pipeline_stencil_set_model_occluder_instance_visability(mo->instance_ref, visible);
 }
 

@@ -52,12 +52,54 @@ rlr_obj_sprite_t* rlr_obj_sprite_create_ext(rlr_res_texture_t* texture, rlr_rect
         .local_anchor = local_anchor,
         .cmd_id = cmd->id,
         .instance_index = instance_index,
+        .layer = layer,
     };
 
     return sprite;
 err:
     rlr_obj_sprite_free(sprite);
     return sprite;
+}
+
+void rlr_obj_sprite_set_texture_from_atlas_tile(rlr_obj_sprite_t* sprite, rlr_res_texture_atlas_tile_t* tile) {
+    rlr_pipeline_ui_draw_command_t* new_cmd = rlr_pipeline_ui_find_draw_command(tile->texture, NULL, sprite->layer);
+    rlr_vec2_t new_uv = rlr_vec2(tile->uv.x / tile->texture->width, tile->uv.y / tile->texture->height);
+    rlr_vec2_t new_uv_size = rlr_vec2(tile->size.x / tile->texture->width, tile->size.y / tile->texture->height);
+
+    //it is the same texture, so we just update the instance's uv
+    if(new_cmd->id == sprite->cmd_id) {
+        rlr_instance_data_ui_t* ins = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
+        ins->uv = new_uv;
+        ins->uv_size = new_uv_size;
+        return;
+    }
+
+    //make new instance
+    rlr_instance_data_ui_t* old_instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
+    old_instance->uv = new_uv;
+    old_instance->uv_size = new_uv_size;
+
+    uint64_t new_instance = rlr_pipeline_ui_add_sprite_instance(new_cmd, *old_instance);
+    rlr_pipeline_ui_remove_sprite_instance(sprite->cmd_id, sprite->instance_index);
+
+    sprite->instance_index = new_instance;
+    sprite->cmd_id = new_cmd->id;
+}
+
+void rlr_obj_sprite_set_texture(rlr_obj_sprite_t* sprite, rlr_res_texture_t* texture) {
+    rlr_pipeline_ui_draw_command_t* new_cmd = rlr_pipeline_ui_find_draw_command(texture, NULL, sprite->layer);
+    if(new_cmd->id == sprite->cmd_id) {
+        return;
+    }
+    
+    rlr_instance_data_ui_t* old_instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
+    old_instance->uv = rlr_vec2(0.0, 0.0);
+    old_instance->uv_size = rlr_vec2(1.0, 1.0);
+    uint64_t new_instance = rlr_pipeline_ui_add_sprite_instance(new_cmd, *old_instance);
+
+    rlr_pipeline_ui_remove_sprite_instance(sprite->cmd_id, sprite->instance_index);
+    sprite->instance_index = new_instance;
+    sprite->cmd_id = new_cmd->id;
 }
 
 void rlr_obj_sprite_set_color(rlr_obj_sprite_t* sprite, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {

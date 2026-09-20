@@ -132,7 +132,9 @@ bool rlr_pipeline_stencil_add_model_occluder_instance(rlr_pipeline_stencil_occlu
     *out_ref = rlpp_alloc_to_ref(ps->occluder_instances, data);
     if(rlpp_deref(ps->occluder_instances, *out_ref) != NULL) {
         ps->is_dirty = true;
-        ps->visible_occluder_instances++;
+        if(data.visible) {
+            ps->visible_occluder_instances++;
+        }
         return true;
     }
     return false;
@@ -163,7 +165,14 @@ rlr_pipeline_stencil_occluder_instance_t* rlr_pipeline_stencil_get_and_dirty_mod
 
 void rlr_pipeline_stencil_remove_model_occluder_instance(rlpp_ref_t ref) {
     rlr_pipeline_stencil_t* ps = RLR_PIPELINE_STENCIL;
+    rlr_pipeline_stencil_occluder_instance_t* inst = rlpp_deref(ps->occluder_instances, ref);
+    if(!inst) {
+        return;
+    }
+
+    if(inst->visible) {
+        ps->visible_occluder_instances--;
+    }
     rlpp_remove_by_ref(ps->occluder_instances, ref);
-    ps->visible_occluder_instances--;
     ps->is_dirty = true;
 }

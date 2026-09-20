@@ -225,7 +225,9 @@ rlr_pipeline_ui_draw_command_t* rlr_pipeline_ui_find_draw_command(rlr_res_textur
 
 uint64_t rlr_pipeline_ui_add_sprite_instance(rlr_pipeline_ui_draw_command_t* command, rlr_instance_data_ui_t data) {
     command->is_dirty = true;
-    command->visible_instances++;
+    if(data.visible) {
+        command->visible_instances++;
+    }
     return rlpp_alloc(command->instance_data, data);
 }
 

@@ -27,7 +27,7 @@ void gen_text(void* user, uint32_t color, float italic_sheer, rlr_vec2_t pos, rl
         .uv_size = uv_size,
         .italic_sheer = italic_sheer,
         .screen_px_range = px_range,
-        .visible = true,
+        .visible = ctx->label->visible,
     };
     uint64_t id = rlr_pipeline_ui_add_sprite_instance(ctx->cmd, instance);
     arrpush(ctx->label->instance_indices, id);
@@ -64,6 +64,7 @@ rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size,
     label->horizontal_alignment = horizontal_alignment;
     label->vertical_alignment = vertical_alignment;
     label->instance_indices = NULL;
+    label->visible = true;
 
     struct text_gen_ctx_t ctx = {
         .cmd = cmd,
@@ -89,6 +90,7 @@ void rlr_obj_label_set_text(rlr_obj_label_t* label, const char* text) {
 }
 
 void rlr_obj_label_set_visability(rlr_obj_label_t* label, bool visible) {
+    label->visible = visible;
     for(uint32_t i = 0; i < arrlenu(label->instance_indices); i++) {
         rlr_pipeline_ui_set_sprite_instance_visability(label->cmd_id, label->instance_indices[i], visible);
     }

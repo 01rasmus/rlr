@@ -23,6 +23,7 @@ typedef struct rlr_obj_label_t {
     rlr_horizontal_alignment_t horizontal_alignment;
     rlr_vertical_alignment_t vertical_alignment;
     float size;
+    bool visible;
 } rlr_obj_label_t;
 
 /*
@@ -31,6 +32,7 @@ typedef struct rlr_obj_label_t {
 typedef struct rlr_obj_sprite_t {
     rlr_rect_t rect;
     rlr_anchor_t local_anchor;
+    uint32_t layer;
     uint64_t cmd_id;
     uint64_t instance_index;
 } rlr_obj_sprite_t;
@@ -118,4 +120,5 @@ typedef struct rlr_obj_nine_patch_t {
     uint64_t cmd_id;
     uint64_t instances[9];
     rlr_nine_patch_t nine_patch;
+    bool visible;
 } rlr_obj_nine_patch_t;
