@@ -15,7 +15,7 @@ struct text_gen_ctx_t {
     rlr_obj_label_t* label;
 };
 
-void gen_text(void* user, uint32_t color, float shear, rlr_vec2_t pos, rlr_vec2_t size, rlr_anchor_t screen_anchor, rlr_vec2_t uv, rlr_vec2_t uv_size) {
+void gen_text(void* user, uint32_t color, float italic_sheer, rlr_vec2_t pos, rlr_vec2_t size, rlr_anchor_t screen_anchor, rlr_vec2_t uv, rlr_vec2_t uv_size, float px_range) {
     struct text_gen_ctx_t* ctx = user;
 
     rlr_instance_data_ui_t instance = {
@@ -25,7 +25,8 @@ void gen_text(void* user, uint32_t color, float shear, rlr_vec2_t pos, rlr_vec2_
         .screen_anchor = screen_anchor,
         .uv = uv,
         .uv_size = uv_size,
-        .italic_sheer = shear,
+        .italic_sheer = italic_sheer,
+        .screen_px_range = px_range,
         .visible = true,
     };
     uint64_t id = rlr_pipeline_ui_add_sprite_instance(ctx->cmd, instance);

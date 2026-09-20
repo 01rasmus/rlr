@@ -117,7 +117,7 @@ word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_gly
     uint32_t current_offset = 0;
     uint32_t current_word_id = 0;
     uint32_t current_color = UINT32_MAX;
-    float current_shear = 0.0;
+    bool current_italic = false;
     bool do_rich_text = true;
 
     const void* p = text;
@@ -134,11 +134,11 @@ word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_gly
                 p = end;
                 continue;
             } else if(try_parse_italic_on(start, &end)) {
-                current_shear = 0.25;
+                current_italic = true;
                 p = end;
                 continue;
             } else if(try_parse_italic_off(start, &end)) {
-                current_shear = 0.0;
+                current_italic = false;
                 p = end;
                 continue;
             } else if(try_parse_color_reset(start, &end)) {
@@ -203,7 +203,7 @@ word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_gly
 
         rlr_measured_glyph_t g = (rlr_measured_glyph_t){
             .color = current_color,
-            .shear = current_shear,
+            .italic = current_italic,
             .word_id = current_word_id,
             .glyph = glyph,
         };
@@ -304,16 +304,24 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
             screen_px_range = 1.0;
         }
 
+        float sheer_amount = 0.25;
+        float half_sheer_amount = sheer_amount * 0.5;
+        float height = draw_y2 - draw_y1;
+        float width = draw_x2 - draw_x1;
+        float italic_sheer = g->italic == true ? (height * sheer_amount) : 0.0; 
+        float italic_sheer_offset = g->italic == true ? (-text_size * half_sheer_amount) : 0.0;
+
         if(gen_callback) {
             gen_callback(
                 user,
                 g->color,
-                g->shear,
-                rlr_vec2(draw_x1, draw_y1),
-                rlr_vec2(draw_x2 - draw_x1, draw_y2 - draw_y1),
+                italic_sheer,
+                rlr_vec2(draw_x1 + italic_sheer_offset, draw_y1),
+                rlr_vec2(width, height),
                 screen_anchor,
                 rlr_vec2(u1, v1),
-                rlr_vec2(u2 - u1, v2 - v1)
+                rlr_vec2(u2 - u1, v2 - v1),
+                screen_px_range
             );
         }
 
