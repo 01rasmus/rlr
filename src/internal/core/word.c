@@ -335,7 +335,7 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
     }
     
     if(out_measured_size) {
-        const float epsilon_size = 1e-4;
+        const float epsilon_size = 1.0e-4;
         *out_measured_size = (rlr_vec2_t){
             .x = max_width + epsilon_size,
             .y = (current_row + 1) * text_size + epsilon_size

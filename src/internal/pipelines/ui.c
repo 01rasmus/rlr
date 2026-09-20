@@ -236,11 +236,10 @@ void rlr_pipeline_ui_remove_sprite_instance(uint64_t command_id, uint64_t instan
     rlr_pipeline_ui_draw_command_t* cmd = rlpp_get_unchecked(pu->commands, command_id);
     rlr_instance_data_ui_t* instance = rlpp_get_unchecked(cmd->instance_data, instance_id);
     cmd->is_dirty = true;
-
-    rlpp_remove(cmd->instance_data, instance_id);
     if(instance->visible) {
         cmd->visible_instances--;
     }
+    rlpp_remove(cmd->instance_data, instance_id);
 }
 
 void rlr_pipeline_ui_set_sprite_instance_visability(uint64_t command_id, uint64_t instance_id, bool visible) {
@@ -250,7 +249,7 @@ void rlr_pipeline_ui_set_sprite_instance_visability(uint64_t command_id, uint64_
 
     if(instance->visible != visible) {
         cmd->is_dirty = true;
-        instance->visible = visible;
+        instance->visible = visible == true ? 1 : 0;
 
         if(!visible) {
             cmd->visible_instances--;
