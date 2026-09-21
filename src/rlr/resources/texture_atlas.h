@@ -9,11 +9,17 @@
 #define rlr_res_texture_atlas_tile(FILEPATH, DEST) \
     ((rlr_res_texture_atlas_tile_desc_t){.destination = (DEST), .filepath = (FILEPATH)})
 
+#define rlr_res_texture_atlas_tile_size(FILEPATH, DEST, W, H) \
+    ((rlr_res_texture_atlas_tile_desc_t){.destination = (DEST), .filepath = (FILEPATH), .resize_width = (W), .resize_height = (H)})
+
 #define rlr_res_texture_atlas_tile_size_padding(FILEPATH, DEST, W, H, PADDING) \
     ((rlr_res_texture_atlas_tile_desc_t){.destination = (DEST), .filepath = (FILEPATH), .padding = (PADDING), .resize_width = (W), .resize_height = (H)})
 
 #define rlr_res_texture_atlas_tile_offset(FILEPATH, DEST, DEST_OFFSET) \
     ((rlr_res_texture_atlas_tile_desc_t){.destination = (DEST), .destination_offset = (DEST_OFFSET), .filepath = (FILEPATH)})
+
+#define rlr_res_texture_atlas_tile_size_offset(FILEPATH, DEST_OFFSET, DEST, W, H) \
+    ((rlr_res_texture_atlas_tile_desc_t){.destination = (DEST), .destination_offset = (DEST_OFFSET), .filepath = (FILEPATH), .resize_width = (W), .resize_height = (H)})
 
 #define rlr_res_texture_atlas_tile_size_padding_offset(FILEPATH, DEST, DEST_OFFSET, W, H, PADDING) \
     ((rlr_res_texture_atlas_tile_desc_t){.destination = (DEST), .destination_offset = (DEST_OFFSET), .filepath = (FILEPATH), .padding = (PADDING), .resize_width = (W), .resize_height = (H)})

@@ -185,9 +185,24 @@ rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_at
             }
         }
 
+        //set padding automatically if it's not set
+        uint32_t padding = desc->padding;
+        if(atlas->filter != RLR_RES_TEXTURE_FILTER_NEAREST && padding == 0) {
+            uint32_t size = rw < rh ? rw : rh;
+            if(size <= 16) {
+                padding = 2;
+            } else if(size <= 64) {
+                padding = 4;
+            } else if(size <= 128) {
+                padding = 8;
+            } else {
+                padding = 16;
+            }
+        }
+
         //add to the area
-        uint32_t ew = rw + desc->padding * 2;
-        uint32_t eh = rh + desc->padding * 2;
+        uint32_t ew = rw + padding * 2;
+        uint32_t eh = rh + padding * 2;
         area += (double)ew + (double)eh;
 
         //add step entry
@@ -280,8 +295,10 @@ rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_at
     //fill uv data
     for(size_t i = 0; i < description_count; i++) {
         stbrp_rect* rect = &rects[i];
-        atlas->steps[rect->id].u = rect->x + descriptions[rect->id].padding;
-        atlas->steps[rect->id].v = rect->y + descriptions[rect->id].padding;
+        rlr_res_texture_atlas_tile_step_ctx_t* step = &atlas->steps[rect->id];
+        uint32_t padding = step->external_width - step->internal_width;
+        step->u = rect->x + padding;
+        step->v = rect->y + padding;
     }
 
     free(rects);
