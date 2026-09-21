@@ -9,17 +9,6 @@
 
 rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter) {
     uint8_t* data = NULL;
-    rlr_res_texture_t* texture = NULL;
-
-    texture = malloc(sizeof(rlr_res_texture_t));
-    if(!texture) {
-        rlr_log_error("pointer to the texture handle is null");
-        goto err;
-    }
-
-    texture->texture = 0;
-    texture->height = 0;
-    texture->width = 0;
 
     int32_t w = 0;
     int32_t h = 0;
@@ -30,27 +19,9 @@ rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_
         goto err;
     }
 
-    texture->width = w;
-    texture->height = h;
-    texture->channels = channels;
-    switch(filter) {
-        case RLR_RES_TEXTURE_FILTER_NEAREST: {
-            texture->texture = rlr_backend()->create_nearest_texture(data, w, h, channels, use_srgb_color_space);
-            break;
-        }
-        case RLR_RES_TEXTURE_FILTER_LINEAR: {
-            texture->texture = rlr_backend()->create_linear_texture(data, w, h, channels, use_srgb_color_space);
-            break;
-        }
-        default:
-        case RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP: {
-            texture->texture = rlr_backend()->create_linear_mipmap_texture(data, w, h, channels, use_srgb_color_space);
-            break;
-        }
-    }
-
-    if(texture->texture == 0) {
-        rlr_log_error("backend handle for the texture \"%s\" is null", texture_path);
+    rlr_res_texture_t* texture = rlr_res_texture_load_from_memory(data, w, h, channels, use_srgb_color_space, filter);
+    if(!texture) {
+        rlr_log_error("could not load texture \"%s\"", texture_path);
         goto err;
     }
 
@@ -59,6 +30,45 @@ rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_
     return texture;
 err:
     stbi_image_free(data);
+    return NULL;
+}
+
+rlr_res_texture_t* rlr_res_texture_load_from_memory(const uint8_t* data, uint32_t width, uint32_t height, uint32_t channels, bool use_srgb_color_space, rlr_res_texture_filter_t filter) {
+    rlr_res_texture_t* texture = NULL;
+
+    texture = malloc(sizeof(rlr_res_texture_t));
+    if(!texture) {
+        rlr_log_error("pointer to the texture handle is null");
+        goto err;
+    }
+
+    texture->texture = 0;
+    texture->width = width;
+    texture->height = height;
+
+    switch(filter) {
+        case RLR_RES_TEXTURE_FILTER_NEAREST: {
+            texture->texture = rlr_backend()->create_nearest_texture(data, width, height, channels, use_srgb_color_space);
+            break;
+        }
+        case RLR_RES_TEXTURE_FILTER_LINEAR: {
+            texture->texture = rlr_backend()->create_linear_texture(data, width, height, channels, use_srgb_color_space);
+            break;
+        }
+        default:
+        case RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP: {
+            texture->texture = rlr_backend()->create_linear_mipmap_texture(data, width, height, channels, use_srgb_color_space);
+            break;
+        }
+    }
+
+    if(texture->texture == 0) {
+        rlr_log_error("backend handle for texture is null");
+        goto err;
+    }
+
+    return texture;
+err:
     rlr_res_texture_free(texture);
     return NULL;
 }

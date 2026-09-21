@@ -155,12 +155,30 @@ typedef struct rlr_res_texture_atlas_tile_t {
     rlr_vec2_t size;
 } rlr_res_texture_atlas_tile_t;
 
+typedef struct rlr_res_texture_atlas_tile_step_ctx_t {
+    const char* filepath;
+    void* dest;
+    size_t dest_offset;
+    uint32_t external_width;
+    uint32_t external_height;
+    uint32_t internal_width;
+    uint32_t internal_height;
+    uint32_t u;
+    uint32_t v;
+} rlr_res_texture_atlas_tile_step_ctx_t;
+
 typedef struct rlr_res_texture_atlas_t {
     rlr_res_texture_t* texture;
-    rlr_vec2_t tile_size;
-    rlr_vec2_t texture_size;
     uint32_t channels;
     bool use_srgb_color_space;
     rlr_res_texture_filter_t filter;
     rlr_res_texture_atlas_tile_t* tiles;
+
+    //step
+    uint8_t* temp_texture;
+    uint32_t texture_side_size;
+    rlr_res_texture_atlas_tile_step_ctx_t* steps;
+    size_t step_count;
+    size_t current_step;
+    bool is_loaded;
 } rlr_res_texture_atlas_t;
