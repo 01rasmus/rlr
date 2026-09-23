@@ -1,5 +1,6 @@
 #pragma once
 #include <stdbool.h>
+#include <stdint.h>
 #include "anchor.h"
 #include "vec.h"
 
@@ -24,6 +25,9 @@ rlr_anchored_rect_t rlr_anchored_rect_inset_top(rlr_anchored_rect_t ar, float am
 rlr_anchored_rect_t rlr_anchored_rect_inset_bottom(rlr_anchored_rect_t ar, float amount);
 rlr_anchored_rect_t rlr_anchored_rect_inset_left(rlr_anchored_rect_t ar, float amount);
 rlr_anchored_rect_t rlr_anchored_rect_inset_right(rlr_anchored_rect_t ar, float amount);
+void rlr_anchored_rect_subdivide_vertically(const rlr_anchored_rect_t ar, uint32_t divisions, rlr_anchored_rect_t* out_anchors);
+void rlr_anchored_rect_subdivide_horizontally(const rlr_anchored_rect_t ar, uint32_t divisions, rlr_anchored_rect_t* out_anchors);
+void rlr_anchored_rect_subdivide_matrix(const rlr_anchored_rect_t ar, uint32_t horizontal_divisons, uint32_t vertical_divisions, rlr_anchored_rect_t* out_anchors);
 
 inline rlr_anchored_rect_t rlr_anchored_rect_outset(rlr_anchored_rect_t ar, float amount) {
     return rlr_anchored_rect_inset(ar, -amount);

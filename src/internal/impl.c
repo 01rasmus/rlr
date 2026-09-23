@@ -55,6 +55,25 @@ static void _rlr_log_default_callback(rlr_log_level_t log_level, const char* log
     printf("%s %s:%d: %s", log_level_strings[log_level], file, line, log);
 }
 
+static void rlr_set_framebuffer_size() {
+    int32_t width = 0;
+    int32_t height = 0;
+    glfwGetFramebufferSize(ctx->window, &width, &height);
+    if(width != ctx->framebuffer_width || height != ctx->framebuffer_height) {
+        rlr_uniform_ui_t ui_uniform = (rlr_uniform_ui_t){
+            .inv_x = 1.0 / (float)width,
+            .inv_y = 1.0 / (float)height,
+            .screen_width = (float)width,
+            .screen_height = (float)height
+        };
+        ctx->framebuffer_width = width;
+        ctx->framebuffer_height = height;
+        rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_UI], 0, &ui_uniform, sizeof(rlr_uniform_ui_t));
+        rlr_backend()->set_viewport(0, 0, width, height);
+        rlr_set_camera(ctx->camera_pos, ctx->camera_rot);
+    }
+}
+
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags) {
     ctx = malloc(sizeof(rlr_t));
     if(!ctx) {
@@ -112,6 +131,9 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
             goto err;
         }
     }
+
+    //check framebuffer
+    rlr_set_framebuffer_size();
 
     //setup default values
     ctx->callback_log = _rlr_log_default_callback;
@@ -308,22 +330,8 @@ bool rlr_update() {
     double delta_time = current_time - ctx->last_time;
     ctx->last_time = current_time;
 
-    int32_t width = 0;
-    int32_t height = 0;
-    glfwGetFramebufferSize(ctx->window, &width, &height);
-    if(width != ctx->framebuffer_width || height != ctx->framebuffer_height) {
-        rlr_uniform_ui_t ui_uniform = (rlr_uniform_ui_t){
-            .inv_x = 1.0 / (float)width,
-            .inv_y = 1.0 / (float)height,
-            .screen_width = (float)width,
-            .screen_height = (float)height
-        };
-        ctx->framebuffer_width = width;
-        ctx->framebuffer_height = height;
-        rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_UI], 0, &ui_uniform, sizeof(rlr_uniform_ui_t));
-        rlr_backend()->set_viewport(0, 0, width, height);
-        rlr_set_camera(ctx->camera_pos, ctx->camera_rot);
-    }
+    //check framebuffer
+    rlr_set_framebuffer_size();
 
     //update mouse position
     int32_t window_width = 1;
