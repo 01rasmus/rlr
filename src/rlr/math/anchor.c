@@ -23,3 +23,39 @@ rlr_vec2_t rlr_anchor_vec(rlr_anchor_t anchor) {
             return rlr_vec2(0, 0);
     }
 }
+
+float rlr_anchor_x(rlr_anchor_t anchor) {
+    switch(anchor) {
+        case RLR_ANCHOR_TOP_RIGHT:
+        case RLR_ANCHOR_CENTER_RIGHT:
+        case RLR_ANCHOR_BOTTOM_RIGHT:
+            return 1.0;
+        case RLR_ANCHOR_TOP_CENTER:
+        case RLR_ANCHOR_CENTER_CENTER:
+        case RLR_ANCHOR_BOTTOM_CENTER:
+            return 0.5;
+        case RLR_ANCHOR_CENTER_LEFT:
+        case RLR_ANCHOR_BOTTOM_LEFT:
+        case RLR_ANCHOR_TOP_LEFT:
+        default:
+            return 0.0;
+    }
+}
+
+float rlr_anchor_y(rlr_anchor_t anchor) {
+    switch(anchor) {
+        case RLR_ANCHOR_BOTTOM_LEFT:
+        case RLR_ANCHOR_BOTTOM_CENTER:
+        case RLR_ANCHOR_BOTTOM_RIGHT:
+            return 1.0;
+        case RLR_ANCHOR_CENTER_LEFT:
+        case RLR_ANCHOR_CENTER_CENTER:
+        case RLR_ANCHOR_CENTER_RIGHT:
+            return 0.5;
+        case RLR_ANCHOR_TOP_CENTER:
+        case RLR_ANCHOR_TOP_RIGHT:
+        case RLR_ANCHOR_TOP_LEFT:
+        default:
+            return 0.0;
+    }
+}

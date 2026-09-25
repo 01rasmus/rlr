@@ -22,38 +22,34 @@ bool rlr_rect_contains_position(const rlr_rect_t* rect, const rlr_vec2_t pos) {
 }
 
 rlr_anchored_rect_t rlr_anchored_rect_inset(rlr_anchored_rect_t ar, float amount) {
-    rlr_vec2_t anchor = rlr_anchor_vec(ar.anchor);
-    ar.rect.x += amount * (1.0 - 2.0 * anchor.x);
-    ar.rect.y += amount * (1.0 - 2.0 * anchor.y);
-    ar.rect.width -= amount * 2.0f;
-    ar.rect.height -= amount * 2.0f;
+    rlr_vec2_t vec = rlr_anchor_vec(ar.anchor);
+    ar.rect.width -= amount * 2.0;
+    ar.rect.height -= amount * 2.0;
+    ar.rect.x += (1.0 - vec.x * 2.0) * amount;
+    ar.rect.y += (1.0 - vec.y * 2.0) * amount;
     return ar;
 }
 
 rlr_anchored_rect_t rlr_anchored_rect_inset_top(rlr_anchored_rect_t ar, float amount) {
-    rlr_vec2_t anchor = rlr_anchor_vec(ar.anchor);
-    ar.rect.y += amount * (1.0 - anchor.y);
+    ar.rect.y += (1.0 - rlr_anchor_y(ar.anchor)) * amount;
     ar.rect.height -= amount;
     return ar;
 }
 
 rlr_anchored_rect_t rlr_anchored_rect_inset_bottom(rlr_anchored_rect_t ar, float amount) {
-    rlr_vec2_t anchor = rlr_anchor_vec(ar.anchor);
-    ar.rect.y -= amount * anchor.y;
+    ar.rect.y -= rlr_anchor_y(ar.anchor) * amount;
     ar.rect.height -= amount;
     return ar;
 }
 
 rlr_anchored_rect_t rlr_anchored_rect_inset_left(rlr_anchored_rect_t ar, float amount) {
-    rlr_vec2_t anchor = rlr_anchor_vec(ar.anchor);
-    ar.rect.x += amount * (1.0 - anchor.x);
+    ar.rect.x += (1.0 - rlr_anchor_x(ar.anchor)) * amount;
     ar.rect.width -= amount;
     return ar;
 }
 
 rlr_anchored_rect_t rlr_anchored_rect_inset_right(rlr_anchored_rect_t ar, float amount) {
-    rlr_vec2_t anchor = rlr_anchor_vec(ar.anchor);
-    ar.rect.x -= amount * anchor.x;
+    ar.rect.x -= rlr_anchor_x(ar.anchor) * amount;
     ar.rect.width -= amount;
     return ar;
 }
