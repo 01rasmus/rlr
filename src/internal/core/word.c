@@ -223,7 +223,7 @@ word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_gly
     return &ctx;
 }
 
-bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, float text_size, rlr_rect_t rectangle, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
+bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, float original_size, rlr_rect_t rectangle, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
     if(!font) {
         goto err;
     }
@@ -231,6 +231,7 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
         goto err;
     }
 
+    float text_size = original_size * font->size_scale;
     rlr_vec2_t local_anchor_vec = rlr_anchor_vec(local_anchor);
     const rlr_res_font_glyph_t* space_glyph = rlr_res_font_get_glyph(font, ' ');
     const rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_get_glyph(font, '?');
@@ -296,14 +297,6 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
         float u2 = glyph->atlas_right;
         float v1 = glyph->atlas_top;
 
-        //calculate the screen px range
-        float texture_width = (u2 - u1) * font->texture->width;
-        float quad_width = draw_x2 - draw_x1;
-        float screen_px_range = quad_width / texture_width * (font->px_range);
-        if(screen_px_range < 1.0) {
-            screen_px_range = 1.0;
-        }
-
         float sheer_amount = 0.25;
         float half_sheer_amount = sheer_amount * 0.5;
         float height = draw_y2 - draw_y1;
@@ -321,7 +314,7 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
                 screen_anchor,
                 rlr_vec2(u1, v1),
                 rlr_vec2(u2 - u1, v2 - v1),
-                screen_px_range
+                font->px_range
             );
         }
 

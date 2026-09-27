@@ -98,6 +98,7 @@ rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atla
     }
 
     font->vertical_offset = 0.0;
+    font->size_scale = 1.0;
     font->px_range = px_range;
     font->texture = RLR_NULL;
     font->glyphs = NULL;
@@ -127,6 +128,10 @@ err:
 
 void rlr_res_font_set_vertical_offset(rlr_res_font_t* font, float vertical_offset_fraction) {
     font->vertical_offset = vertical_offset_fraction;
+}
+
+void rlr_res_font_set_size_scale(rlr_res_font_t* font, float scale) {
+    font->size_scale = scale;
 }
 
 rlr_vec2_t rlr_res_font_measure(rlr_res_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...) {

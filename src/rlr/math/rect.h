@@ -21,6 +21,8 @@ typedef struct rlr_anchored_rect_t {
 
 bool rlr_rect_contains_position(const rlr_rect_t* rect, const rlr_vec2_t pos);
 rlr_anchored_rect_t rlr_anchored_rect_inset(rlr_anchored_rect_t ar, float amount);
+rlr_anchored_rect_t rlr_anchored_rect_inset_vertically(rlr_anchored_rect_t ar, float amount);
+rlr_anchored_rect_t rlr_anchored_rect_inset_horizontally(rlr_anchored_rect_t ar, float amount);
 rlr_anchored_rect_t rlr_anchored_rect_inset_top(rlr_anchored_rect_t ar, float amount);
 rlr_anchored_rect_t rlr_anchored_rect_inset_bottom(rlr_anchored_rect_t ar, float amount);
 rlr_anchored_rect_t rlr_anchored_rect_inset_left(rlr_anchored_rect_t ar, float amount);

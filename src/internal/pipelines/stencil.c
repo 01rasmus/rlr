@@ -90,6 +90,7 @@ void rlr_pipeline_stencil_draw() {
     }
 
     if(ps->visible_occluder_instances == 0) {
+        rlr_backend()->set_depth_test(true);
         return;
     }
 

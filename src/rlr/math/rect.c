@@ -30,6 +30,20 @@ rlr_anchored_rect_t rlr_anchored_rect_inset(rlr_anchored_rect_t ar, float amount
     return ar;
 }
 
+rlr_anchored_rect_t rlr_anchored_rect_inset_vertically(rlr_anchored_rect_t ar, float amount) {
+    rlr_vec2_t vec = rlr_anchor_vec(ar.anchor);
+    ar.rect.height -= amount * 2.0;
+    ar.rect.y += (1.0 - vec.y * 2.0) * amount;
+    return ar;
+}
+
+rlr_anchored_rect_t rlr_anchored_rect_inset_horizontally(rlr_anchored_rect_t ar, float amount) {
+    rlr_vec2_t vec = rlr_anchor_vec(ar.anchor);
+    ar.rect.width -= amount * 2.0;
+    ar.rect.x += (1.0 - vec.x * 2.0) * amount;
+    return ar;
+}
+
 rlr_anchored_rect_t rlr_anchored_rect_inset_top(rlr_anchored_rect_t ar, float amount) {
     ar.rect.y += (1.0 - rlr_anchor_y(ar.anchor)) * amount;
     ar.rect.height -= amount;

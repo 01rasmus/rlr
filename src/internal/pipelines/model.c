@@ -595,7 +595,7 @@ uint32_t rlr_pipeline_model_add_animated_model_instance(rlr_pipeline_animated_mo
 
 bool rlpp_pipeline_model_set_animated_model_animation_state(rlr_obj_animated_model_t* model) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
-    rlpp_ref_t ref = rlpp_alloc_to_ref(pm->animation_states, ((rlr_pipeline_animated_model_animation_state_t){
+    model->animation_state_ref = rlpp_alloc_to_ref(pm->animation_states, ((rlr_pipeline_animated_model_animation_state_t){
         .animation_states = {
             {.animation_index = -1, .animation_loop = false, .animation_speed = 1.0, .animation_time = 0.0 },
             {.animation_index = -1, .animation_loop = false, .animation_speed = 1.0, .animation_time = 0.0 },
@@ -606,7 +606,7 @@ bool rlpp_pipeline_model_set_animated_model_animation_state(rlr_obj_animated_mod
         .current_transition_time = 0.0,
         .transition_time = 0.0,
     }));
-    rlr_pipeline_animated_model_animation_state_t* state = rlpp_deref(pm->animation_states, ref);
+    rlr_pipeline_animated_model_animation_state_t* state = rlpp_deref(pm->animation_states, model->animation_state_ref);
     return state != NULL;
 }
 

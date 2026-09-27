@@ -26,7 +26,7 @@ void gen_text(void* user, uint32_t color, float italic_sheer, rlr_vec2_t pos, rl
         .uv = uv,
         .uv_size = uv_size,
         .italic_sheer = italic_sheer,
-        .screen_px_range = px_range,
+        .px_range = px_range,
         .visible = ctx->label->visible == true ? 1 : 0,
     };
     uint64_t id = rlr_pipeline_ui_add_sprite_instance(ctx->cmd, instance);
