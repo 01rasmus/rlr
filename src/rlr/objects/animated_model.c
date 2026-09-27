@@ -72,9 +72,6 @@ bool rlr_obj_animated_model_is_animating(rlr_obj_animated_model_t* model) {
 
 void rlr_obj_animated_model_set_animation(rlr_obj_animated_model_t* model, int32_t animation_index, float speed, bool loop) {
     rlr_pipeline_animated_model_animation_state_t* state = rlr_pipeline_model_get_animation_state(model);
-
-    rlr_log_error("hello %p", model->animation_state_ref.ptr);
-
     state->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_index = animation_index;
     state->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_time = 0.0;
     state->animation_states[RLR_OBJ_ANIMATION_PRIMARY].animation_speed = speed;
