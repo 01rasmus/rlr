@@ -46,8 +46,11 @@ typedef struct rlr_res_cube_map_t {
 /*
     font
 */
+typedef struct rlr_res_font_t rlr_res_font_t;
+
 typedef struct rlr_res_font_glyph_t {
     uint32_t key; //unicode, the hashmap key
+    rlr_res_font_t* font; //the font that this glyph belongs to
     float advance;
     float plane_left;
     float plane_right;
@@ -60,6 +63,8 @@ typedef struct rlr_res_font_glyph_t {
 } rlr_res_font_glyph_t;
 
 typedef struct rlr_res_font_t {
+    rlr_res_font_t** fallback_fonts;
+    size_t fallback_fonts_len;
     rlr_res_texture_t* texture;
     rlr_res_font_glyph_t* glyphs;
     float px_range;

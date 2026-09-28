@@ -189,7 +189,8 @@ word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_gly
             continue;
         }
 
-        const rlr_res_font_glyph_t* glyph = rlr_res_font_get_glyph(font, unicode);
+        uint32_t font_index;
+        const rlr_res_font_glyph_t* glyph = rlr_res_font_get_glyph(font, unicode, &font_index);
         if(!glyph) {
             if(!unknown_glyph) {
                 continue;
@@ -206,6 +207,7 @@ word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_gly
             .italic = current_italic,
             .word_id = current_word_id,
             .glyph = glyph,
+            .font_index = font_index
         };
         arrpush(ctx.glyphs, g);
     }
@@ -227,14 +229,12 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
     if(!font) {
         goto err;
     }
-    if(!font->texture) {
-        goto err;
-    }
 
     float text_size = original_size * font->size_scale;
     rlr_vec2_t local_anchor_vec = rlr_anchor_vec(local_anchor);
-    const rlr_res_font_glyph_t* space_glyph = rlr_res_font_get_glyph(font, ' ');
-    const rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_get_glyph(font, '?');
+    uint32_t index;
+    const rlr_res_font_glyph_t* space_glyph = rlr_res_font_get_glyph(font, ' ', &index);
+    const rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_get_glyph(font, '?', &index);
     float x = rectangle.x - (rectangle.width * local_anchor_vec.x);
     float start_y = (rectangle.y + text_size) - (rectangle.height * local_anchor_vec.y) - (font->vertical_offset * text_size);
     float space_width = space_glyph ? ((space_glyph->advance * text_size)) : text_size;
@@ -264,7 +264,18 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
 
     for(uint32_t i = 0; i < arrlenu(ctx->glyphs); i++) {
         rlr_measured_glyph_t* g = &ctx->glyphs[i];
-        float y = start_y + text_size * g->row;
+        float final_text_size = text_size;
+        uint32_t font_index = 0;
+
+        //fallback logic
+        float fallback_vertical_offset = 0.0;
+        if(font != g->glyph->font) {
+            final_text_size = final_text_size * g->glyph->font->size_scale;
+            fallback_vertical_offset = (g->glyph->font->vertical_offset * final_text_size);
+            font_index = g->font_index;
+        }
+
+        float y = start_y + text_size * g->row - fallback_vertical_offset;
 
         if(current_word != g->word_id) {
             x += sw;
@@ -285,12 +296,12 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
             x = start_x + start_pos;
             current_width = start_pos;
         }
-
+        
         const rlr_res_font_glyph_t* glyph = g->glyph;
-        float draw_x1 = x + glyph->plane_left * text_size;
-        float draw_y1 = y - glyph->plane_top * text_size;
-        float draw_x2 = x + glyph->plane_right * text_size;
-        float draw_y2 = y - glyph->plane_bottom * text_size;
+        float draw_x1 = x + glyph->plane_left * final_text_size;
+        float draw_y1 = y - glyph->plane_top * final_text_size;
+        float draw_x2 = x + glyph->plane_right * final_text_size;
+        float draw_y2 = y - glyph->plane_bottom * final_text_size;
 
         float u1 = glyph->atlas_left;
         float v2 = glyph->atlas_bottom;
@@ -302,7 +313,7 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
         float height = draw_y2 - draw_y1;
         float width = draw_x2 - draw_x1;
         float italic_sheer = g->italic == true ? (height * sheer_amount) : 0.0; 
-        float italic_sheer_offset = g->italic == true ? (-text_size * half_sheer_amount) : 0.0;
+        float italic_sheer_offset = g->italic == true ? (-final_text_size * half_sheer_amount) : 0.0;
 
         if(gen_callback) {
             gen_callback(
@@ -314,11 +325,12 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
                 screen_anchor,
                 rlr_vec2(u1, v1),
                 rlr_vec2(u2 - u1, v2 - v1),
-                font->px_range
+                glyph->font->px_range,
+                font_index
             );
         }
 
-        float word_width = glyph->advance * text_size;
+        float word_width = glyph->advance * final_text_size;
         current_width += word_width;
         x += word_width;
     }

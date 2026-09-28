@@ -10,7 +10,7 @@
 
 #define WORD_EPSILON    (1e-6)
 
-typedef void (*rlr_word_generate_callback_t)(void* user, uint32_t color, float italic_sheer, rlr_vec2_t pos, rlr_vec2_t size, rlr_anchor_t screen_anchor, rlr_vec2_t uv, rlr_vec2_t uv_size, float px_range);
+typedef void (*rlr_word_generate_callback_t)(void* user, uint32_t color, float italic_sheer, rlr_vec2_t pos, rlr_vec2_t size, rlr_anchor_t screen_anchor, rlr_vec2_t uv, rlr_vec2_t uv_size, float px_range, uint32_t font_index);
 
 typedef struct rlr_measured_glyph_t {
     uint32_t row;
@@ -18,6 +18,7 @@ typedef struct rlr_measured_glyph_t {
     bool italic;
     uint32_t word_id;
     const rlr_res_font_glyph_t* glyph;
+    uint32_t font_index;
 } rlr_measured_glyph_t;
 
 typedef struct word_measure_context_t {

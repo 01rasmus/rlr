@@ -71,6 +71,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
 
     hmputs(ctx->font->glyphs, ((rlr_res_font_glyph_t) {
         .key = unicode,
+        .font = ctx->font,
         .advance = advance,
         .plane_bottom = plane_bound_bottom,
         .plane_left = plane_bound_left,
@@ -83,7 +84,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
     }));
 }
 
-rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atlas_path, float px_range) {
+rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atlas_path, float px_range, rlr_res_font_t** fallback_fonts, size_t fallback_font_count) {
     rlr_res_font_t* font = NULL;
 
     font = malloc(sizeof(rlr_res_font_t));
@@ -97,11 +98,22 @@ rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atla
         goto err;
     }
 
+    font->fallback_fonts = NULL;
+    font->fallback_fonts_len = fallback_fonts != NULL ? fallback_font_count : 0;
     font->vertical_offset = 0.0;
     font->size_scale = 1.0;
     font->px_range = px_range;
     font->texture = RLR_NULL;
     font->glyphs = NULL;
+
+    //malloc fallback fonts
+    font->fallback_fonts = malloc(sizeof(rlr_res_font_t) * fallback_font_count);
+    if(!font->fallback_fonts) {
+        goto err;
+    }
+    for(size_t i = 0; i < fallback_font_count; i++) {
+        font->fallback_fonts[i] = fallback_fonts[i];
+    }
 
     //msdf textures need to use normal linear filtering (dont use mipmap filtering)
     font->texture = rlr_res_texture_load(texture_atlas_path, false, RLR_RES_TEXTURE_FILTER_LINEAR);
@@ -142,8 +154,23 @@ rlr_vec2_t rlr_res_font_measure(rlr_res_font_t* font, rlr_rect_t rectangle, floa
     return size;
 }
 
-const rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_font_t* font, uint32_t unicode) {
-    return hmgetp_null(font->glyphs, unicode);
+const rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_font_t* font, uint32_t unicode, uint32_t* out_font_index) {
+    const rlr_res_font_glyph_t* glyph = hmgetp_null(font->glyphs, unicode);
+    if(glyph) {
+        *out_font_index = 0;
+        return glyph;
+    }
+
+    for(size_t i = 0; i < font->fallback_fonts_len; i++) {
+        glyph = hmgetp_null(font->fallback_fonts[i]->glyphs, unicode);
+        if(glyph) {
+            *out_font_index = (uint32_t)i + 1;
+            return glyph;
+        }
+    }
+
+    *out_font_index = 0;
+    return NULL;
 }
 
 int32_t rlr_res_font_get_glyph_count(const rlr_res_font_t* font) {
@@ -156,5 +183,6 @@ void rlr_res_font_free(rlr_res_font_t* font) {
     }
     rlr_res_texture_free(font->texture);
     hmfree(font->glyphs);
+    free(font->fallback_fonts);
     free(font);
 }
