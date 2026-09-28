@@ -3,7 +3,6 @@
 #include "../../internal/core/res_types.h"
 #include "../../external/stb_ds.h"
 #include "../../internal/impl.h"
-#include "../error.h"
 #include "texture_atlas.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION

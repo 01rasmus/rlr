@@ -5,7 +5,6 @@
 #include "../../internal/impl.h"
 #include "../io/csv.h"
 #include "../io/str.h"
-#include "../error.h"
 #include "../rlr.h"
 #include "font.h"
 

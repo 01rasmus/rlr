@@ -2,7 +2,6 @@
 #include <stb_image.h>
 #include "../../internal/core/res_types.h"
 #include "../../internal/impl.h"
-#include "../error.h"
 #include "../rlr.h"
 #include "cube_map.h"
 

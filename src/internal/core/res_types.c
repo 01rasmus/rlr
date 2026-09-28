@@ -4,7 +4,6 @@
 #include "../../rlr/resources/texture.h"
 #include "../../rlr/resources/uniform.h"
 #include "res_types.h"
-#include "../error.h"
 #include "../impl.h"
 
 cgltf_data* rlr_res_model_load_glb(const char* filename) {

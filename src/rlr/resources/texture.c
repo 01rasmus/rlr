@@ -3,7 +3,6 @@
 #include <cgltf.h>
 #include "../../internal/core/res_types.h"
 #include "../../internal/impl.h"
-#include "../error.h"
 #include "../rlr.h"
 #include "texture.h"
 

@@ -6,7 +6,6 @@
 #include "../resources/texture.h"
 #include "../resources/uniform.h"
 #include "../math/vec.h"
-#include "../error.h"
 #include "../rlr.h"
 #include "static_model.h"
 
