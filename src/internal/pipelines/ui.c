@@ -316,10 +316,10 @@ void rlr_pipeline_ui_draw() {
         if(instance_len == 0) {
             continue;
         }
-        rlr_res_shader_bind(cmd->shader == RLR_NULL ? pu->shader_sprite : cmd->shader);
+        rlr_res_shader_bind(cmd->shader == NULL ? pu->shader_sprite : cmd->shader);
         rlr_res_texture_bind(cmd->texture, 0);
         rlr_backend()->bind_vertex_array(cmd->vao);
-        rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U8, instance_len);
+        rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U16, instance_len);
     }
 
     rlr_backend()->set_blending(false);

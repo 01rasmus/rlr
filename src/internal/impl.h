@@ -82,7 +82,7 @@ typedef struct rlr_t {
 } rlr_t;
 
 extern rlr_vec2_t rlr_quad_vertices[4];
-extern uint8_t rlr_quad_indices[6];
+extern uint16_t rlr_quad_indices[6];
 
 #define rlr_log(...) \
     _rlr_log(__FILE__, __LINE__, RLR_LOG_LEVEL_INFO, __VA_ARGS__)

@@ -29,7 +29,7 @@ rlr_vec2_t rlr_quad_vertices[4] = {
     rlr_vec2(0, 1)
 };
 
-uint8_t rlr_quad_indices[6] = {
+uint16_t rlr_quad_indices[6] = {
     2, 1, 0, 3, 2, 0
 };
 

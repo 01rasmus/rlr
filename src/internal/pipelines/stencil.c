@@ -104,7 +104,7 @@ void rlr_pipeline_stencil_draw() {
 
     rlr_res_shader_bind(ps->shader);
     rlr_backend()->bind_vertex_array(ps->vao);
-    rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U8, ps->visible_occluder_instances);
+    rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U16, ps->visible_occluder_instances);
 
     rlr_backend()->set_stencil_mask(0x0);
     rlr_backend()->set_stencil_func(RLR_BACKEND_STENCIL_FUNC_NOTEQUAL, 1, 0xFF);
