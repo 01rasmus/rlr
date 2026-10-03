@@ -187,3 +187,9 @@ typedef enum rlr_init_flags_t {
     RLR_INIT_FLAG_FULLSCREEN = 0x1,
     RLR_INIT_FLAG_VSYNC = 0x2,
 } rlr_init_flags_t;
+
+typedef enum rlr_setting_animation_evaluation_t {
+    RLR_SETTING_ANIMATION_EVALUATION_AUTOMATIC = 0,
+    RLR_SETTING_ANIMATION_EVALUATION_GPU,
+    RLR_SETTING_ANIMATION_EVALUATION_CPU,
+} rlr_setting_animation_evaluation_t;

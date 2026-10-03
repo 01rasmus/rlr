@@ -287,6 +287,24 @@ rlr_vec2_t rlr_get_mouse_position() {
     return ctx->mouse_pos;
 }
 
+void rlr_settings_set_animation_evaluation(rlr_setting_animation_evaluation_t setting) {
+    switch(setting) {
+        case RLR_SETTING_ANIMATION_EVALUATION_GPU: {
+            ctx->pipeline_model.animated_model_path = RLR_PIPELINE_ANIMATED_MODEL_GPU;
+            break;
+        }
+        case RLR_SETTING_ANIMATION_EVALUATION_CPU: {
+            ctx->pipeline_model.animated_model_path = RLR_PIPELINE_ANIMATED_MODEL_CPU;
+            break;
+        }
+        case RLR_SETTING_ANIMATION_EVALUATION_AUTOMATIC: //todo: have some kind of gpu evaluator to see what should be used by default
+        default: {
+            ctx->pipeline_model.animated_model_path = RLR_PIPELINE_ANIMATED_MODEL_CPU;
+            break;
+        }
+    }
+}
+
 rlr_statistics_t* rlr_get_total_statistics() {
     return &ctx->statistics_total;
 }

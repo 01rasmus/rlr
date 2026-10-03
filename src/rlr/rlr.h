@@ -45,6 +45,22 @@ const char* rlr_get_backend_implementation();
 const char* rlr_get_backend_context();
 const char* rlr_get_gpu_name();
 
+//settings
+/*
+    if gpu evaluation is used, the relevant poses for an animated model
+    are fetched from a texture in the vertex shader. This makes it 
+    possible to have a lot of instances drawn together in one go.
+
+    otherwise, the cpu will calculate the final pose for the model and upload
+    it per instance to a UBO buffer. Since the ubo has limited space, instances
+    may divided into different draw calls if they exceed the UBO space of 16 kB
+    that the renderer is using as the limit
+
+    in general, the cpu path can be faster on older hardware where
+    texelFetch is an expensive operation
+*/
+void rlr_settings_set_animation_evaluation(rlr_setting_animation_evaluation_t setting);
+
 //statistics
 rlr_statistics_t* rlr_get_total_statistics();
 rlr_statistics_t* rlr_get_statistics();
