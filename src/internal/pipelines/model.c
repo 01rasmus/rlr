@@ -596,7 +596,7 @@ static inline void rlr_pipeline_update_animation_ubos(rlr_pipeline_animated_mode
 
 static inline void rlr_pipeline_update_animated_model_instance_vbo(rlr_pipeline_animated_model_draw_command_t* cmd, size_t instance_offset, size_t instance_count) {
     rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_animated_model_instance_t) * instance_count, cmd->instances + instance_offset, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+    rlr_backend()->update_buffer_orphaned(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_animated_model_instance_t) * instance_count, cmd->instances + instance_offset);
 }
 
 static inline void rlr_pipeline_draw_cpu_prepared_animated_model(rlr_pipeline_animated_model_draw_command_t* cmd, uint64_t joint_count, size_t instance_offset, size_t instance_count) {
@@ -707,7 +707,7 @@ void rlr_pipeline_model_draw(double delta_time) {
         rlr_pipeline_static_model_draw_command_t* cmd = &pm->opaque_static_model_commands[i];
         if(cmd->dirty) {
             rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_static_model_instance_t) * arrlenu(cmd->instances), cmd->instances, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+            rlr_backend()->update_buffer_orphaned(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_static_model_instance_t) * arrlenu(cmd->instances), cmd->instances);
             cmd->dirty = false;
         }
     }

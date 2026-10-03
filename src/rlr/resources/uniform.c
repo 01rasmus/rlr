@@ -47,7 +47,7 @@ void rlr_res_uniform_update(rlr_res_uniform_t* ubo, uint64_t offset, void* data,
         return;
     }
     rlr_backend()->bind_buffer(ubo->buffer, RLR_BACKEND_BUFFER_UNIFORM);
-    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_UNIFORM, size, data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+    rlr_backend()->update_buffer_orphaned(RLR_BACKEND_BUFFER_UNIFORM, size, data);
 }
 
 void rlr_res_uniform_bind(const rlr_res_uniform_t* ubo, uint8_t ubo_slot) {

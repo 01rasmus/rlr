@@ -501,6 +501,10 @@ static void gl_bind_buffer(uint64_t buffer, rlr_backend_buffer_target_t target) 
 static void gl_update_buffer(rlr_backend_buffer_target_t target, size_t size, const void* data, rlr_backend_buffer_usage_t usage_type) {
     GL_CALL(gl->BufferData(target, size, data, usage_type));
 }
+static void gl_update_buffer_orphaned(rlr_backend_buffer_target_t target, size_t size, const void* data) {
+    GL_CALL(gl->BufferData(target, size, NULL, GL_DYNAMIC_DRAW));
+    GL_CALL(gl->BufferSubData(target, 0, size, data));
+}
 
 static void gl_free_buffer(uint64_t buffer) {
     uint64_t handles[1] = { buffer };
