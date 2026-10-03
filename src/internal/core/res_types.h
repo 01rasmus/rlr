@@ -92,7 +92,7 @@ bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_unifor
     animated model
 */
 #define RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH        (128)
-#define RLR_RES_ANIMATED_MODEL_ANIMATION_TEXTURE_SIZE       (2048)
+#define RLR_RES_ANIMATED_MODEL_ANIMATION_TEXTURE_SIZE       (1920)
 #define RLR_RES_ANIMATED_MODEL_ANIMATION_FPS                (30.0)
 
 typedef struct rlr_animated_model_vertex_t {
@@ -112,10 +112,16 @@ typedef struct rlr_res_animated_mesh_t {
     bool is_skinned;
 } rlr_res_animated_mesh_t;
 
+typedef struct rlr_res_animation_sample_t {
+    rlr_vec3_t translation;
+    rlr_quat_t rotation;
+} rlr_res_animation_sample_t;
+
 typedef struct rlr_res_animation_meta_t {
     char name[RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH];
     float duration;
     float fps;
+    uint64_t joint_count;
     uint64_t pose_offset; //where inside the texture this animation starts
     uint64_t pose_count;  //how many poses there are in the texture
 } rlr_res_animation_meta_t;
@@ -124,6 +130,7 @@ typedef struct rlr_res_animations_t {
     uint64_t animation_texture;
     uint64_t joint_count;
     rlr_res_animation_meta_t* metas;
+    rlr_res_animation_sample_t* samples;
 } rlr_res_animations_t;
 
 typedef struct rlr_res_animated_model_t {

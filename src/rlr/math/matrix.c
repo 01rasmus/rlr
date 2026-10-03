@@ -260,6 +260,76 @@ float rlr_mat4x4_determinant(const rlr_mat4x4_t* matrix) {
         );
 }
 
+rlr_quat_t rlr_mat4x4_extract_rotation(const rlr_mat4x4_t* m) {
+
+    //get column lengths
+    rlr_vec3_t col0 = rlr_vec3(m->matrix[0][0], m->matrix[0][1], m->matrix[0][2]);
+    rlr_vec3_t col1 = rlr_vec3(m->matrix[1][0], m->matrix[1][1], m->matrix[1][2]);
+    rlr_vec3_t col2 = rlr_vec3(m->matrix[2][0], m->matrix[2][1], m->matrix[2][2]);
+    float sx = rlr_vec3_len(col0);
+    float sy = rlr_vec3_len(col1);
+    float sz = rlr_vec3_len(col2);
+
+    //normalize columns
+    col0 = rlr_vec3_divf(col0, sx);
+    col1 = rlr_vec3_divf(col1, sy);
+    col2 = rlr_vec3_divf(col2, sz);
+
+    float m00 = col0.x;
+    float m10 = col0.y;
+    float m20 = col0.z;
+    float m01 = col1.x;
+    float m11 = col1.y;
+    float m21 = col1.z;
+    float m02 = col2.x;
+    float m12 = col2.y;
+    float m22 = col2.z;
+
+    float trace = m00 + m11 + m22;
+
+    rlr_quat_t q = rlr_quat_ident;
+    if(trace > 0.0) {
+        float s = sqrtf(trace + 1.0) * 2.0;
+        q.w = 0.25 * s;
+        q.x = (m21 - m12) / s;
+        q.y = (m02 - m20) / s;
+        q.z = (m10 - m01) / s;
+    } else if(m00 > m11 && m00 > m22) {
+        float s = sqrtf(1.0 + m00 - m11 - m22) * 2.0;
+        q.w = (m21 - m12) / s;
+        q.x = 0.25 * s;
+        q.y = (m01 + m10) / s;
+        q.z = (m02 + m20) / s;
+    } else if(m11 > m22) {
+        float s = sqrtf(1.0 + m11 - m00 - m22) * 2.0;
+        q.w = (m02 - m20) / s;
+        q.x = (m01 + m10) / s;
+        q.y = 0.25 * s;
+        q.z = (m12 + m21) / s;
+    } else {
+        float s = sqrtf(1.0 + m22 - m00 - m11) * 2.0;
+        q.w = (m10 - m01) / s;
+        q.x = (m02 + m20) / s;
+        q.y = (m12 + m21) / s;
+        q.z = 0.25 * s;
+    }
+    return q;
+}
+
+rlr_vec3_t rlr_mat4x4_extract_translation(const rlr_mat4x4_t* matrix) {
+    return rlr_vec3(matrix->matrix[3][0], matrix->matrix[3][1], matrix->matrix[3][2]);
+}
+
+rlr_affine_rows_t rlr_mat4x4_to_affine_rows(const rlr_mat4x4_t* matrix) {
+    rlr_affine_rows_t ar;
+    for(size_t row = 0; row < 3; row++) {
+        for(size_t col = 0; col < 4; col++) {
+            ar.matrix[row][col] = matrix->matrix[col][row];
+        }
+    }
+    return ar;
+}
+
 rlr_affine_mat4x3_t rlr_mat4x4_to_affine_mat4x3(const rlr_mat4x4_t* matrix) {
     rlr_affine_mat4x3_t affine;
     memcpy(affine.matrix[0], matrix->matrix[0], sizeof(float) * 3);

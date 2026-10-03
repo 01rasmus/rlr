@@ -196,7 +196,67 @@ const char static_model_vertex[] = RLR_SHADER_INLINE(
     }
 );
 
-const char animated_model_vertex[] = RLR_SHADER_INLINE(
+const char animated_model_vertex_ubo_poses[] = RLR_SHADER_INLINE(
+    layout(location = 0) in vec3 pos;
+    layout(location = 1) in vec3 normal;
+    layout(location = 2) in vec2 uv;
+    layout(location = 3) in uvec4 joints;
+    layout(location = 4) in uvec4 weights;
+    layout(location = 5) in vec3 instance_mat_col_0;
+    layout(location = 6) in vec3 instance_mat_col_1;
+    layout(location = 7) in vec3 instance_mat_col_2;
+    layout(location = 8) in vec3 instance_mat_col_3;
+
+    layout(std140) uniform ubo_model {
+        mat4 vp;
+        vec3 camera_pos;
+    } model;
+
+    layout(std140) uniform ubo_bone_trans {
+        vec4 translations[1024];
+    };
+
+    layout(std140) uniform ubo_bone_rots {
+        vec4 rotations[1024];
+    };
+
+    layout(std140) uniform ubo_bone_info {
+        uint joint_count;
+    };
+
+    out vec2 frag_uv;
+    out vec3 frag_normal;
+    out vec3 frag_vert_pos;
+
+    vec3 quat_rotate(vec4 q, vec3 v) {
+        vec3 temp = 2.0 * cross(q.xyz, v);
+        return v + q.w * temp + cross(q.xyz, temp);
+    }
+
+    void main() {
+        mat4 instance_matrix = mat4(
+            vec4(instance_mat_col_0, 0.0),
+            vec4(instance_mat_col_1, 0.0),
+            vec4(instance_mat_col_2, 0.0),
+            vec4(instance_mat_col_3, 1.0)
+        );
+
+        //get bone
+        uint base = uint(gl_InstanceID) * joint_count;
+        uint bone_index = base + joints.x;
+        vec4 bone_rot = rotations[bone_index];
+        vec3 bone_pos = translations[bone_index].xyz;
+        vec3 skinned_pos = quat_rotate(bone_rot, pos) + bone_pos;
+
+        vec4 world_pos = instance_matrix * vec4(skinned_pos, 1.0);
+        frag_vert_pos = world_pos.xyz;
+        frag_normal = normal;// mat3(transpose(inverse(instance_matrix))) * (skin * vec4(normal, 0.0)).xyz;
+        frag_uv = uv;
+        gl_Position = model.vp * world_pos;
+    }
+);
+
+const char animated_model_vertex_texture_poses[] = RLR_SHADER_INLINE(
     layout(location = 0) in vec3 pos;
     layout(location = 1) in vec3 normal;
     layout(location = 2) in vec2 uv;
@@ -228,28 +288,31 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
     const float UINT8_MAX_RATIO = 1.0 / 255.0;
     const float UINT16_MAX_RATIO = 1.0 / 65535.0;
 
-    mat4 fetch_pose(uint matrix_index, uint tex_w) {
-        uint texel_index = matrix_index * 4u;
-        uint x = texel_index % tex_w;
-        uint y = texel_index / tex_w;
-        vec4 c0 = texelFetch(poses, ivec2(x + 0u, y), 0);
-        vec4 c1 = texelFetch(poses, ivec2(x + 1u, y), 0);
-        vec4 c2 = texelFetch(poses, ivec2(x + 2u, y), 0);
-        vec4 c3 = texelFetch(poses, ivec2(x + 3u, y), 0);
-        return mat4(c0, c1, c2, c3);
-    }
+    struct rows_t {
+        vec4 r0;
+        vec4 r1;
+        vec4 r2;
+    };
 
-    mat4 fetch_blended_joint(uint joint_index, uint tex_w, float lerp, uint a_offset, uint b_offset) {
-        mat4 a = fetch_pose(a_offset + joint_index, tex_w);
-        mat4 b = fetch_pose(b_offset + joint_index, tex_w);
-        return a * (1.0 - lerp) + b * lerp;
-    }
+    rows_t get_pose_rows(uint offset_a, uint offset_b, uint tex_w, float lerp) {
+        rows_t r = rows_t(vec4(0.0), vec4(0.0), vec4(0.0));
 
-    mat4 fetch_skin_matrix(uint tex_width, vec4 weights, uvec4 joints, float lerp, uint a_offset, uint b_offset) {
-        return (fetch_blended_joint(joints.x, tex_width, lerp, a_offset, b_offset) * weights.x)
-        + (fetch_blended_joint(joints.y, tex_width, lerp, a_offset, b_offset) * weights.y)
-        + (fetch_blended_joint(joints.z, tex_width, lerp, a_offset, b_offset) * weights.z)
-        + (fetch_blended_joint(joints.w, tex_width, lerp, a_offset, b_offset) * weights.w);
+        float inverse_lerp = 1.0 - lerp;
+
+        for(int i = 0; i < 4; i++) {
+            uint atexel_index = (offset_a + joints[i]) * 3u;
+            uint ax = atexel_index % tex_w;
+            uint ay = atexel_index / tex_w;
+            uint btexel_index = (offset_b + joints[i]) * 3u;
+            uint bx = btexel_index % tex_w;
+            uint by = btexel_index / tex_w;
+
+            r.r0 += (texelFetch(poses, ivec2(ax + 0u, ay), 0) * inverse_lerp + texelFetch(poses, ivec2(bx + 0u, by), 0) * lerp) * float(weights[i]) * UINT8_MAX_RATIO;
+            r.r1 += (texelFetch(poses, ivec2(ax + 1u, ay), 0) * inverse_lerp + texelFetch(poses, ivec2(bx + 1u, by), 0) * lerp) * float(weights[i]) * UINT8_MAX_RATIO;
+            r.r2 += (texelFetch(poses, ivec2(ax + 2u, ay), 0) * inverse_lerp + texelFetch(poses, ivec2(bx + 2u, by), 0) * lerp) * float(weights[i]) * UINT8_MAX_RATIO;
+        }
+
+        return r;
     }
 
     void main() {
@@ -260,28 +323,34 @@ const char animated_model_vertex[] = RLR_SHADER_INLINE(
             vec4(instance_mat_col_3, 1.0)
         );
 
-        vec4 w = vec4(
-            float(weights[0]) * UINT8_MAX_RATIO,
-            float(weights[1]) * UINT8_MAX_RATIO,
-            float(weights[2]) * UINT8_MAX_RATIO,
-            float(weights[3]) * UINT8_MAX_RATIO
-        );
-
         float lerp_prim = float(pose_lerp_primary) * UINT8_MAX_RATIO;
         float lerp_sec = float(pose_lerp_secondary) * UINT8_MAX_RATIO;
         float lerp_trans = float(transition_lerp) * UINT16_MAX_RATIO;
-
         uint tex_w = uint(textureSize(poses, 0).x);
-        mat4 skin = fetch_skin_matrix(tex_w, w, joints, lerp_prim, pose_a_offset_primary, pose_b_offset_primary);
+
+        vec4 po = vec4(pos, 1.0);
+        
+        rows_t p = get_pose_rows(pose_a_offset_primary, pose_b_offset_primary, tex_w, lerp_prim);
+        rows_t final = rows_t(p.r0, p.r1, p.r2);
+
         if(transition_lerp > 0u) {
-            mat4 skin_secondary = fetch_skin_matrix(tex_w, w, joints, lerp_sec, pose_a_offset_secondary, pose_b_offset_secondary);
-            skin = (1.0 - lerp_trans) * skin + lerp_trans * skin_secondary;
+            rows_t s = get_pose_rows(pose_a_offset_secondary, pose_b_offset_secondary, tex_w, lerp_sec);
+            float inverse_lerp_trans = 1.0 - lerp_trans;
+            final.r0 = final.r0 * inverse_lerp_trans + lerp_trans * s.r0;
+            final.r1 = final.r1 * inverse_lerp_trans + lerp_trans * s.r1;
+            final.r2 = final.r2 * inverse_lerp_trans + lerp_trans * s.r2;
         }
 
-        vec4 skinned_pos = skin * vec4(pos, 1.0);
+        vec4 skinned_pos = vec4(
+            dot(final.r0, po),
+            dot(final.r1, po),
+            dot(final.r2, po),
+            1.0
+        );
+
         vec4 world_pos = instance_matrix * skinned_pos;
         frag_vert_pos = world_pos.xyz;
-        frag_normal = mat3(transpose(inverse(instance_matrix))) * (skin * vec4(normal, 0.0)).xyz;
+        frag_normal = mat3(transpose(inverse(instance_matrix))) * (skinned_pos * vec4(normal, 0.0)).xyz;
         frag_uv = uv;
         gl_Position = model.vp * world_pos;
     }
@@ -369,22 +438,42 @@ bool rlr_pipeline_model_init() {
 
     pm->opaque_static_model_commands = NULL;
     pm->opaque_animated_model_commands = NULL;
+    pm->animated_model_path = RLR_PIPELINE_ANIMATED_MODEL_GPU;
     pm->shader_opaque_static_model = rlr_res_shader_create(static_model_vertex, model_fragment);
-    pm->shader_opaque_animated_model = rlr_res_shader_create(animated_model_vertex, model_fragment);
+    pm->shader_opaque_animated_model_cpu = rlr_res_shader_create(animated_model_vertex_ubo_poses, model_fragment);
+    pm->shader_opaque_animated_model_gpu = rlr_res_shader_create(animated_model_vertex_texture_poses, model_fragment);
     pm->generation_counter = 0;
     if(!pm->shader_opaque_static_model) {
         goto err;
     }
+    if(!pm->shader_opaque_animated_model_cpu) {
+        goto err;
+    }
+    if(!pm->shader_opaque_animated_model_gpu) {
+        goto err;
+    }
+
+    //set static model shader slots
     rlr_res_shader_bind_uniform_slot(pm->shader_opaque_static_model, "ubo_model", RLR_INTERNAL_UBO_MODEL);
     rlr_res_shader_bind_uniform_slot(pm->shader_opaque_static_model, "ubo_material", RLR_INTERNAL_UBO_MATERIAL);
     rlr_res_shader_bind_texture_slot(pm->shader_opaque_static_model, "tex", 0);
     rlr_res_shader_bind_texture_slot(pm->shader_opaque_static_model, "cube_map", 4);
 
-    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model, "ubo_model", RLR_INTERNAL_UBO_MODEL);
-    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model, "ubo_material", RLR_INTERNAL_UBO_MATERIAL);
-    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model, "tex", 0);
-    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model, "cube_map", 4);
-    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model, "poses", 1);
+    //set animated model cpu calculated slots
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model_cpu, "ubo_model", RLR_INTERNAL_UBO_MODEL);
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model_cpu, "ubo_material", RLR_INTERNAL_UBO_MATERIAL);
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model_cpu, "ubo_bone_trans", RLR_INTERNAL_UBO_BONE_TRANSLATION);
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model_cpu, "ubo_bone_rots", RLR_INTERNAL_UBO_BONE_ROTATION);
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model_cpu, "ubo_bone_info", RLR_INTERNAL_UBO_BONE_INFO);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model_cpu, "tex", 0);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model_cpu, "cube_map", 4);
+
+    //set animated model gpu skinned slots
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model_gpu, "ubo_model", RLR_INTERNAL_UBO_MODEL);
+    rlr_res_shader_bind_uniform_slot(pm->shader_opaque_animated_model_gpu, "ubo_material", RLR_INTERNAL_UBO_MATERIAL);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model_gpu, "tex", 0);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model_gpu, "cube_map", 4);
+    rlr_res_shader_bind_texture_slot(pm->shader_opaque_animated_model_gpu, "poses", 1);
 
     return true;
 err:
@@ -458,35 +547,131 @@ static inline void rlr_pipeline_update_animations(rlr_pipeline_model_t* pm, doub
     }
 }
 
-void rlr_pipeline_model_draw(double delta_time) {
-    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+static inline void rlr_pipeline_get_animation(size_t i, rlr_pipeline_animated_model_instance_t* inst, rlr_res_animation_sample_t* samples, size_t joint, rlr_quat_t* out_q, rlr_vec3_t* out_v) {
+    const float UINT8_MAX_RATIO = 1.0 / 255.0;
+    const float UINT16_MAX_RATIO = 1.0 / 65535.0;
 
-    //update animated models
-    rlr_pipeline_update_animations(pm, delta_time);
+    rlr_res_animation_sample_t* s_prim1 = &samples[inst->pose_a_offset_primary + joint];
+    rlr_res_animation_sample_t* s_prim2 = &samples[inst->pose_b_offset_primary + joint];
+    rlr_res_animation_sample_t* s_sec1 = &samples[inst->pose_a_offset_secondary + joint];
+    rlr_res_animation_sample_t* s_sec2 = &samples[inst->pose_b_offset_secondary + joint];
 
-    //reupload command instance vbos that are dirty
-    for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
-        rlr_pipeline_static_model_draw_command_t* cmd = &pm->opaque_static_model_commands[i];
-        if(cmd->dirty) {
-            rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_static_model_instance_t) * arrlenu(cmd->instances), cmd->instances, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
-            cmd->dirty = false;
+    float lerp_prim = inst->lerp_primary * UINT8_MAX_RATIO;
+    float lerp_sec = inst->lerp_secondary * UINT8_MAX_RATIO;
+    float lerp_trans = inst->transition_lerp * UINT16_MAX_RATIO;
+
+    rlr_quat_t prim_q = rlr_quat_slerp(&s_prim1->rotation, &s_prim2->rotation, lerp_prim);
+    rlr_vec3_t prim_v = rlr_vec3_lerp(s_prim1->translation, s_prim2->translation, lerp_prim);
+
+    if(inst->transition_lerp > 0) {
+        rlr_quat_t sec_q = rlr_quat_slerp(&s_sec1->rotation, &s_sec2->rotation, lerp_sec);     
+        rlr_vec3_t sec_v = rlr_vec3_lerp(s_sec1->translation, s_sec2->translation, lerp_sec);
+        *out_q = rlr_quat_slerp(&prim_q, &sec_q, lerp_trans);
+        *out_v = rlr_vec3_lerp(prim_v, sec_v, lerp_trans);
+    } else {
+        *out_q = prim_q;
+        *out_v = prim_v;
+    }
+}
+
+static inline void rlr_pipeline_update_animation_ubos(rlr_pipeline_animated_model_draw_command_t* cmd, uint64_t joint_count, size_t instance_offset, size_t instance_count) {
+    static rlr_uniform_bone_pos_t pos = {0};
+    static rlr_uniform_bone_quat_t rot = {0};
+
+    size_t end = instance_offset + instance_count;
+    for(size_t i = instance_offset; i < end; i++) {
+        rlr_pipeline_animated_model_instance_t* inst = &cmd->instances[i];
+
+        //update joints
+        size_t offset = joint_count * i;
+        for(size_t joint = 0; joint < joint_count; joint++) {
+            rlr_quat_t q;
+            rlr_vec3_t v;
+            rlr_pipeline_get_animation(i, inst, cmd->model->animations.samples, joint, &rot.quat[offset + joint], &pos.vecs[offset + joint].vec);
         }
     }
+
+    rlr_res_uniform_update(rlr()->ubos[RLR_INTERNAL_UBO_BONE_TRANSLATION], 0, pos.vecs, sizeof(pos.vecs));
+    rlr_res_uniform_update(rlr()->ubos[RLR_INTERNAL_UBO_BONE_ROTATION], 0, rot.quat, sizeof(rot.quat));
+}
+
+static inline void rlr_pipeline_update_animated_model_instance_vbo(rlr_pipeline_animated_model_draw_command_t* cmd, size_t instance_offset, size_t instance_count) {
+    rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_animated_model_instance_t) * instance_count, cmd->instances + instance_offset, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+}
+
+static inline void rlr_pipeline_draw_cpu_prepared_animated_model(rlr_pipeline_animated_model_draw_command_t* cmd, uint64_t joint_count, size_t instance_offset, size_t instance_count) {
+
+    //prepare ubo and instance ebo
+    rlr_pipeline_update_animation_ubos(cmd, joint_count, instance_offset, instance_count);
+    rlr_pipeline_update_animated_model_instance_vbo(cmd, instance_offset, instance_count);
+
+    //draw each mesh
+    for(int64_t j = 0; j < arrlen(cmd->mesh_vaos); j++) {
+        rlr_res_animated_mesh_t* mesh = &cmd->model->meshes[j];
+        rlr_res_uniform_bind(mesh->material_ubo, RLR_INTERNAL_UBO_MATERIAL);
+        rlr_backend()->bind_texture(cmd->model->animations.animation_texture, RLR_BACKEND_TEXTURE_2D, 1);
+        if(mesh->texture_base) {
+            rlr_res_texture_bind(mesh->texture_base, 0);
+        } else {
+            rlr_res_texture_bind(rlr()->texture_white, 0);
+        }
+
+        rlr_backend()->bind_vertex_array(cmd->mesh_vaos[j]);
+        rlr_backend()->draw_elements_instanced(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32, arrlenu(cmd->instances));
+    }
+}
+
+void rlr_pipeline_model_prepare_animated_models_cpu(rlr_pipeline_model_t* pm, double delta_time) {
+    rlr_pipeline_update_animations(pm, delta_time);
+}
+
+void rlr_pipeline_model_prepare_animated_models_gpu(rlr_pipeline_model_t* pm, double delta_time) {
+    rlr_pipeline_update_animations(pm, delta_time);
+
     for(int64_t i = 0; i < arrlen(pm->opaque_animated_model_commands); i++) {
         rlr_pipeline_animated_model_draw_command_t* cmd = &pm->opaque_animated_model_commands[i];
         if(cmd->dirty) {
-            rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
-            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_animated_model_instance_t) * arrlenu(cmd->instances), cmd->instances, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+            rlr_pipeline_update_animated_model_instance_vbo(cmd, 0, arrlenu(cmd->instances));
             cmd->dirty = false;
         }
     }
+}
 
-    //draw
+void rlr_pipeline_model_draw_animated_models_cpu(rlr_pipeline_model_t* pm) {
     for(int64_t i = 0; i < arrlen(pm->opaque_animated_model_commands); i++) {
         rlr_pipeline_animated_model_draw_command_t* command = &pm->opaque_animated_model_commands[i];
-        rlr_res_shader_bind(pm->shader_opaque_animated_model);
+        rlr_res_shader_bind(pm->shader_opaque_animated_model_cpu);
         
+        //upload joint count
+        uint64_t joint_count = command->model->animations.joint_count;
+        rlr_uniform_bone_info_t info = {
+            .joint_count = (uint32_t)joint_count
+        };
+        rlr_res_uniform_update(rlr()->ubos[RLR_INTERNAL_UBO_BONE_INFO], 0, &info, sizeof(rlr_uniform_bone_info_t));
+
+        //calculate the amount of poses that can fit inside the UBO
+        size_t instance_per_batch = MAX_UBO_SIZE / (sizeof(float) * 4 * joint_count);
+
+        //divide the instances into draw call batches to make sure
+        //all the poses fit inside the UBO buffers
+        size_t instance_count = arrlenu(command->instances);
+        size_t batch_count = instance_count / instance_per_batch;
+        size_t remainder_count = instance_count % instance_per_batch;
+        for(size_t batch = 0; batch < batch_count; batch++) {
+            rlr_pipeline_draw_cpu_prepared_animated_model(command, joint_count, batch * instance_per_batch, instance_per_batch);
+        }
+        if(remainder_count > 0) {
+            rlr_pipeline_draw_cpu_prepared_animated_model(command, joint_count, batch_count * instance_per_batch, remainder_count);
+        }
+    }
+}
+
+void rlr_pipeline_model_draw_animated_models_gpu(rlr_pipeline_model_t* pm) {
+    for(int64_t i = 0; i < arrlen(pm->opaque_animated_model_commands); i++) {
+        rlr_pipeline_animated_model_draw_command_t* command = &pm->opaque_animated_model_commands[i];
+        rlr_res_shader_bind(pm->shader_opaque_animated_model_gpu);
+
         for(int64_t j = 0; j < arrlen(command->mesh_vaos); j++) {
             rlr_res_animated_mesh_t* mesh = &command->model->meshes[j];
             rlr_res_uniform_bind(mesh->material_ubo, RLR_INTERNAL_UBO_MATERIAL);
@@ -501,6 +686,45 @@ void rlr_pipeline_model_draw(double delta_time) {
             rlr_backend()->draw_elements_instanced(0, mesh->index_count, RLR_BACKEND_BUFFER_TYPE_U32, arrlenu(command->instances));
         }
     }
+}
+
+
+void rlr_pipeline_model_draw(double delta_time) {
+    rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
+
+    //prepare animated models
+    switch(pm->animated_model_path) {
+        case RLR_PIPELINE_ANIMATED_MODEL_CPU:
+            rlr_pipeline_model_prepare_animated_models_cpu(pm, delta_time);
+            break;
+        case RLR_PIPELINE_ANIMATED_MODEL_GPU:
+        default:
+            rlr_pipeline_model_prepare_animated_models_gpu(pm, delta_time);
+            break;
+    }
+
+    //prepare static models
+    for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
+        rlr_pipeline_static_model_draw_command_t* cmd = &pm->opaque_static_model_commands[i];
+        if(cmd->dirty) {
+            rlr_backend()->bind_buffer(cmd->instance_vbo, RLR_BACKEND_BUFFER_ARRAY);
+            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_pipeline_static_model_instance_t) * arrlenu(cmd->instances), cmd->instances, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+            cmd->dirty = false;
+        }
+    }
+
+    //draw animated models
+    switch(pm->animated_model_path) {
+        case RLR_PIPELINE_ANIMATED_MODEL_CPU:
+            rlr_pipeline_model_draw_animated_models_cpu(pm);
+            break;
+        case RLR_PIPELINE_ANIMATED_MODEL_GPU:
+        default:
+            rlr_pipeline_model_draw_animated_models_gpu(pm);
+            break;
+    }
+
+    //draw static models
     for(int64_t i = 0; i < arrlen(pm->opaque_static_model_commands); i++) {
         rlr_pipeline_static_model_draw_command_t* command = &pm->opaque_static_model_commands[i];
         rlr_res_shader_bind(pm->shader_opaque_static_model);
@@ -529,7 +753,8 @@ void rlr_pipeline_model_deinit() {
     arrfree(pm->opaque_static_model_commands);
     arrfree(pm->opaque_animated_model_commands);
     rlr_res_shader_free(pm->shader_opaque_static_model);
-    rlr_res_shader_free(pm->shader_opaque_animated_model);
+    rlr_res_shader_free(pm->shader_opaque_animated_model_gpu);
+    rlr_res_shader_free(pm->shader_opaque_animated_model_cpu);
 }
 
 rlr_pipeline_static_model_draw_command_t* rlr_pipeline_model_find_static_model_draw_command(rlr_res_static_model_t* model, rlr_res_shader_t* shader) {

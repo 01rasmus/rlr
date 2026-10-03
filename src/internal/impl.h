@@ -15,11 +15,14 @@ typedef struct rlr_res_material_t rlr_res_material_t;
 
 typedef bool (*rlr_pipeline_init_function_t)();
 
-#define RLR_INTERNAL_UBO_COUNT                  4
+#define RLR_INTERNAL_UBO_COUNT                  7
 #define RLR_INTERNAL_UBO_MODEL                  0x0
 #define RLR_INTERNAL_UBO_MATERIAL               0x1
 #define RLR_INTERNAL_UBO_ENVIRONMENT            0x2
 #define RLR_INTERNAL_UBO_UI                     0x3
+#define RLR_INTERNAL_UBO_BONE_TRANSLATION       0x4
+#define RLR_INTERNAL_UBO_BONE_ROTATION          0x5
+#define RLR_INTERNAL_UBO_BONE_INFO              0x6
 
 typedef struct rlr_uniform_model_t {
     rlr_mat4x4_t vp;
@@ -38,6 +41,21 @@ typedef struct rlr_uniform_ui_t {
     float screen_width;
     float screen_height;
 } rlr_uniform_ui_t;
+
+typedef struct rlr_uniform_bone_pos_t {
+    struct {
+        rlr_vec3_t vec;
+        float _;
+    } vecs[1024];
+} rlr_uniform_bone_pos_t;
+
+typedef struct rlr_uniform_bone_quat_t {
+    rlr_quat_t quat[1024];
+} rlr_uniform_bone_quat_t;
+
+typedef struct rlr_uniform_bone_info_t {
+    uint32_t joint_count;
+} rlr_uniform_bone_info_t;
 
 typedef rlr_res_material_t rlr_uniform_material_t;
 

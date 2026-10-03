@@ -10,6 +10,10 @@ typedef struct rlr_affine_mat4x3_t {
     float matrix[4][3]; // [col][row]
 } rlr_affine_mat4x3_t;
 
+typedef struct rlr_affine_rows_t {
+    float matrix[3][4]; // [row][col]
+} rlr_affine_rows_t;
+
 typedef struct rlr_mat4x4_t {
     float matrix[4][4]; // [col][row]
 } rlr_mat4x4_t;
@@ -27,6 +31,10 @@ rlr_mat4x4_t rlr_mat4x4_transpose(const rlr_mat4x4_t* matrix);
 rlr_mat4x4_t rlr_mat4x4_adjoint(const rlr_mat4x4_t* matrix);
 rlr_mat4x4_t rlr_mat4x4_inverse(const rlr_mat4x4_t* matrix);
 float rlr_mat4x4_determinant(const rlr_mat4x4_t* matrix);
+rlr_quat_t rlr_mat4x4_extract_rotation(const rlr_mat4x4_t* matrix);
+rlr_vec3_t rlr_mat4x4_extract_translation(const rlr_mat4x4_t* matrix);
+
+rlr_affine_rows_t rlr_mat4x4_to_affine_rows(const rlr_mat4x4_t* matrix);
 
 rlr_affine_mat4x3_t rlr_mat4x4_to_affine_mat4x3(const rlr_mat4x4_t* matrix);
 rlr_mat4x4_t rlr_affine_mat4x3_to_mat4x4(const rlr_affine_mat4x3_t* affine);

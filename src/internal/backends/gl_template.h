@@ -236,18 +236,18 @@ static uint64_t gl_create_cube_map_texture(const uint8_t* right, const uint8_t* 
     return texture;
 }
 
-static uint64_t gl_create_animation_texture(rlr_mat4x4_t* matrices, uint32_t matrix_count, uint32_t width) {
+static uint64_t gl_create_animation_texture(rlr_affine_rows_t* matrices, uint32_t matrix_count, uint32_t width) {
     uint32_t texture = 0;
     GL_CALL(gl->GenTextures(1, &texture));
     if(texture == 0) {
         goto err;
     }
 
-    if((width % 4) != 0) {
+    if((width % 3) != 0) {
         goto err;
     }
 
-    uint32_t texel_count = matrix_count * 4;
+    uint32_t texel_count = matrix_count * 3;
     uint32_t height = (texel_count + width - 1) / width;
 
     GL_CALL(gl->BindTexture(GL_TEXTURE_2D, texture));
@@ -256,9 +256,9 @@ static uint64_t gl_create_animation_texture(rlr_mat4x4_t* matrices, uint32_t mat
     GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
     GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    GL_CALL(gl->PixelStorei(GL_UNPACK_ALIGNMENT, 4));
+    //GL_CALL(gl->PixelStorei(GL_UNPACK_ALIGNMENT, 4));
 
-    GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL));
+    GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL));
 
     uint32_t complete_rows = texel_count / width;
     uint32_t remaining_texels = texel_count % width;
@@ -269,7 +269,7 @@ static uint64_t gl_create_animation_texture(rlr_mat4x4_t* matrices, uint32_t mat
     }
 
     if(remaining_texels > 0) {
-        data += complete_rows * width * 4;
+        data += complete_rows * width * 3;
         GL_CALL(gl->TexSubImage2D(GL_TEXTURE_2D, 0, 0, complete_rows, remaining_texels, 1, GL_RGBA, GL_FLOAT, data));
     }
 

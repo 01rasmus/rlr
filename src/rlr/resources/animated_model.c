@@ -190,18 +190,23 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
         return (rlr_res_animations_t){0};
     }
     cgltf_skin* skin = &model->skins[0];
-    rlr_mat4x4_t* animation_matrices = NULL; // the final, baked, gpu data
+    rlr_affine_rows_t* animation_matrices = NULL; // the final, baked, gpu data
 
-    final.joint_count = model->skins[0].joints_count;
     const uint32_t joint_count = model->skins[0].joints_count;
+    final.joint_count = joint_count;
+    final.samples = NULL;
     const uint32_t node_count = model->nodes_count;
     animation_frame_joint_t* poses = malloc(sizeof(animation_frame_joint_t) * node_count);
     rlr_mat4x4_t* local_matrices = malloc(sizeof(rlr_mat4x4_t) * node_count);
     rlr_mat4x4_t* global_matrices = malloc(sizeof(rlr_mat4x4_t) * node_count);
     
     //make identity pose(which is used for meshes that don't have any weights and joints)
-    for(int32_t i = 0; i < model->skins[0].joints_count; i++) {
-        arrpush(animation_matrices, rlr_mat4x4_ident);
+    for(int32_t i = 0; i < joint_count; i++) {
+        arrpush(animation_matrices, rlr_mat4x4_to_affine_rows(&rlr_mat4x4_ident));
+        arrpush(final.samples, ((rlr_res_animation_sample_t){
+            .rotation = rlr_quat_ident,
+            .translation = rlr_vec3(0.0, 0.0, 0.0)
+        }));
     }
     
     cgltf_node* mesh_node = find_mesh_node_for_skin(model, skin);
@@ -219,6 +224,7 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
         anim_meta.fps = fps;
         anim_meta.duration = animation_duration(animation);
         anim_meta.pose_offset = arrlenu(animation_matrices);
+        anim_meta.joint_count = skin->joints_count;
 
         float frame_interval = 1.0 / anim_meta.fps;
         bool done = false;
@@ -274,8 +280,16 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
                 uint32_t node_index = skin->joints[j] - model->nodes;
 
                 rlr_mat4x4_t joint = rlr_mat4x4_mul(&global_matrices[node_index], &inverse_bind_matrix);
-                rlr_mat4x4_t final = rlr_mat4x4_mul(&inv_mesh_global, &joint);
-                arrpush(animation_matrices, final);
+                rlr_mat4x4_t final_mat = rlr_mat4x4_mul(&inv_mesh_global, &joint);
+                rlr_affine_rows_t affine_rows = rlr_mat4x4_to_affine_rows(&final_mat);
+                arrpush(animation_matrices, affine_rows);
+
+                //extract translation and rotation to make samples
+                rlr_res_animation_sample_t sample = {
+                    .translation = rlr_mat4x4_extract_translation(&final_mat),
+                    .rotation = rlr_mat4x4_extract_rotation(&final_mat)
+                };
+                arrpush(final.samples, sample);
             }
 
             if(done) {
@@ -538,6 +552,7 @@ void rlr_res_animated_model_free(rlr_res_animated_model_t* model) {
         return;
     }
     rlr_backend()->free_texture(model->animations.animation_texture);
+    arrfree(model->animations.samples);
     arrfree(model->animations.metas);
 
     for(int32_t i = 0; i < arrlen(model->meshes); i++) {

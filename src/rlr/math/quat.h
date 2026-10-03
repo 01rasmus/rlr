@@ -3,10 +3,10 @@
 #include "vec.h"
 
 typedef struct rlr_quat_t {
-    float w;
     float x;
     float y;
     float z;
+    float w;
 } rlr_quat_t;
 
 #define rlr_quat(W, X, Y, Z)        ((rlr_quat_t){.w = W, .x = X, .y = Y, .z = Z})

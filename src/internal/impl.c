@@ -106,10 +106,13 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     glfwSetKeyCallback(ctx->window, _rlr_key_callback);
 
     //setup uniform buffer objects
-    rlr()->ubos[RLR_INTERNAL_UBO_MODEL]         = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_model_t));
-    rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL]      = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_material_t));
-    rlr()->ubos[RLR_INTERNAL_UBO_ENVIRONMENT]   = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_environment_t));
-    rlr()->ubos[RLR_INTERNAL_UBO_UI]            = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_ui_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_MODEL]             = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_model_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL]          = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_material_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_ENVIRONMENT]       = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_environment_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_UI]                = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_ui_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_BONE_TRANSLATION]  = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_bone_pos_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_BONE_ROTATION]     = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_bone_quat_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_BONE_INFO]         = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_bone_info_t));
     for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {
         rlr_res_uniform_t* ubo = rlr()->ubos[i];
         if(ubo == NULL) {

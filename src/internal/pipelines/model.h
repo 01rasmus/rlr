@@ -5,6 +5,13 @@
 #include "../core/obj_types.h"
 #include "../../rlr/def.h"
 
+#define MAX_UBO_SIZE    16384
+
+typedef enum rlr_pipeline_animated_model_path_t {
+    RLR_PIPELINE_ANIMATED_MODEL_GPU,    /* skinned on the gpu */
+    RLR_PIPELINE_ANIMATED_MODEL_CPU,    /* single pose on the gpu, calculated on the cpu */
+} rlr_pipeline_animated_model_path_t;
+
 #define rlr_pipeline_model_get_animation_state(MODEL) \
     rlpp_deref(rlr()->pipeline_model.animation_states, (MODEL)->animation_state_ref)
 
@@ -58,9 +65,11 @@ typedef struct rlr_pipeline_animated_model_draw_command_t {
 
 typedef struct rlr_pipeline_model_t {
     rlr_res_shader_t* shader_opaque_static_model;
-    rlr_res_shader_t* shader_opaque_animated_model;
+    rlr_res_shader_t* shader_opaque_animated_model_cpu;
+    rlr_res_shader_t* shader_opaque_animated_model_gpu;
 
     uint32_t generation_counter;
+    rlr_pipeline_animated_model_path_t animated_model_path;
 
     //draw commands
     rlr_pipeline_static_model_draw_command_t* opaque_static_model_commands;
@@ -73,6 +82,14 @@ typedef struct rlr_pipeline_model_t {
 bool rlr_pipeline_model_init();
 void rlr_pipeline_model_draw(double delta_time);
 void rlr_pipeline_model_deinit();
+
+/*
+    animation paths
+*/
+void rlr_pipeline_model_prepare_animated_models_cpu(rlr_pipeline_model_t* pm, double delta_time);
+void rlr_pipeline_model_prepare_animated_models_gpu(rlr_pipeline_model_t* pm, double delta_time);
+void rlr_pipeline_model_draw_animated_models_cpu(rlr_pipeline_model_t* pm);
+void rlr_pipeline_model_draw_animated_models_gpu(rlr_pipeline_model_t* pm);
 
 /*
     tries to find a draw command list where the specific
