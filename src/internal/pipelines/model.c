@@ -547,7 +547,7 @@ static inline void rlr_pipeline_update_animations(rlr_pipeline_model_t* pm, doub
     }
 }
 
-static inline void rlr_pipeline_get_animation(size_t i, rlr_pipeline_animated_model_instance_t* inst, rlr_res_animation_sample_t* samples, size_t joint, rlr_quat_t* out_q, rlr_vec3_t* out_v) {
+static inline void rlr_pipeline_get_animation(rlr_pipeline_animated_model_instance_t* inst, rlr_res_animation_sample_t* samples, size_t joint, rlr_quat_t* out_q, rlr_vec3_t* out_v) {
     const float UINT8_MAX_RATIO = 1.0 / 255.0;
     const float UINT16_MAX_RATIO = 1.0 / 65535.0;
 
@@ -578,16 +578,15 @@ static inline void rlr_pipeline_update_animation_ubos(rlr_pipeline_animated_mode
     static rlr_uniform_bone_pos_t pos = {0};
     static rlr_uniform_bone_quat_t rot = {0};
 
-    size_t end = instance_offset + instance_count;
-    for(size_t i = instance_offset; i < end; i++) {
-        rlr_pipeline_animated_model_instance_t* inst = &cmd->instances[i];
+    for(size_t i = 0; i < instance_count; i++) {
+        rlr_pipeline_animated_model_instance_t* inst = &cmd->instances[instance_offset + i];
 
         //update joints
         size_t offset = joint_count * i;
         for(size_t joint = 0; joint < joint_count; joint++) {
             rlr_quat_t q;
             rlr_vec3_t v;
-            rlr_pipeline_get_animation(i, inst, cmd->model->animations.samples, joint, &rot.quat[offset + joint], &pos.vecs[offset + joint].vec);
+            rlr_pipeline_get_animation(inst, cmd->model->animations.samples, joint, &rot.quat[offset + joint], &pos.vecs[offset + joint].vec);
         }
     }
 
