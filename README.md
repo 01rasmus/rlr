@@ -8,8 +8,10 @@ The renderer chooses either ___OpenGL 3.3___ or ___OpenGL ES 3.0___ dynamically 
 [RLSL](https://github.com/rasu01/rlsl) is a shading language specifically written for RL Render. Since there are multiple backends a custom shader language makes sure a single shader can be used for any backend.
 - **MTSDF Fonts**<br>
 It is used together with texture atlases generated from [Chlumsky's atlas gen](https://github.com/Chlumsky/msdf-atlas-gen). The engine loads in the .csv file with the glyph data, and then the texture atlas image. It uses [stb image](https://github.com/nothings/stb/blob/master/stb_image.h) to load the image. Only the ___MTSDF___ variant is supported.
+- **Texture Atlases**  
+Texture atlases can be stitched together automatically by declaring the images in a list. with the help of [stb rect pack](https://github.com/nothings/stb/blob/master/stb_rect_pack.h) and [stb image](https://github.com/nothings/stb/blob/master/stb_image.h) the images will be loaded and inserted into a single texture, whilst also creating texture atlas tile handles into the locations declared in that same list.
 - **GPU Skinning**<br>
-The poses of the animations are prebaked and uploaded to the gpu as a texture to make it possible to do gpu skinning.
+The poses of the animations are prebaked and uploaded to the gpu as a texture to make it possible to do gpu skinning. Alternatively, the poses can be preblended on the CPU and uploaded to an UBO buffer before the model is being drawn to avoid texture fetches and blending in the vertex shader.
 
 ## Libraries Used
 The libraries are mainly single header libraries to try to minimize the complexity at compile time.
@@ -19,6 +21,7 @@ The libraries are mainly single header libraries to try to minimize the complexi
 - [stb_ds.h](https://github.com/nothings/stb/blob/master/stb_ds.h)
 - [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h)
 - [stb_image_resize2.h](https://github.com/nothings/stb/blob/master/stb_image_resize2.h)
+- [stb_rect_pack.h](https://github.com/nothings/stb/blob/master/stb_rect_pack.h)
 - [rlsl](https://github.com/rasu01/rlsl)
 - [rlpp](https://github.com/rasu01/rlpp)
 
