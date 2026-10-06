@@ -37,7 +37,7 @@ static inline void reset_rects(stbrp_rect* rects, rlr_res_texture_atlas_tile_ste
 
 static inline void atlas_done_loading(rlr_res_texture_atlas_t* atlas) {
     //we are done, create gpu texture
-    atlas->texture = rlr_res_texture_load_from_memory(atlas->temp_texture, atlas->texture_side_size, atlas->texture_side_size, atlas->channels, atlas->use_srgb_color_space, atlas->filter);
+    atlas->texture = rlr_res_texture_load_from_memory(atlas->temp_texture, atlas->texture_side_size, atlas->texture_side_size, atlas->channels, atlas->use_srgb_color_space, atlas->filter, true);
     if(!atlas->texture) {
         rlr_res_texture_atlas_free(atlas);
         return;

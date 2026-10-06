@@ -7,6 +7,10 @@
 #include "texture.h"
 
 rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter) {
+    return rlr_res_texture_load_ext(texture_path, use_srgb_color_space, filter, true);
+}
+
+rlr_res_texture_t* rlr_res_texture_load_ext(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter, bool may_compress) {
     uint8_t* data = NULL;
 
     int32_t w = 0;
@@ -18,7 +22,7 @@ rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_
         goto err;
     }
 
-    rlr_res_texture_t* texture = rlr_res_texture_load_from_memory(data, w, h, channels, use_srgb_color_space, filter);
+    rlr_res_texture_t* texture = rlr_res_texture_load_from_memory(data, w, h, channels, use_srgb_color_space, filter, may_compress);
     if(!texture) {
         rlr_log_error("could not load texture \"%s\"", texture_path);
         goto err;
@@ -32,7 +36,7 @@ err:
     return NULL;
 }
 
-rlr_res_texture_t* rlr_res_texture_load_from_memory(const uint8_t* data, uint32_t width, uint32_t height, uint32_t channels, bool use_srgb_color_space, rlr_res_texture_filter_t filter) {
+rlr_res_texture_t* rlr_res_texture_load_from_memory(const uint8_t* data, uint32_t width, uint32_t height, uint32_t channels, bool use_srgb_color_space, rlr_res_texture_filter_t filter, bool may_compress) {
     rlr_res_texture_t* texture = NULL;
 
     texture = malloc(sizeof(rlr_res_texture_t));
@@ -47,16 +51,16 @@ rlr_res_texture_t* rlr_res_texture_load_from_memory(const uint8_t* data, uint32_
 
     switch(filter) {
         case RLR_RES_TEXTURE_FILTER_NEAREST: {
-            texture->texture = rlr_backend()->create_nearest_texture(data, width, height, channels, use_srgb_color_space);
+            texture->texture = rlr_backend()->create_nearest_texture(data, width, height, channels, use_srgb_color_space, may_compress);
             break;
         }
         case RLR_RES_TEXTURE_FILTER_LINEAR: {
-            texture->texture = rlr_backend()->create_linear_texture(data, width, height, channels, use_srgb_color_space);
+            texture->texture = rlr_backend()->create_linear_texture(data, width, height, channels, use_srgb_color_space, may_compress);
             break;
         }
         default:
         case RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP: {
-            texture->texture = rlr_backend()->create_linear_mipmap_texture(data, width, height, channels, use_srgb_color_space);
+            texture->texture = rlr_backend()->create_linear_mipmap_texture(data, width, height, channels, use_srgb_color_space, may_compress);
             break;
         }
     }
@@ -72,42 +76,6 @@ err:
     return NULL;
 }
 
-rlr_res_texture_t* rlr_res_texture_create_empty(rlr_vec2_t size, bool use_srgb_color_space, rlr_res_texture_filter_t filter, uint32_t channels) {
-    rlr_res_texture_t* texture = NULL;
-    uint64_t texture_handle = 0;
-    switch(filter) {
-        case RLR_RES_TEXTURE_FILTER_NEAREST: {
-            texture_handle = rlr_backend()->create_nearest_texture(NULL, size.x, size.y, channels, use_srgb_color_space);
-            break;
-        }
-        case RLR_RES_TEXTURE_FILTER_LINEAR: {
-            texture_handle = rlr_backend()->create_linear_texture(NULL, size.x, size.y, channels, use_srgb_color_space);
-            break;
-        }
-        case RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP: {
-            texture_handle = rlr_backend()->create_linear_mipmap_texture(NULL, size.x, size.y, channels, use_srgb_color_space);
-            break;
-        }
-    }
-    if(texture_handle == 0) {
-        goto err;
-    }
-    texture = malloc(sizeof(rlr_res_texture_t));
-    if(!texture) {
-        goto err;
-    }
-    *texture = (rlr_res_texture_t){
-        .height = size.x,
-        .width = size.y,
-        .channels = channels,
-        .texture = texture_handle
-    };
-    return texture;
-err:
-    rlr_res_texture_free(texture);
-    return NULL;
-}
-
 void rlr_res_texture_copy_subtex(rlr_res_texture_t* texture, const uint8_t* texture_data, uint32_t u, uint32_t v, uint32_t width, uint32_t height) {
     rlr_backend()->copy_sub_texture(texture->texture, u, v, width, height, texture->channels, texture_data);
 }
@@ -115,7 +83,7 @@ void rlr_res_texture_copy_subtex(rlr_res_texture_t* texture, const uint8_t* text
 rlr_res_texture_t* rlr_res_texture_default() {
     rlr_res_texture_t* texture = NULL;
     uint8_t data[3] = {255, 255, 255};
-    uint64_t texture_handle = rlr_backend()->create_nearest_texture(data, 1, 1, 3, false);
+    uint64_t texture_handle = rlr_backend()->create_nearest_texture(data, 1, 1, 3, false, false);
     if(texture_handle == 0) {
         goto err;
     }
@@ -188,7 +156,7 @@ rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
         };
     }
 
-    texture->texture = rlr_backend()->create_texture(data, w, h, channels, true, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t);
+    texture->texture = rlr_backend()->create_compressed_texture(data, w, h, channels, true, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t);
     if(texture->texture == 0) {
         rlr_log_error("the backend texture handle is null");
         goto err;

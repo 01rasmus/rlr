@@ -67,56 +67,64 @@ typedef enum rlr_backend_type_t {
     RLR_BACKEND_BUFFER_TYPE_FLOAT       = 0x1406
 } rlr_backend_type_t;
 
+typedef struct rlr_gpu_capabilities_t {
+    int32_t supports_bc1_bc3;
+    int32_t supports_bc1_bc3_srgb;
+    int32_t supports_bc4_bc5;
+} rlr_gpu_capabilities_t;
+
 #define RLR_BACKEND_FUNCTIONS(X) \
-    X(uint64_t,     create_vertex_array,            ()) \
-    X(uint64_t,     create_texture,                 (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
-    X(uint64_t,     create_buffer,                  ()) \
-    X(uint64_t,     create_linear_texture,          (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
-    X(uint64_t,     create_linear_mipmap_texture,   (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
-    X(uint64_t,     create_nearest_texture,         (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space)) \
-    X(uint64_t,     create_cube_map_texture,        (const uint8_t* right, const uint8_t* left, const uint8_t* top, const uint8_t* bottom, const uint8_t* front, const uint8_t* back, uint32_t width, uint32_t height, int32_t channels)) \
-    X(uint64_t,     create_animation_texture,       (rlr_affine_rows_t* matrices, uint32_t matrix_count, uint32_t width)) \
-    X(uint64_t,     create_shader,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
-    X(void,         copy_sub_texture,               (uint64_t texture, uint32_t u, uint32_t v, uint32_t width, uint32_t height, uint32_t channels, const uint8_t* data)) \
-    X(void,         bind_vertex_array,              (uint64_t vao)) \
-    X(void,         bind_buffer,                    (uint64_t buffer, rlr_backend_buffer_target_t target)) \
-    X(void,         bind_texture,                   (uint64_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot)) \
-    X(void,         bind_shader,                    (uint64_t shader)) \
-    X(void,         bind_shader_uniform_block,      (uint64_t shader, const char* uniform_block_name, uint32_t uniform_block_slot)) \
-    X(void,         bind_shader_texture_slot,       (uint64_t shader, const char* texture_var_name, uint32_t texture_slot)) \
-    X(void,         bind_uniform_buffer,            (uint64_t ubo, uint32_t uniform_block_slot)) \
-    X(void,         set_vertex_array_attrib,        (rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset)) \
-    X(void,         set_vertex_array_attribi,       (rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, uint32_t stride, uintptr_t vertex_offset)) \
-    X(void,         set_viewport,                   (int32_t x, int32_t y, int32_t width, int32_t height)) \
-    X(void,         set_scissor_test,               (bool use_scissor_test)) \
-    X(void,         set_scissor,                    (int32_t x, int32_t y, int32_t width, int32_t height)) \
-    X(void,         set_clear_color,                (float r, float g, float b, float a)) \
-    X(void,         set_clear_stencil,              (int32_t stencil)) \
-    X(void,         set_color_mask,                 (bool r, bool g, bool b, bool a)) \
-    X(void,         set_depth_test,                 (bool use_depth_test)) \
-    X(void,         set_depth_mask,                 (bool z)) \
-    X(void,         set_stencil_test,               (bool use_stencil_test)) \
-    X(void,         set_stencil_mask,               (uint8_t mask)) \
-    X(void,         set_stencil_func,               (rlr_backend_stencil_func_t func, uint8_t ref, uint8_t mask)) \
-    X(void,         set_stencil_op,                 (rlr_backend_stencil_op_t sfail, rlr_backend_stencil_op_t dpfail, rlr_backend_stencil_op_t dppass)) \
-    X(void,         set_blending,                   (bool use_blending)) \
-    X(void,         draw_arrays,                    (uint64_t offset, uint32_t vertex_count)) \
-    X(void,         draw_arrays_instanced,          (uint64_t offset, uint32_t vertex_count, uint32_t instance_count)) \
-    X(void,         draw_elements,                  (uint64_t offset, uint32_t element_count, rlr_backend_type_t type)) \
-    X(void,         draw_elements_instanced,        (uint64_t offset, uint32_t element_count, rlr_backend_type_t type, uint32_t instance_count)) \
-    X(void,         clear,                          (rlr_backend_clear_flag_t clear_flags)) \
-    X(void,         update_buffer,                  (rlr_backend_buffer_target_t target, size_t size, const void* data, rlr_backend_buffer_usage_t update_type)) \
-    X(void,         update_buffer_orphaned,         (rlr_backend_buffer_target_t target, size_t size, const void* data)) \
-    X(const char*,  get_implementation,             ()) \
-    X(const char*,  get_gpu_name,                   ()) \
-    X(const char*,  get_context_version,            ()) \
-    X(uint64_t,     get_draw_call_count,            ()) \
-    X(void,         reset_statistics,               ()) \
-    X(void,         free_vertex_array,              (uint64_t vao)) \
-    X(void,         free_buffer,                    (uint64_t buffer)) \
-    X(void,         free_texture,                   (uint64_t texture)) \
-    X(void,         free_shader,                    (uint64_t shader)) \
-    X(void,         free_backend,                   ())
+    X(uint64_t,                 create_vertex_array,            ()) \
+    X(uint64_t,                 create_texture,                 (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
+    X(uint64_t,                 create_compressed_texture,      (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
+    X(uint64_t,                 create_buffer,                  ()) \
+    X(uint64_t,                 create_linear_texture,          (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, bool may_compress)) \
+    X(uint64_t,                 create_linear_mipmap_texture,   (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, bool may_compress)) \
+    X(uint64_t,                 create_nearest_texture,         (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, bool may_compress)) \
+    X(uint64_t,                 create_cube_map_texture,        (const uint8_t* right, const uint8_t* left, const uint8_t* top, const uint8_t* bottom, const uint8_t* front, const uint8_t* back, uint32_t width, uint32_t height, int32_t channels)) \
+    X(uint64_t,                 create_animation_texture,       (rlr_affine_rows_t* matrices, uint32_t matrix_count, uint32_t width)) \
+    X(uint64_t,                 create_shader,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \
+    X(void,                     copy_sub_texture,               (uint64_t texture, uint32_t u, uint32_t v, uint32_t width, uint32_t height, uint32_t channels, const uint8_t* data)) \
+    X(void,                     bind_vertex_array,              (uint64_t vao)) \
+    X(void,                     bind_buffer,                    (uint64_t buffer, rlr_backend_buffer_target_t target)) \
+    X(void,                     bind_texture,                   (uint64_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot)) \
+    X(void,                     bind_shader,                    (uint64_t shader)) \
+    X(void,                     bind_shader_uniform_block,      (uint64_t shader, const char* uniform_block_name, uint32_t uniform_block_slot)) \
+    X(void,                     bind_shader_texture_slot,       (uint64_t shader, const char* texture_var_name, uint32_t texture_slot)) \
+    X(void,                     bind_uniform_buffer,            (uint64_t ubo, uint32_t uniform_block_slot)) \
+    X(void,                     set_vertex_array_attrib,        (rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, bool normalized, uint32_t stride, uintptr_t vertex_offset)) \
+    X(void,                     set_vertex_array_attribi,       (rlr_backend_vertex_array_attrib_type_t attrib_type, uint32_t index, uint8_t count, rlr_backend_type_t type, uint32_t stride, uintptr_t vertex_offset)) \
+    X(void,                     set_viewport,                   (int32_t x, int32_t y, int32_t width, int32_t height)) \
+    X(void,                     set_scissor_test,               (bool use_scissor_test)) \
+    X(void,                     set_scissor,                    (int32_t x, int32_t y, int32_t width, int32_t height)) \
+    X(void,                     set_clear_color,                (float r, float g, float b, float a)) \
+    X(void,                     set_clear_stencil,              (int32_t stencil)) \
+    X(void,                     set_color_mask,                 (bool r, bool g, bool b, bool a)) \
+    X(void,                     set_depth_test,                 (bool use_depth_test)) \
+    X(void,                     set_depth_mask,                 (bool z)) \
+    X(void,                     set_stencil_test,               (bool use_stencil_test)) \
+    X(void,                     set_stencil_mask,               (uint8_t mask)) \
+    X(void,                     set_stencil_func,               (rlr_backend_stencil_func_t func, uint8_t ref, uint8_t mask)) \
+    X(void,                     set_stencil_op,                 (rlr_backend_stencil_op_t sfail, rlr_backend_stencil_op_t dpfail, rlr_backend_stencil_op_t dppass)) \
+    X(void,                     set_blending,                   (bool use_blending)) \
+    X(void,                     draw_arrays,                    (uint64_t offset, uint32_t vertex_count)) \
+    X(void,                     draw_arrays_instanced,          (uint64_t offset, uint32_t vertex_count, uint32_t instance_count)) \
+    X(void,                     draw_elements,                  (uint64_t offset, uint32_t element_count, rlr_backend_type_t type)) \
+    X(void,                     draw_elements_instanced,        (uint64_t offset, uint32_t element_count, rlr_backend_type_t type, uint32_t instance_count)) \
+    X(void,                     clear,                          (rlr_backend_clear_flag_t clear_flags)) \
+    X(void,                     update_buffer,                  (rlr_backend_buffer_target_t target, size_t size, const void* data, rlr_backend_buffer_usage_t update_type)) \
+    X(void,                     update_buffer_orphaned,         (rlr_backend_buffer_target_t target, size_t size, const void* data)) \
+    X(const char*,              get_implementation,             ()) \
+    X(const char*,              get_gpu_name,                   ()) \
+    X(rlr_gpu_capabilities_t,   get_gpu_capabilities,           ()) \
+    X(const char*,              get_context_version,            ()) \
+    X(uint64_t,                 get_draw_call_count,            ()) \
+    X(void,                     reset_statistics,               ()) \
+    X(void,                     free_vertex_array,              (uint64_t vao)) \
+    X(void,                     free_buffer,                    (uint64_t buffer)) \
+    X(void,                     free_texture,                   (uint64_t texture)) \
+    X(void,                     free_shader,                    (uint64_t shader)) \
+    X(void,                     free_backend,                   ())
 
 typedef struct rlr_backend_t {
     #define X(RET, NAME, PARAMS) RET (*NAME)PARAMS;

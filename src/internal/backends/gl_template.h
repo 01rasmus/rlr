@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stb_image_resize2.h>
+#include <stb_dxt.h>
 #include "../impl.h"
 #include "backend.h"
 
@@ -54,6 +55,10 @@ typedef GladGLContext glad_context_t;
 #ifdef GL_IMPLEMENTATION_TEMPLATE_GLES
 #define GL_TEMPLATE_ENTRY           rlr_backend_gles3
 #define GL_LOADER_FUNCTION          gladLoadGLES2Context
+
+//normalize compression defines
+#define GL_COMPRESSED_RED_RGTC1 GL_COMPRESSED_RED_RGTC1_EXT
+#define GL_COMPRESSED_RG_RGTC2  GL_COMPRESSED_RED_GREEN_RGTC2_EXT
 
 static uint64_t version = RLR_BUILD_VERSION(3, 0);
 
@@ -85,6 +90,7 @@ typedef GladGLES2Context glad_context_t;
 
 static uint8_t* texture_resize_buffer = NULL;
 static glad_context_t* gl = NULL;
+static rlr_gpu_capabilities_t caps;
 static uint64_t statistic_draw_call_count = 0;
 
 static char gpu_name[256] = { 0 };
@@ -101,6 +107,20 @@ static bool texture_filter_uses_mipmaps(int32_t filter) {
             return true;
         default:
             return false;
+    }
+}
+
+static int32_t texture_internal_format_compressed(int32_t channels, bool srgb) {
+    switch(channels) {
+        case 1:
+            return GL_COMPRESSED_RED_RGTC1;
+        case 2:
+            return GL_COMPRESSED_RG_RGTC2;
+        case 3:
+            return srgb ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+        case 4:
+        default:
+            return srgb ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
     }
 }
 
@@ -162,15 +182,7 @@ static uint64_t gl_create_texture(const uint8_t* color_data, uint32_t width, uin
     int32_t format = texture_format(channels);
 
     gl->PixelStorei(GL_UNPACK_ALIGNMENT, channels == 3 ? 1 : 4);
-
-    if(use_srgb_color_space) {
-        int32_t output_w = 64;
-        int32_t output_h = 64;
-        stbir_resize_uint8_srgb(color_data, width, height, 0, texture_resize_buffer, output_w, output_h, 0, channels);
-        GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, output_w, output_h, 0, format, GL_UNSIGNED_BYTE, texture_resize_buffer));
-    } else {
-        GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, color_data));
-    }
+    GL_CALL(gl->TexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, color_data));
 
     if(texture_filter_uses_mipmaps(filter_min)) {
         if(internal_format == GL_SRGB8) {
@@ -187,16 +199,153 @@ static uint64_t gl_create_texture(const uint8_t* color_data, uint32_t width, uin
     return (uint64_t)texture;
 }
 
-static uint64_t gl_create_linear_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
-    return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+static size_t compressed_texture_size(uint32_t width, uint32_t height, int32_t channels) {
+    size_t block_size = (channels == 4 || channels == 2) ? 16 : 8;
+    size_t blocks_x = ((size_t)width  + 3) / 4;
+    size_t blocks_y = ((size_t)height + 3) / 4;
+    return blocks_x * blocks_y * (size_t)block_size;
 }
 
-static uint64_t gl_create_linear_mipmap_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
-    return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+static void compress_block(uint8_t* dest, const uint8_t* src, size_t channels) {
+    switch(channels) {
+        case 1:
+            stb_compress_bc4_block(dest, src);
+            break;
+        case 2:
+            stb_compress_bc5_block(dest, src);
+            break;
+        case 3:
+            uint8_t src_converted[64];
+            size_t j = 0;
+            for(size_t i = 0; i < 48; i+=3) {
+                src_converted[j++] = src[i + 0];
+                src_converted[j++] = src[i + 1];
+                src_converted[j++] = src[i + 2];
+                src_converted[j++] = 0;
+            }
+            stb_compress_dxt_block(dest, src_converted, 0, STB_DXT_HIGHQUAL);
+            break;
+        case 4:
+            stb_compress_dxt_block(dest, src, 1, STB_DXT_HIGHQUAL);
+            break;
+        default:
+            break;
+    }
 }
 
-static uint64_t gl_create_nearest_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space) {
-    return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+static uint8_t* compress_texture(const uint8_t* orig, size_t compressed_size, size_t width, size_t height, size_t channels) {
+    uint8_t* ptr = malloc(compressed_size);
+    uint8_t block[64]; //64 is the maximum size ever needed
+    const size_t block_len = 4;
+    if(!ptr) {
+        goto err;
+    }
+
+    size_t block_size = (channels == 4 || channels == 2) ? 16 : 8;
+    uint8_t* dst = ptr;
+    for (size_t y = 0; y < height; y += 4) {
+        for (size_t x = 0; x < width; x += 4) {
+
+            for(size_t row = 0; row < block_len; row++) {
+                size_t copy_amount = channels * block_len;
+                uint8_t* block_dst = block + row * copy_amount;
+                const uint8_t* block_src = orig + ((y + row) * width + x) * channels;
+                memcpy(block_dst, block_src, copy_amount);
+            }
+
+            compress_block(dst, block, channels);
+            dst += block_size;
+        }
+    }
+
+    return ptr;
+err:
+    free(ptr);
+    return NULL;
+}
+
+static uint64_t gl_create_compressed_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t) {
+
+    //fallback to a normal texture if it doesn't support compressed formats
+    if(channels <= 2 && !caps.supports_bc4_bc5) {
+        return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, filter_min, filter_mag, wrap_s, wrap_t);
+    } else if(channels <= 4 && use_srgb_color_space && !caps.supports_bc1_bc3_srgb) {
+        return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, filter_min, filter_mag, wrap_s, wrap_t);
+    } else if(channels <= 4 && !use_srgb_color_space && !caps.supports_bc1_bc3) {
+        return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, filter_min, filter_mag, wrap_s, wrap_t);
+    }
+    
+    uint32_t texture = 0;
+    gl->GenTextures(1, &texture);
+    if(texture == 0) {
+        return 0;
+    }
+    gl->BindTexture(GL_TEXTURE_2D, texture);
+    int32_t internal_format = texture_internal_format_compressed(channels, use_srgb_color_space);
+
+    //compress
+    size_t compressed_size = compressed_texture_size(width, height, channels);
+    uint8_t* color_data_compressed = compress_texture(color_data, compressed_size, width, height, channels);
+    if(color_data_compressed) {
+        GL_CALL(gl->CompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, compressed_size, color_data_compressed));
+    }
+    free(color_data_compressed);
+
+    if(texture_filter_uses_mipmaps(filter_min)) {
+        uint32_t w = width;
+        uint32_t h = height;
+        for(uint32_t level = 1; w > 1 || h > 1; level++) {
+
+            //resize texture
+            uint32_t dst_width = w > 1 ? w / 2 : 1;
+            uint32_t dst_height = h > 1 ? h / 2 : 1;
+            if(use_srgb_color_space) {
+                stbir_resize_uint8_srgb(color_data, width, height, 0, texture_resize_buffer, dst_width, dst_height, 0, channels);
+            } else {
+                stbir_resize_uint8_linear(color_data, width, height, 0, texture_resize_buffer, dst_width, dst_height, 0, channels);
+            }
+
+            //compress it
+            size_t resized_compressed_size = compressed_texture_size(dst_width, dst_height, channels);
+            uint8_t* resized_compressed = compress_texture(texture_resize_buffer, resized_compressed_size, dst_width, dst_height, channels);
+            if(resized_compressed) {
+                GL_CALL(gl->CompressedTexImage2D(GL_TEXTURE_2D, level, internal_format, dst_width, dst_height, 0, resized_compressed_size, resized_compressed));
+            }
+            free(resized_compressed);
+
+            w = dst_width;
+            h = dst_height;
+        }
+    }
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t));
+    return (uint64_t)texture;
+}
+
+static uint64_t gl_create_linear_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, bool may_compress) {
+    if(may_compress) {
+        return gl_create_compressed_texture(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    } else {
+        return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    }
+}
+
+static uint64_t gl_create_linear_mipmap_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, bool may_compress) {
+    if(may_compress) {
+        return gl_create_compressed_texture(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    } else {
+        return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    }
+}
+
+static uint64_t gl_create_nearest_texture(const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, bool may_compress) {
+    if(may_compress) {
+        return gl_create_compressed_texture(color_data, width, height, channels, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    } else {
+        return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    }
 }
 
 static uint64_t gl_create_cube_map_texture(const uint8_t* right, const uint8_t* left, const uint8_t* top, const uint8_t* bottom, const uint8_t* front, const uint8_t* back, uint32_t width, uint32_t height, int32_t channels) {
@@ -218,17 +367,14 @@ static uint64_t gl_create_cube_map_texture(const uint8_t* right, const uint8_t* 
 
     int32_t internal_format = texture_internal_format(channels, true);
     int32_t format = texture_format(channels);
-    
     for(int64_t i = 0; i < sizeof(texture_data) / sizeof(texture_data[0]); i++) {
         if(texture_data[i]) {
-            int32_t output_w = 64;
-            int32_t output_h = 64;
-            stbir_resize_uint8_linear(texture_data[i], width, height, 0, texture_resize_buffer, output_w, output_h, 0, channels);
-            GL_CALL(gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, output_w, output_h, 0, format, GL_UNSIGNED_BYTE, texture_resize_buffer));
+            GL_CALL(gl->TexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, texture_data[i]));
         }
     }
+    GL_CALL(gl->GenerateMipmap(GL_TEXTURE_CUBE_MAP));
 
-    GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST));
     GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     GL_CALL(gl->TexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
@@ -631,6 +777,27 @@ static bool validate_backend() {
     return true;
 }
 
+static void fill_gpu_capabilities() {
+    //reset
+    memset(&caps, 0, sizeof(rlr_gpu_capabilities_t));
+
+    //texture compression
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+    caps.supports_bc1_bc3 = gl->EXT_texture_compression_s3tc;
+    caps.supports_bc1_bc3_srgb = gl->EXT_texture_compression_s3tc && gl->EXT_texture_sRGB;
+    caps.supports_bc4_bc5 = true;
+    #endif
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GLES
+    caps.supports_bc4_bc5 = gl->EXT_texture_compression_rgtc;
+    caps.supports_bc1_bc3 = gl->EXT_texture_compression_s3tc;
+    caps.supports_bc1_bc3_srgb = caps.supports_bc1_bc3 && gl->EXT_texture_compression_s3tc_srgb;
+    #endif
+}
+
+static rlr_gpu_capabilities_t gl_get_gpu_capabilities() {
+    return caps;
+}
+
 rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     rlr_backend_t* backend = NULL;
     gl = malloc(sizeof(glad_context_t));
@@ -666,6 +833,9 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     const char* gpu_vendor = gl->GetString(GL_VENDOR);
     const char* gpu_renderer = gl->GetString(GL_RENDERER);
     snprintf(gpu_name, 256, "%s %s", gpu_vendor, gpu_renderer);
+
+    //set capabilities
+    fill_gpu_capabilities();
 
     GL_CALL(gl->Enable(GL_CULL_FACE));
     GL_CALL(gl->CullFace(GL_BACK));
