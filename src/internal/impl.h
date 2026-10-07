@@ -76,7 +76,6 @@ typedef struct rlr_t {
     void* log_user;
     rlr_input_key_callback_t callback_key_input;
     rlr_input_mouse_callback_t callback_mouse_input;
-    rlr_log_callback_t callback_log;
 
     //timing
     double last_time;

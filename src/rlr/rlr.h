@@ -12,6 +12,7 @@ typedef struct rlr_statistics_t {
 } rlr_statistics_t;
 
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags);
+void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags, rlr_log_callback_t log_callback, bool log_callback_add_new_line);
 
 bool rlr_update();
 void rlr_free();
@@ -26,7 +27,7 @@ void rlr_set_input_user(void* user);
 void rlr_set_log_user(void* user);
 void rlr_set_mouse_input_callback(rlr_input_mouse_callback_t func);
 void rlr_set_key_input_callback(rlr_input_key_callback_t func);
-void rlr_set_log_callback(rlr_log_callback_t func);
+void rlr_set_log_callback(rlr_log_callback_t func, bool add_new_line);
 
 //screen / world convertions
 bool rlr_screen_pos_to_ground(rlr_vec2_t mouse_pos, rlr_vec3_t* out_position);

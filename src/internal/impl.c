@@ -21,6 +21,8 @@
 #include "impl.h"
 
 static rlr_t* ctx = NULL;
+rlr_log_callback_t ctx_callback_log = NULL;
+bool ctx_callback_log_add_newline = true;
 
 rlr_vec2_t rlr_quad_vertices[4] = {
     rlr_vec2(0, 0),
@@ -75,6 +77,16 @@ static void rlr_set_framebuffer_size() {
 }
 
 void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags) {
+    rlr_init_ext(title, window_width, window_height, flags, _rlr_log_default_callback, true);
+}
+
+void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags, rlr_log_callback_t log_callback, bool log_callback_add_new_line) {
+
+    //setup logging
+    ctx_callback_log = log_callback;
+    ctx_callback_log_add_newline = log_callback_add_new_line;
+
+    //allocate
     ctx = malloc(sizeof(rlr_t));
     if(!ctx) {
         rlr_log_error("could not allocate memory for the rlr context");
@@ -116,6 +128,7 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {
         rlr_res_uniform_t* ubo = rlr()->ubos[i];
         if(ubo == NULL) {
+            rlr_log_error("could not initialize internal uniform buffer objects");
             goto err;
         }
         rlr_res_uniform_bind(ubo, i);
@@ -128,9 +141,16 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
         rlr_pipeline_model_init,
         rlr_pipeline_input_init,
     };
+    const char* pipeline_names[4] = {
+        "ui",
+        "stencil",
+        "model",
+        "input"
+    };
     for(size_t i = 0; i < sizeof(pipeline_init_functions) / sizeof(pipeline_init_functions[0]); i++) {
         rlr_pipeline_init_function_t pipeline_init = pipeline_init_functions[i];
         if(!pipeline_init()) {
+            rlr_log_error("could not initialize the %s pipeline", pipeline_names[i]);
             goto err;
         }
     }
@@ -139,14 +159,22 @@ void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, 
     rlr_set_framebuffer_size();
 
     //setup default values
-    ctx->callback_log = _rlr_log_default_callback;
     rlr_backend()->set_clear_color(0.0, 0.0, 0.0, 1.0);
     ctx->last_time = glfwGetTime();
 
     //setup default resources
     ctx->texture_white = rlr_res_texture_default();
     ctx->cube_map_white = rlr_res_cube_map_default();
+    if(!ctx->texture_white) {
+        rlr_log_error("could not create the default white texture");
+        goto err;
+    }
+    if(!ctx->cube_map_white) {
+        rlr_log_error("could not create the default white cube map texture");
+        goto err;
+    }
     rlr_res_cube_map_bind(ctx->cube_map_white, 4);
+    rlr_log("initialized rlr");
     return;
 err:
     rlr_free();
@@ -279,8 +307,9 @@ void rlr_set_key_input_callback(rlr_input_key_callback_t func) {
     ctx->callback_key_input = func;
 }
 
-void rlr_set_log_callback(rlr_log_callback_t func) {
-    ctx->callback_log = func;
+void rlr_set_log_callback(rlr_log_callback_t func, bool add_new_line) {
+    ctx_callback_log = func;
+    ctx_callback_log_add_newline = add_new_line;
 }
 
 rlr_vec2_t rlr_get_mouse_position() {
@@ -335,9 +364,13 @@ void _rlr_log(const char* file, uint64_t line, rlr_log_level_t log_level, const 
     va_start(args, format);
     size_t len = vsnprintf(string, sizeof(string), format, args);
     va_end(args);
-    string[len] = '\n';
-    string[len+1] = 0;
-    ctx->callback_log(log_level, string, file, line, ctx->log_user);
+    if(ctx_callback_log_add_newline) {
+        string[len] = '\n';
+        string[len+1] = 0;
+    } else {
+        string[len] = 0;
+    }
+    ctx_callback_log(log_level, string, file, line, ctx->log_user);
 }
 
 bool rlr_update() {
