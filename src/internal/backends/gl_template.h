@@ -785,12 +785,14 @@ static void fill_gpu_capabilities() {
     #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
     caps.supports_bc1_bc3 = gl->EXT_texture_compression_s3tc;
     caps.supports_bc1_bc3_srgb = gl->EXT_texture_compression_s3tc && gl->EXT_texture_sRGB;
+    caps.supports_bc7 = gl->ARB_texture_compression_bptc;
     caps.supports_bc4_bc5 = true;
     #endif
     #ifdef GL_IMPLEMENTATION_TEMPLATE_GLES
     caps.supports_bc4_bc5 = gl->EXT_texture_compression_rgtc;
     caps.supports_bc1_bc3 = gl->EXT_texture_compression_s3tc;
     caps.supports_bc1_bc3_srgb = caps.supports_bc1_bc3 && gl->EXT_texture_compression_s3tc_srgb;
+    caps.supports_bc7 = false;
     #endif
 }
 

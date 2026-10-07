@@ -113,6 +113,18 @@ void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_heig
         rlr_log_error("could not find a suitable backend");
         goto err;
     }
+
+    //print gpu capabilities
+    rlr_gpu_capabilities_t caps = ctx->backend->get_gpu_capabilities();
+    rlr_log_debug(
+        "gpu capabilities\n\tsupports_bc1_bc3\t%s\n\tsupports_bc1_bc3_srgb\t%s\n\tsupports_bc4_bc5\t%s\n\tsupports_bc7\t\t%s",
+        caps.supports_bc1_bc3 ? "yes" : "no",
+        caps.supports_bc1_bc3_srgb ? "yes" : "no",
+        caps.supports_bc4_bc5 ? "yes" : "no",
+        caps.supports_bc7 ? "yes" : "no"
+    );
+
+    //setup callbacks and swap interval
     glfwSwapInterval((RLR_INIT_FLAG_VSYNC & flags) == RLR_INIT_FLAG_VSYNC ? 1 : 0);
     glfwSetMouseButtonCallback(ctx->window, _rlr_mouse_button_callback);
     glfwSetKeyCallback(ctx->window, _rlr_key_callback);

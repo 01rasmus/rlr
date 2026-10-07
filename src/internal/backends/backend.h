@@ -71,6 +71,7 @@ typedef struct rlr_gpu_capabilities_t {
     int32_t supports_bc1_bc3;
     int32_t supports_bc1_bc3_srgb;
     int32_t supports_bc4_bc5;
+    int32_t supports_bc7;
 } rlr_gpu_capabilities_t;
 
 #define RLR_BACKEND_FUNCTIONS(X) \
