@@ -1,5 +1,13 @@
 <h1 align="center">RL Render 👾</h1>
-<p align="center">A simplistic graphics renderer</p>
+<h3><p align="center">A graphics renderer for the past</p></h3>
+<p align="center">
+    <a href="https://www.techpowerup.com/gpu-specs/ati-radeon-hd-2600-pro-gddr3.b1713">
+        <img src="docs/radeonhd2600pro.jpg" width="300" alt="ATI Radeon HD 2600 Pro">
+    </a>
+    <br>
+    <sub><i>ATI Radeon HD 2600 Pro,
+    used for legacy hardware compatibility testing.</i></sub>
+</p>
 
 ## Features
 - **Multiple Backends**<br>
