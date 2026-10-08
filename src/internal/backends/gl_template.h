@@ -777,7 +777,101 @@ static bool validate_backend() {
     return true;
 }
 
-static void fill_gpu_capabilities() {
+static int32_t get_free_vram_kib() {
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+
+    //check with GL_ATI_meminfo
+    if(gl->ATI_meminfo) {
+        int32_t free_mem[4] = {0};
+        GL_CALL(gl->GetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, free_mem));
+        return free_mem[0];
+    }
+
+    //else check with GL_NVX_gpu_memory_info
+    if(gl->NVX_gpu_memory_info) {
+        int32_t free_mem = 0;
+        GL_CALL(gl->GetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &free_mem));
+        return free_mem;
+    }
+
+    //else it didn't support memory usage query
+    return 0;
+    #else
+    return 0;
+    #endif
+}
+
+#define DUMMY_TEXTURE_SIZE  1024
+static uint8_t dummy_texture[DUMMY_TEXTURE_SIZE * DUMMY_TEXTURE_SIZE];
+
+static int32_t measure_bc7_texture_size() {
+
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+    rlr_log_debug("memory info capabilities\n\tGL_ATI_meminfo\t\t%s\n\tGL_NVX_gpu_memory_info\t%s", gl->ATI_meminfo ? "yes" : "no", gl->NVX_gpu_memory_info ? "yes" : "no");
+    int32_t vram_free_before = get_free_vram_kib();
+
+    //check if we even got a value back.
+    //if not, we know the extensions
+    //to check for vram usage isn't
+    // supported
+    if(vram_free_before == 0) {
+        return 0;
+    }
+
+    int32_t result = 1;
+    uint32_t tex = 0;
+    GL_CALL(gl->GenTextures(1, &tex));
+    if(tex == 0) {
+        return 0;
+    }
+
+    GL_CALL(gl->BindTexture(GL_TEXTURE_2D, tex));
+    GL_CALL(gl->CompressedTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_COMPRESSED_RGBA_BPTC_UNORM_ARB,
+        DUMMY_TEXTURE_SIZE,
+        DUMMY_TEXTURE_SIZE,
+        0,
+        DUMMY_TEXTURE_SIZE * DUMMY_TEXTURE_SIZE,
+        dummy_texture
+    ));
+    GL_CALL(gl->Finish());
+    int32_t vram_free_after = get_free_vram_kib();
+    int32_t approx_texture_size = (vram_free_before - vram_free_after) * 1024;
+    int32_t expected_size = DUMMY_TEXTURE_SIZE * DUMMY_TEXTURE_SIZE;
+    int32_t diff = abs(approx_texture_size - expected_size);
+
+    rlr_log_debug("bc7 texture measurement\n\ttexture size\t%d\n\texpected size\t%d\n\tdiff size\t%d", approx_texture_size, expected_size, diff);
+    if(diff > (1024 * 256)) {
+        result = 0;
+    }
+
+    GL_CALL(gl->DeleteTextures(1, &tex));
+    return result;
+    #else
+    return 0;
+    #endif
+}
+
+static int32_t check_bc7_texture_capability(bool supports_max_gl) {
+    #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+
+    //first check the size of a bc7 texture
+    if(gl->ATI_meminfo || gl->NVX_gpu_memory_info) {
+        return measure_bc7_texture_size();
+    }
+
+    //if that fails we check the maximum opengl version
+    //if it's 4.6(max gl), we have a quite good
+    //confidence that it's natively supported
+    return supports_max_gl;
+    #else
+    return 0;
+    #endif
+}
+
+static void fill_gpu_capabilities(bool supports_max_gl) {
     //reset
     memset(&caps, 0, sizeof(rlr_gpu_capabilities_t));
 
@@ -794,13 +888,21 @@ static void fill_gpu_capabilities() {
     caps.supports_bc1_bc3_srgb = caps.supports_bc1_bc3 && gl->EXT_texture_compression_s3tc_srgb;
     caps.supports_bc7 = false;
     #endif
+
+    //mesa can say that this extension is supported
+    //but internally it could be converted to a normal
+    //uncompressed texture. let's check that the compression
+    //really does make a compressed image
+    if(caps.supports_bc7) {
+        caps.supports_bc7 = check_bc7_texture_capability(supports_max_gl);
+    }
 }
 
 static rlr_gpu_capabilities_t gl_get_gpu_capabilities() {
     return caps;
 }
 
-rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
+rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader, bool supports_max_gl) {
     rlr_backend_t* backend = NULL;
     gl = malloc(sizeof(glad_context_t));
     if(!gl) {
@@ -837,7 +939,7 @@ rlr_backend_t* GL_TEMPLATE_ENTRY(rlr_backend_loader_t proc_loader) {
     snprintf(gpu_name, 256, "%s %s", gpu_vendor, gpu_renderer);
 
     //set capabilities
-    fill_gpu_capabilities();
+    fill_gpu_capabilities(supports_max_gl);
 
     GL_CALL(gl->Enable(GL_CULL_FACE));
     GL_CALL(gl->CullFace(GL_BACK));

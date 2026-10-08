@@ -22,6 +22,11 @@ rlr_res_texture_t* rlr_res_texture_load_ext(const char* texture_path, bool use_s
         goto err;
     }
 
+    if(w % 4 != 0 || h % 4 != 0) {
+        rlr_log_error("texture \"%s\"'s size(%dx%d) has a side that is not divisible by 4", texture_path, w, h);
+        goto err;
+    }
+
     rlr_res_texture_t* texture = rlr_res_texture_load_from_memory(data, w, h, channels, use_srgb_color_space, filter, may_compress);
     if(!texture) {
         rlr_log_error("could not load texture \"%s\"", texture_path);
@@ -38,6 +43,11 @@ err:
 
 rlr_res_texture_t* rlr_res_texture_load_from_memory(const uint8_t* data, uint32_t width, uint32_t height, uint32_t channels, bool use_srgb_color_space, rlr_res_texture_filter_t filter, bool may_compress) {
     rlr_res_texture_t* texture = NULL;
+
+    if(width % 4 != 0 || height % 4 != 0) {
+        rlr_log_error("texture size(%dx%d) has a side that is not divisible by 4", width, height);
+        goto err;
+    }
 
     texture = malloc(sizeof(rlr_res_texture_t));
     if(!texture) {
@@ -141,6 +151,11 @@ rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
     data = stbi_load_from_memory(texture_data, size, &w, &h, &channels, 0);
     if(!data) {
         rlr_log_error("failed to parse glb texture");
+        goto err;
+    }
+
+    if(w % 4 != 0 || h % 4 != 0) {
+        rlr_log_error("glb model \"%s\"'s base texture size(%dx%d) has a side that is not divisible by 4", "unknown", w, h);
         goto err;
     }
 
