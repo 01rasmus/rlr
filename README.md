@@ -10,6 +10,8 @@ The renderer chooses either ___OpenGL 3.3___ or ___OpenGL ES 3.0___ dynamically 
 It is used together with texture atlases generated from [Chlumsky's atlas gen](https://github.com/Chlumsky/msdf-atlas-gen). The engine loads in the .csv file with the glyph data, and then the texture atlas image. It uses [stb image](https://github.com/nothings/stb/blob/master/stb_image.h) to load the image. Only the ___MTSDF___ variant is supported.
 - **Texture Atlases**  
 Texture atlases can be stitched together automatically by declaring the images in a list. with the help of [stb rect pack](https://github.com/nothings/stb/blob/master/stb_rect_pack.h) and [stb image](https://github.com/nothings/stb/blob/master/stb_image.h) the images will be loaded and inserted into a single texture, whilst also creating texture atlas tile handles into the locations declared in that same list.
+- **Texture Compression**  
+For textures that hint compression, BC4(R textures), BC5(RG textures), BC1(RGB textures), BC3(RGBA textures) and BC7(RGB or RGBA textures) might be used depending on hardware support to compress the texture. BC1, BC3, BC4 and BC4 use [stb dxt](https://github.com/nothings/stb/blob/master/stb_dxt.h) whilst, [bc7enc](https://github.com/richgel999/bc7enc) is used for BC7. BC7 is prefered, but if the hardware does not support it, BC3 or BC1 will be used. If the graphics card does not support compression at all, the normal uncompressed path will be taken. The textures that are loaded are still loaded with [stb image](https://github.com/nothings/stb/blob/master/stb_image.h) which means that they are compressed at runtime to make asset loading simple. Since texture compression takes time, the final texture is cached and will be loaded from disk the next time it's trying to compress the same texture.
 - **GPU Skinning**<br>
 The poses of the animations are prebaked and uploaded to the gpu as a texture to make it possible to do gpu skinning. Alternatively, the poses can be preblended on the CPU and uploaded to an UBO buffer before the model is being drawn to avoid texture fetches and blending in the vertex shader.
 
@@ -18,7 +20,9 @@ The libraries are mainly single header libraries to try to minimize the complexi
 - [cgltf](https://github.com/jkuhlmann/cgltf)
 - [glad](https://gen.glad.sh/)
 - [glfw](https://github.com/glfw/glfw)
+- [bc7enc](https://github.com/richgel999/bc7enc)
 - [stb_ds.h](https://github.com/nothings/stb/blob/master/stb_ds.h)
+- [stb_dxt.h](https://github.com/nothings/stb/blob/master/stb_dxt.h)
 - [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h)
 - [stb_image_resize2.h](https://github.com/nothings/stb/blob/master/stb_image_resize2.h)
 - [stb_rect_pack.h](https://github.com/nothings/stb/blob/master/stb_rect_pack.h)
@@ -35,16 +39,3 @@ sudo apt install cmake gcc pkg-config libgl1-mesa-dev libwayland-dev libxrandr-d
 
 ## How to Build
 The library is built with cmake.
-
-## How to Generate a Font
-Using [msdf-atlas-gen](https://github.com/Chlumsky/msdf-atlas-gen) the following example can be used to generate a compatible font
-```
-msdf-atlas-gen -font font.ttf -type mtsdf -format png -pots -pxrange 2 -imageout font.png -csv font.csv -charset charset.txt
-```
-The important thing is that the output glyph information file is a `.csv` file and that the output uses unicode codepoints(which it does if -charset is declared). [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h) is used to load the image part of the font. The pxrange should be noted, since it is used when loading the font(and used when rendering).
-
-The `charset.txt` must include the unicode points that should be in the final font atlas/csv.
-To just get all of them, `charset.txt` could include the follow:
-```
-[0x0, 0xFFFF]
-```
