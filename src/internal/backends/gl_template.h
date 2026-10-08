@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stb_image_resize2.h>
 #include <stb_dxt.h>
+#include <bc7enc.h>
 #include "../impl.h"
 #include "backend.h"
 
@@ -116,11 +117,23 @@ static int32_t texture_internal_format_compressed(int32_t channels, bool srgb) {
             return GL_COMPRESSED_RED_RGTC1;
         case 2:
             return GL_COMPRESSED_RG_RGTC2;
-        case 3:
+        case 3: {
+            #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+            if(caps.supports_bc7) {
+                return srgb ? GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB : GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+            }
+            #endif
             return srgb ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+        }
         case 4:
-        default:
+        default: {
+            #ifdef GL_IMPLEMENTATION_TEMPLATE_GL
+            if(caps.supports_bc7) {
+                return srgb ? GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB : GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+            }
+            #endif
             return srgb ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+        }
     }
 }
 
@@ -200,8 +213,8 @@ static uint64_t gl_create_texture(const uint8_t* color_data, uint32_t width, uin
 }
 
 static size_t compressed_texture_size(uint32_t width, uint32_t height, int32_t channels) {
-    size_t block_size = (channels == 4 || channels == 2) ? 16 : 8;
-    size_t blocks_x = ((size_t)width  + 3) / 4;
+    size_t block_size = (channels == 4 || channels == 2 || (caps.supports_bc7 && channels == 3)) ? 16 : 8;
+    size_t blocks_x = ((size_t)width + 3) / 4;
     size_t blocks_y = ((size_t)height + 3) / 4;
     return blocks_x * blocks_y * (size_t)block_size;
 }
@@ -221,12 +234,25 @@ static void compress_block(uint8_t* dest, const uint8_t* src, size_t channels) {
                 src_converted[j++] = src[i + 0];
                 src_converted[j++] = src[i + 1];
                 src_converted[j++] = src[i + 2];
-                src_converted[j++] = 0;
+                src_converted[j++] = 255;
             }
-            stb_compress_dxt_block(dest, src_converted, 0, STB_DXT_HIGHQUAL);
+
+            if(caps.supports_bc7) {
+                bc7enc_compress_block_params params = {0};
+                bc7enc_compress_block_params_init(&params);
+                bc7enc_compress_block(dest, src_converted, &params);
+            } else {
+                stb_compress_dxt_block(dest, src_converted, 0, STB_DXT_HIGHQUAL);
+            }
             break;
         case 4:
-            stb_compress_dxt_block(dest, src, 1, STB_DXT_HIGHQUAL);
+            if(caps.supports_bc7) {
+                bc7enc_compress_block_params params = {0};
+                bc7enc_compress_block_params_init(&params);
+                bc7enc_compress_block(dest, src, &params);
+            } else {
+                stb_compress_dxt_block(dest, src, 1, STB_DXT_HIGHQUAL);
+            }
             break;
         default:
             break;
@@ -241,10 +267,14 @@ static uint8_t* compress_texture(const uint8_t* orig, size_t compressed_size, si
         goto err;
     }
 
-    size_t block_size = (channels == 4 || channels == 2) ? 16 : 8;
+    if(caps.supports_bc7) {
+        bc7enc_compress_block_init();
+    }
+
+    size_t block_size = (channels == 4 || channels == 2 || (caps.supports_bc7 && channels == 3)) ? 16 : 8;
     uint8_t* dst = ptr;
-    for (size_t y = 0; y < height; y += 4) {
-        for (size_t x = 0; x < width; x += 4) {
+    for (size_t y = 0; y < height; y += block_len) {
+        for (size_t x = 0; x < width; x += block_len) {
 
             for(size_t row = 0; row < block_len; row++) {
                 size_t copy_amount = channels * block_len;
@@ -274,7 +304,7 @@ static uint64_t gl_create_compressed_texture(const uint8_t* color_data, uint32_t
     } else if(channels <= 4 && !use_srgb_color_space && !caps.supports_bc1_bc3) {
         return gl_create_texture(color_data, width, height, channels, use_srgb_color_space, filter_min, filter_mag, wrap_s, wrap_t);
     }
-    
+
     uint32_t texture = 0;
     gl->GenTextures(1, &texture);
     if(texture == 0) {
