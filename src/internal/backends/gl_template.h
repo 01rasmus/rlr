@@ -96,7 +96,6 @@ static uint64_t statistic_draw_call_count = 0;
 
 static char gpu_name[256] = { 0 };
 static float current_height = 0.0;
-static uint64_t current_textures[16] = {0};
 static uint64_t current_shader = 0;
 
 static bool texture_filter_uses_mipmaps(int32_t filter) {
@@ -461,12 +460,8 @@ static void gl_copy_sub_texture(uint64_t texture, uint32_t u, uint32_t v, uint32
 }
 
 static void gl_bind_texture(uint64_t texture, rlr_backend_texture_type_t type, uint8_t texture_slot) {
-    if(current_textures[texture_slot] == texture) {
-        return;
-    }
     GL_CALL(gl->ActiveTexture(GL_TEXTURE0 + texture_slot));
     GL_CALL(gl->BindTexture(type, texture));
-    current_textures[texture_slot] = texture;
 }
 
 static void gl_free_texture(uint64_t texture) {

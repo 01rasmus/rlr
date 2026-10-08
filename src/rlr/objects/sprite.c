@@ -19,7 +19,8 @@ static rlr_rect_t _rlr_obj_sprite_make_instance_rectangle(rlr_anchor_t local_anc
 }
 
 rlr_obj_sprite_t* rlr_obj_sprite_create(rlr_res_texture_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
-    return rlr_obj_sprite_create_ext(texture, rectangle, screen_anchor, local_anchor, layer, rlr_rect(0, 0, texture->width, texture->height), rlr_rect(0, 0, 0, 0));
+    rlr_res_texture_t* tex = texture == NULL ? rlr_default_texture() : texture;
+    return rlr_obj_sprite_create_ext(tex, rectangle, screen_anchor, local_anchor, layer, rlr_rect(0, 0, tex->width, tex->height), rlr_rect(0, 0, 0, 0));
 }
 
 rlr_obj_sprite_t* rlr_obj_sprite_create_from_atlas_tile(rlr_res_texture_atlas_tile_t* tile, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {

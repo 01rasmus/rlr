@@ -308,7 +308,6 @@ void rlr_pipeline_ui_draw() {
 
     rlr_backend()->set_stencil_test(false);
     rlr_backend()->set_blending(true);
-
     rlr_backend()->set_depth_test(false);
     for(uint64_t i = 0; i < rlpp_len(pu->commands); i++) {
         rlr_pipeline_ui_draw_command_t* cmd = &pu->commands[i];
