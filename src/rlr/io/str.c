@@ -4,7 +4,7 @@
 #include "../../internal/impl.h"
 #include "str.h"
 
-int32_t _rlr_io_str_starts_with_any(const char* src, const char** substrings, int32_t substring_count) {
+int32_t _rlr_str_starts_with_any(const char* src, const char** substrings, int32_t substring_count) {
     for(int32_t i = 0; i < substring_count; i++) {
         const char* substring = substrings[i];
         size_t length = strlen(substring);
@@ -15,7 +15,7 @@ int32_t _rlr_io_str_starts_with_any(const char* src, const char** substrings, in
     return -1;
 }
 
-char* rlr_io_str_load_from_file(const char* filepath) {
+char* rlr_str_load_from_file(const char* filepath) {
     char* str = NULL;
     FILE* file = NULL;
 
@@ -53,7 +53,7 @@ err:
     return NULL;
 }
 
-size_t rlr_io_str_cat(char* dest, size_t dest_total_size, const char* src) {
+size_t rlr_str_cat(char* dest, size_t dest_total_size, const char* src) {
     size_t dest_length = 0;
     size_t src_length = strlen(src);
 

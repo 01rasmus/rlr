@@ -96,7 +96,7 @@ rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, floa
         goto err;
     }
 
-    char* csv = rlr_io_str_load_from_file(file_csv);
+    char* csv = rlr_str_load_from_file(file_csv);
     if(!csv) {
         goto err;
     }
@@ -130,7 +130,7 @@ rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, floa
         .font = font,
         .tex = font->texture,
     };
-    if(!rlr_io_csv_parse(_rlr_font_csv_callback, csv, 10, ",", &ctx)) {
+    if(!rlr_csv_parse(_rlr_font_csv_callback, csv, 10, ",", &ctx)) {
         goto err;
     }
 

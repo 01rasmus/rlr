@@ -2,10 +2,10 @@
 #include <stdint.h>
 #include "log.h"
 
-#define RLR_DEBUG   1
 #define RLR_NULL    ((uint64_t)0u)
 
 typedef uint64_t rlr_handle_t;
+typedef struct rlr_t rlr_t;
 
 typedef struct rlr_statistics_t {
     uint64_t draw_call_count;

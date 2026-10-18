@@ -10,7 +10,7 @@
 
 bool csv_parse_row(csv_row_callback_t callback, uint32_t row_index, char* row, const size_t column_count, const char* delimiter, void* user);
 
-bool rlr_io_csv_parse(csv_row_callback_t callback, const char* csv_string, const size_t column_count, const char* delimiter, void* user) {
+bool rlr_csv_parse(csv_row_callback_t callback, const char* csv_string, const size_t column_count, const char* delimiter, void* user) {
     size_t csv_length = strlen(csv_string) + 1;
     char* copied = malloc(csv_length);
     if(!copied) {

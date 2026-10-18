@@ -8,8 +8,8 @@
 #include "shader.h"
 
 rlr_shader_t* rlr_shader_load(const char* file_vertex, const char* file_fragment) {
-    char* string_vertex = rlr_io_str_load_from_file(file_vertex);
-    char* string_fragment = rlr_io_str_load_from_file(file_fragment);
+    char* string_vertex = rlr_str_load_from_file(file_vertex);
+    char* string_fragment = rlr_str_load_from_file(file_fragment);
     if(!string_vertex) {
         rlr_log_error("could not load vertex shader from \"%s\"", file_vertex);
         goto err;
