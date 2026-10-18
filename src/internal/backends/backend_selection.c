@@ -3,7 +3,7 @@
 #include "backend.h"
 #include "../impl.h"
 
-typedef bool (*rlr_backend_selection_function_t)(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title);
+typedef bool (*rlr_backend_selection_function_t)(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title, bool resizable);
 
 static inline bool can_make_gl46() {
     glfwDefaultWindowHints();
@@ -23,12 +23,12 @@ static inline bool can_make_gl46() {
     return true;
 }
 
-static bool try_gl3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title) {
+static bool try_gl3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title, bool resizable) {
     bool supports_gl46 = can_make_gl46();
 
     glfwDefaultWindowHints();
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -58,10 +58,10 @@ err:
     return false;
 }
 
-static bool try_gles3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title) {
+static bool try_gles3(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title, bool resizable) {
     glfwDefaultWindowHints();
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -95,14 +95,14 @@ static rlr_backend_selection_function_t backend_selection_functions[2] = {
     try_gles3,
 };
 
-bool rlr_internal_backend_selection(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title) {
+bool rlr_internal_backend_selection(GLFWwindow** window, rlr_backend_t** backend, GLFWmonitor* monitor, uint32_t width, uint32_t height, const char* title, bool resizable) {
     if(!window || !backend) {
         return false;
     }
 
     for(size_t i = 0; i < sizeof(backend_selection_functions) / sizeof(backend_selection_functions[0]); i++) {
         rlr_backend_selection_function_t try_backend = backend_selection_functions[i];
-        if(try_backend(window, backend, monitor, width, height, title)) {
+        if(try_backend(window, backend, monitor, width, height, title, resizable)) {
             glfwShowWindow(*window);
             return true;
         }

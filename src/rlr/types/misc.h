@@ -22,4 +22,5 @@ typedef enum rlr_setting_animation_evaluation_t {
 typedef enum rlr_init_flag_t {
     RLR_INIT_FLAG_FULLSCREEN    = 0x1,
     RLR_INIT_FLAG_VSYNC         = 0x2,
+    RLR_INIT_FLAG_RESIZABLE     = 0x4
 } rlr_init_flag_t;

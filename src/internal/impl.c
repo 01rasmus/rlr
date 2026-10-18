@@ -158,7 +158,7 @@ int32_t rlr_init_log(const char* title, const char* storage_identifier, rlr_log_
 
     //dynamic backend selection
     GLFWmonitor* monitor = (flags & RLR_INIT_FLAG_FULLSCREEN) > 0 ? glfwGetPrimaryMonitor() : NULL;
-    if(!rlr_internal_backend_selection(&ctx->window, &ctx->backend, monitor, 1024, 768, title)) {
+    if(!rlr_internal_backend_selection(&ctx->window, &ctx->backend, monitor, 1024, 768, title, flags & RLR_INIT_FLAG_RESIZABLE)) {
         rlr_log_error("could not find a suitable backend");
         goto err;
     }
