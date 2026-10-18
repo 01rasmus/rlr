@@ -9,7 +9,7 @@ typedef struct callback_ctx_t {
     rlr_pipeline_ui_draw_command_t* cmd;
 } callback_ctx_t;
 
-static void generate_instance_data(rlr_res_texture_t* texture, bool visible, rlr_nine_patch_t nine_patch, rlr_rect_t rect, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, void* user, void (*on_instance)(uint8_t index, rlr_instance_data_ui_t data, void* user)) {
+static void generate_instance_data(rlr_tex_t* texture, bool visible, rlr_nine_patch_t nine_patch, rlr_rect_t rect, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, void* user, void (*on_instance)(uint8_t index, rlr_instance_data_ui_t data, void* user)) {
 
     //rectangle coordinates
     float x0 = 0.0;
@@ -88,7 +88,7 @@ static void callback_instance_update(uint8_t index, rlr_instance_data_ui_t data,
     *instance = data;
 }
 
-rlr_obj_nine_patch_t* rlr_obj_nine_patch_create(rlr_res_texture_t* texture, rlr_nine_patch_t nine_patch, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
+rlr_obj_nine_patch_t* rlr_obj_nine_patch_create(rlr_tex_t* texture, rlr_nine_patch_t nine_patch, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
     rlr_obj_nine_patch_t* np = malloc(sizeof(rlr_obj_nine_patch_t));
     if(!np) {
         goto err;

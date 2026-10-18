@@ -57,11 +57,11 @@ bool rlr_pipeline_stencil_init() {
         goto err;
     }
 
-    ps->shader = rlr_res_shader_create(stencil_vertex, stencil_fragment);
+    ps->shader = rlr_shader_load_mem(stencil_vertex, stencil_fragment);
     if(!ps->shader) {
         goto err;
     }
-    rlr_res_shader_bind_uniform_slot(ps->shader, "inv_screen_size", RLR_INTERNAL_UBO_UI);
+    rlr_shader_bind_ubo_slot(ps->shader, "inv_screen_size", RLR_INTERNAL_UBO_UI);
 
     rlr_backend()->bind_vertex_array(ps->vao);
     rlr_backend()->bind_buffer(ps->vbo, RLR_BACKEND_BUFFER_ARRAY);
@@ -102,7 +102,7 @@ void rlr_pipeline_stencil_draw() {
     rlr_backend()->set_stencil_func(RLR_BACKEND_STENCIL_FUNC_ALWAYS, 1, 0xFF);
     rlr_backend()->set_stencil_op(RLR_BACKEND_STENCIL_OP_KEEP, RLR_BACKEND_STENCIL_OP_KEEP, RLR_BACKEND_STENCIL_OP_REPLACE);
 
-    rlr_res_shader_bind(ps->shader);
+    rlr_shader_bind(ps->shader);
     rlr_backend()->bind_vertex_array(ps->vao);
     rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U16, ps->visible_occluder_instances);
 
@@ -120,7 +120,7 @@ void rlr_pipeline_stencil_deinit() {
         return;
     }
 
-    rlr_res_shader_free(ps->shader);
+    rlr_shader_free(ps->shader);
     rlr_backend()->free_vertex_array(ps->vao);
     rlr_backend()->free_buffer(ps->vbo);
     rlr_backend()->free_buffer(ps->ebo);

@@ -6,7 +6,7 @@
 #include "res_types.h"
 #include "../impl.h"
 
-cgltf_data* rlr_res_model_load_glb(const char* filename) {
+cgltf_data* rlr_mdl_load_glb(const char* filename) {
     cgltf_options options = {0};
     cgltf_data* data = NULL;
     cgltf_result result = cgltf_parse_file(&options, filename, &data);
@@ -34,17 +34,17 @@ err:
     return NULL;
 }
 
-bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_uniform_t** out_material_ubo, rlr_res_texture_t** out_base_texture) {
+bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_ubo_t** out_material_ubo, rlr_tex_t** out_base_texture) {
     if(!out_material_ubo || !out_base_texture) {
         goto err;
     }
 
-    rlr_res_texture_t* tex = NULL;
-    rlr_res_uniform_t* ubo = NULL;
+    rlr_tex_t* tex = NULL;
+    rlr_ubo_t* ubo = NULL;
 
-    rlr_res_material_t mat;
+    rlr_material_t mat;
     if(material) {
-        tex = rlr_res_texture_load_cgltf_base(material->pbr_metallic_roughness.base_color_texture.texture);
+        tex = rlr_tex_load_cgltf_albedo(material->pbr_metallic_roughness.base_color_texture.texture);
         float roughness = material->pbr_metallic_roughness.roughness_factor;
         memcpy(mat.color, material->pbr_metallic_roughness.base_color_factor, sizeof(float) * 4);
         mat.shininess = 4.0 + powf(1.0 - roughness, 2.0) * 124.0;
@@ -57,7 +57,8 @@ bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_unifor
         mat.specular_strength = 0.2;
         mat.reflectiveness = 0.0;
     }
-    ubo = rlr_res_uniform_create_static(&mat, sizeof(mat));
+
+    ubo = rlr_ubo_create(&mat, sizeof(mat), true);
     if(ubo == NULL) {
         goto err;
     }
@@ -66,7 +67,7 @@ bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_res_unifor
     *out_base_texture = tex;
     return true;
 err:
-    rlr_res_uniform_free(ubo);
-    rlr_res_texture_free(tex);
+    rlr_ubo_free(ubo);
+    rlr_tex_free(tex);
     return false;
 }

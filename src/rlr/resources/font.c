@@ -9,8 +9,8 @@
 #include "font.h"
 
 typedef struct rlr_res_font_load_context_t {
-    rlr_res_font_t* font;
-    rlr_res_texture_t* tex;
+    rlr_font_t* font;
+    rlr_tex_t* tex;
 } rlr_res_font_load_context_t;
 
 void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, void* user) {
@@ -68,7 +68,7 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
         return;
     }
 
-    hmputs(ctx->font->glyphs, ((rlr_res_font_glyph_t) {
+    hmputs(ctx->font->glyphs, ((rlr_font_glyph_t) {
         .key = unicode,
         .font = ctx->font,
         .advance = advance,
@@ -83,16 +83,20 @@ void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, vo
     }));
 }
 
-rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atlas_path, float px_range, rlr_res_font_t** fallback_fonts, size_t fallback_font_count) {
-    rlr_res_font_t* font = NULL;
+rlr_font_t* rlr_font_load(const char* file_csv, const char* file_tex, float px_range) {
+    return rlr_font_load_flbks(file_csv, file_tex, px_range, NULL, 0);
+}
 
-    font = malloc(sizeof(rlr_res_font_t));
+rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, float px_range, rlr_font_t** fallback_fonts, size_t fallback_font_count) {
+    rlr_font_t* font = NULL;
+
+    font = malloc(sizeof(rlr_font_t));
     if(!font) {
         rlr_log_error("pointer to the font handle is null");
         goto err;
     }
 
-    char* csv = rlr_io_str_load_from_file(csv_path);
+    char* csv = rlr_io_str_load_from_file(file_csv);
     if(!csv) {
         goto err;
     }
@@ -102,11 +106,11 @@ rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atla
     font->vertical_offset = 0.0;
     font->size_scale = 1.0;
     font->px_range = px_range;
-    font->texture = RLR_NULL;
+    font->texture = NULL;
     font->glyphs = NULL;
 
     //malloc fallback fonts
-    font->fallback_fonts = malloc(sizeof(rlr_res_font_t) * fallback_font_count);
+    font->fallback_fonts = malloc(sizeof(rlr_font_t) * fallback_font_count);
     if(!font->fallback_fonts) {
         goto err;
     }
@@ -116,7 +120,8 @@ rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atla
 
     //msdf textures need to use normal linear filtering (dont use mipmap filtering)
     //they should not be compressed either
-    font->texture = rlr_res_texture_load_ext(texture_atlas_path, false, RLR_RES_TEXTURE_FILTER_LINEAR, false);
+    font->texture = rlr_tex_load(file_tex, RLR_TEX_FILTER_LINEAR, 0);
+
     if(!font->texture) {
         font->texture = rlr_default_texture();
     }
@@ -130,23 +135,23 @@ rlr_res_font_t* rlr_res_font_load(const char* csv_path, const char* texture_atla
     }
 
     free(csv);
-    rlr_log("loaded mtsdf font\n\tmeta:\t%s\n\tatlas:\t%s", csv_path, texture_atlas_path);
+    rlr_log("loaded mtsdf font\n\tmeta:\t%s\n\tatlas:\t%s", file_csv, file_tex);
     return font;
 err:
     free(csv);
-    rlr_res_font_free(font);
+    rlr_font_free(font);
     return NULL;
 }
 
-void rlr_res_font_set_vertical_offset(rlr_res_font_t* font, float vertical_offset_fraction) {
+void rlr_font_set_vertical_offset(rlr_font_t* font, float vertical_offset_fraction) {
     font->vertical_offset = vertical_offset_fraction;
 }
 
-void rlr_res_font_set_size_scale(rlr_res_font_t* font, float scale) {
+void rlr_font_set_size_scale(rlr_font_t* font, float scale) {
     font->size_scale = scale;
 }
 
-rlr_vec2_t rlr_res_font_measure(rlr_res_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...) {
+rlr_vec2_t rlr_font_measure(rlr_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...) {
     rlr_vec2_t size = {0};
     if(!rlr_word_generate(font, &size, text_size, rectangle, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, RLR_ANCHOR_TOP_LEFT, RLR_ANCHOR_TOP_LEFT, NULL, format, NULL)) {
         return (rlr_vec2_t){0};
@@ -154,8 +159,8 @@ rlr_vec2_t rlr_res_font_measure(rlr_res_font_t* font, rlr_rect_t rectangle, floa
     return size;
 }
 
-const rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_font_t* font, uint32_t unicode, uint32_t* out_font_index) {
-    const rlr_res_font_glyph_t* glyph = hmgetp_null(font->glyphs, unicode);
+const rlr_font_glyph_t* rlr_font_get_glyph(rlr_font_t* font, uint32_t unicode, uint32_t* out_font_index) {
+    const rlr_font_glyph_t* glyph = hmgetp_null(font->glyphs, unicode);
     if(glyph) {
         *out_font_index = 0;
         return glyph;
@@ -173,15 +178,15 @@ const rlr_res_font_glyph_t* rlr_res_font_get_glyph(rlr_res_font_t* font, uint32_
     return NULL;
 }
 
-int32_t rlr_res_font_get_glyph_count(const rlr_res_font_t* font) {
+int32_t rlr_font_get_glyph_count(const rlr_font_t* font) {
     return hmlen(font->glyphs);
 }
 
-void rlr_res_font_free(rlr_res_font_t* font) {
+void rlr_font_free(rlr_font_t* font) {
     if(!font) {
         return;
     }
-    rlr_res_texture_free(font->texture);
+    rlr_tex_free(font->texture);
     hmfree(font->glyphs);
     free(font->fallback_fonts);
     free(font);

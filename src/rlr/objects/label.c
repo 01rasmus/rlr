@@ -45,13 +45,13 @@ static void remove_instances(rlr_obj_label_t* label) {
     }
 }
 
-rlr_obj_label_t* rlr_obj_label_create(rlr_rect_t rect, float size, uint32_t layer, const char* text, rlr_res_font_t* font_id) {
+rlr_obj_label_t* rlr_obj_label_create(rlr_rect_t rect, float size, uint32_t layer, const char* text, rlr_font_t* font_id) {
     return rlr_obj_label_create_ext(rect, size, layer, font_id, RLR_ANCHOR_TOP_LEFT, RLR_ANCHOR_TOP_LEFT, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, text);
 }
 
-rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size, uint32_t layer, rlr_res_font_t* font, rlr_anchor_t screen_anchor, rlr_anchor_t local_anhor, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, const char* format, ...) {
+rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size, uint32_t layer, rlr_font_t* font, rlr_anchor_t screen_anchor, rlr_anchor_t local_anhor, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, const char* format, ...) {
     rlr_obj_label_t* label = malloc(sizeof(rlr_obj_label_t));
-    rlr_res_shader_t* text_shader = rlr_pipeline_ui_get_text_shader();
+    rlr_shader_t* text_shader = rlr_pipeline_ui_get_text_shader();
     if(label == NULL  || font == NULL || text_shader == NULL) {
         goto err;
     }

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "../math/anchor.h"
 #include "../math/rect.h"
-#include "../def.h"
+#include "../types/res.h"
 
 typedef struct rlr_obj_model_occluder_t rlr_obj_model_occluder_t;
 

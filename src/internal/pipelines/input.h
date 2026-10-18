@@ -3,7 +3,9 @@
 #include "../../external/rlpp.h"
 #include "../../rlr/math/anchor.h"
 #include "../../rlr/math/rect.h"
-#include "../../rlr/def.h"
+#include "../../rlr/types/res.h"
+#include "../../rlr/types/obj.h"
+#include "../../rlr/types/input.h"
 
 typedef struct rlr_pipeline_input_mouse_area_t {
     rlpp_id_t id;

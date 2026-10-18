@@ -1,9 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include "math/vec.h"
-
-#define RLR_DEBUG   1
-#define RLR_NULL    ((uint64_t)0u)
+#include "../math/vec.h"
 
 #define RLR_INPUT_ACTION_RELEASE        0
 #define RLR_INPUT_ACTION_PRESS          1
@@ -149,47 +146,9 @@
 #define RLR_INPUT_KEY_MENU              348
 #define RLR_INPUT_KEY_LAST              GLFW_KEY_MENU
 
-#define RLR_LOG_LEVEL_INFO              0x0
-#define RLR_LOG_LEVEL_WARNING           0x1
-#define RLR_LOG_LEVEL_ERROR             0x2
-#define RLR_LOG_LEVEL_DEBUG             0x3
-
-typedef uint64_t rlr_handle_t;
-typedef uint8_t rlr_log_level_t;
-
-typedef struct rlr_res_animated_model_t rlr_res_animated_model_t;
-typedef struct rlr_res_cube_map_t rlr_res_cube_map_t;
-typedef struct rlr_res_font_t rlr_res_font_t;
-typedef struct rlr_res_shader_t rlr_res_shader_t;
-typedef struct rlr_res_static_model_t rlr_res_static_model_t;
-typedef struct rlr_res_texture_atlas_t rlr_res_texture_atlas_t;
-typedef struct rlr_res_texture_atlas_tile_t rlr_res_texture_atlas_tile_t;
-typedef struct rlr_res_texture_t rlr_res_texture_t;
-typedef struct rlr_res_uniform_t rlr_res_uniform_t;
-
-typedef struct rlr_obj_animated_model_t rlr_obj_animated_model_t;
-typedef struct rlr_obj_label_t rlr_obj_label_t;
-typedef struct rlr_obj_model_occluder_t rlr_obj_model_occluder_t;
-typedef struct rlr_obj_mouse_input_area_t rlr_obj_mouse_input_area_t;
-typedef struct rlr_obj_nine_patch_t rlr_obj_nine_patch_t;
-typedef struct rlr_obj_sprite_t rlr_obj_sprite_t;
-typedef struct rlr_obj_static_model_t rlr_obj_static_model_t;
-
 typedef void (*rlr_input_key_callback_t)(uint32_t key, uint32_t scancode, uint32_t action, uint32_t mods, void* user);
 typedef void (*rlr_input_mouse_callback_t)(uint32_t button, uint32_t action, uint32_t mods, rlr_vec2_t pos, void* user);
-typedef void (*rlr_log_callback_t)(rlr_log_level_t log_level, const char* log, const char* file, uint64_t line, void* user);
 typedef void (*rlr_input_area_on_enter_t)(void* user);
 typedef void (*rlr_input_area_on_leave_t)(void* user);
 typedef void (*rlr_input_area_on_pressed_t)(void* user);
 typedef void (*rlr_input_area_on_release_t)(void* user);
-
-typedef enum rlr_init_flags_t {
-    RLR_INIT_FLAG_FULLSCREEN = 0x1,
-    RLR_INIT_FLAG_VSYNC = 0x2,
-} rlr_init_flags_t;
-
-typedef enum rlr_setting_animation_evaluation_t {
-    RLR_SETTING_ANIMATION_EVALUATION_AUTOMATIC = 0,
-    RLR_SETTING_ANIMATION_EVALUATION_GPU,
-    RLR_SETTING_ANIMATION_EVALUATION_CPU,
-} rlr_setting_animation_evaluation_t;

@@ -159,13 +159,13 @@ bool rlr_pipeline_ui_init() {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
     (*pu) = (rlr_pipeline_ui_t){0};
     pu->is_sorted = true;
-    pu->shader_sprite = rlr_res_shader_create(sprite_vertex, sprite_fragment);
-    pu->shader_text = rlr_res_shader_create(mtsdf_vertex, mtsdf_fragment);
+    pu->shader_sprite = rlr_shader_load_mem(sprite_vertex, sprite_fragment);
+    pu->shader_text = rlr_shader_load_mem(mtsdf_vertex, mtsdf_fragment);
     if(!pu->shader_sprite || !pu->shader_text) {
         goto err;
     }
-    rlr_res_shader_bind_uniform_slot(pu->shader_sprite, "inv_screen_size", RLR_INTERNAL_UBO_UI);
-    rlr_res_shader_bind_uniform_slot(pu->shader_text, "inv_screen_size", RLR_INTERNAL_UBO_UI);
+    rlr_shader_bind_ubo_slot(pu->shader_sprite, "inv_screen_size", RLR_INTERNAL_UBO_UI);
+    rlr_shader_bind_ubo_slot(pu->shader_text, "inv_screen_size", RLR_INTERNAL_UBO_UI);
 
     pu->quad_vbo = rlr_backend()->create_buffer();
     pu->quad_ebo = rlr_backend()->create_buffer();
@@ -183,7 +183,7 @@ err:
     return false;
 }
 
-static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_res_texture_t* texture, rlr_res_shader_t* shader, uint32_t layer) {
+static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_tex_t* texture, rlr_shader_t* shader, uint32_t layer) {
     rlr_pipeline_ui_draw_command_t command = {0};
     command.instance_data = NULL;
     command.texture = texture;
@@ -209,7 +209,7 @@ static rlr_pipeline_ui_draw_command_t rlr_pipeline_ui_new_command(rlr_res_textur
     return command;
 }
 
-rlr_pipeline_ui_draw_command_t* rlr_pipeline_ui_find_draw_command(rlr_res_texture_t* texture, rlr_res_shader_t* shader, uint32_t layer) {
+rlr_pipeline_ui_draw_command_t* rlr_pipeline_ui_find_draw_command(rlr_tex_t* texture, rlr_shader_t* shader, uint32_t layer) {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
 
     for(size_t i = 0; i < rlpp_len(pu->commands); i++) {
@@ -282,7 +282,7 @@ const rlr_instance_data_ui_t const* rlr_pipeline_ui_get_sprite_instance(uint64_t
     return rlpp_get_unchecked(cmd->instance_data, instance_id);
 }
 
-rlr_res_shader_t* rlr_pipeline_ui_get_text_shader() {
+rlr_shader_t* rlr_pipeline_ui_get_text_shader() {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
     return pu->shader_text;
 }
@@ -315,8 +315,8 @@ void rlr_pipeline_ui_draw() {
         if(instance_len == 0) {
             continue;
         }
-        rlr_res_shader_bind(cmd->shader == NULL ? pu->shader_sprite : cmd->shader);
-        rlr_res_texture_bind(cmd->texture, 0);
+        rlr_shader_bind(cmd->shader == NULL ? pu->shader_sprite : cmd->shader);
+        rlr_tex_bind(cmd->texture, 0);
         rlr_backend()->bind_vertex_array(cmd->vao);
         rlr_backend()->draw_elements_instanced(0, 6, RLR_BACKEND_BUFFER_TYPE_U16, instance_len);
     }
@@ -330,8 +330,8 @@ void rlr_pipeline_ui_deinit() {
         return;
     }
 
-    rlr_res_shader_free(pu->shader_text);
-    rlr_res_shader_free(pu->shader_sprite);
+    rlr_shader_free(pu->shader_text);
+    rlr_shader_free(pu->shader_sprite);
 
     rlr_backend()->free_buffer(pu->quad_vbo);
     rlr_backend()->free_buffer(pu->quad_ebo);

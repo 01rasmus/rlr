@@ -1,9 +1,19 @@
 #pragma once
 #include <stdint.h>
+#include "../types/res.h"
 #include "../math/vec.h"
-#include "../def.h"
 
-typedef struct rlr_res_static_model_t rlr_res_static_model_t;
+/**
+ * @param file_glb The file location to load the static model from
+ * 
+ * @return The pointer to the static model. Returns `NULL` on failure
+ * 
+ * @warning The static model needs to be free with `rlr_sta_mdl_free`
+ * @warning Only binary glTF models are supported
+ */
+rlr_sta_mdl_t* rlr_sta_mdl_load(const char* file_glb);
 
-rlr_res_static_model_t* rlr_res_static_model_load_glb(const char* glb_model_location);
-void rlr_res_static_model_free(rlr_res_static_model_t* model);
+/**
+ * @param model The pointer to the static model to free. If `NULL` is provided, nothing will be done
+ */
+void rlr_sta_mdl_free(rlr_sta_mdl_t* model);

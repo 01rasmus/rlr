@@ -4,45 +4,42 @@
 #include "../rlr.h"
 #include "uniform.h"
 
-rlr_res_uniform_t* rlr_res_uniform_create_dynamic(uint64_t size) {
-    rlr_res_uniform_t* uniform = NULL;
+rlr_ubo_t* rlr_ubo_create(const void* initial_data, size_t data_len, bool is_static) {
+    rlr_ubo_t* uniform = NULL;
 
-    uniform = malloc(sizeof(rlr_res_uniform_t));
+    uniform = malloc(sizeof(rlr_ubo_t));
     if(!uniform) {
         rlr_log_error("pointer to the uniform handle is null");
         goto err;
     }
-    uniform->is_static = false;
-    uniform->max_size = size;
+
+    uniform->is_static = is_static;
+    uniform->len = data_len;
     uniform->buffer = rlr_backend()->create_buffer();
-    rlr_backend()->bind_buffer(uniform->buffer, RLR_BACKEND_BUFFER_UNIFORM);
-    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_UNIFORM, size, NULL, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
-    return uniform;
-err:
-    rlr_res_uniform_free(uniform);
-    return NULL;
-}
-
-rlr_res_uniform_t* rlr_res_uniform_create_static(void* data, uint64_t size) {
-    rlr_res_uniform_t* uniform = NULL;
-
-    uniform = malloc(sizeof(rlr_res_uniform_t));
-    if(!uniform) {
-        rlr_log_error("pointer to the uniform handle is null");
+    if(uniform->buffer == 0) {
+        rlr_log_error("failed to create uniform buffer");
         goto err;
     }
-    uniform->is_static = true;
-    uniform->max_size = size;
-    uniform->buffer = rlr_backend()->create_buffer();
-    rlr_backend()->bind_buffer(uniform->buffer, RLR_BACKEND_BUFFER_UNIFORM);
-    rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_UNIFORM, size, data, RLR_BACKEND_BUFFER_USAGE_STATIC);
+
+    if(uniform->is_static) {
+        if(initial_data == NULL) {
+            rlr_log_error("a static uniform cannot be initialized with null data");
+            goto err;
+        }
+
+        rlr_backend()->bind_buffer(uniform->buffer, RLR_BACKEND_BUFFER_UNIFORM);
+        rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_UNIFORM, uniform->len, initial_data, RLR_BACKEND_BUFFER_USAGE_STATIC);
+    } else if(initial_data) {
+        rlr_backend()->bind_buffer(uniform->buffer, RLR_BACKEND_BUFFER_UNIFORM);
+        rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_UNIFORM, uniform->len, initial_data, RLR_BACKEND_BUFFER_USAGE_DYNAMIC);
+    }
     return uniform;
 err:
-    rlr_res_uniform_free(uniform);
+    rlr_ubo_free(uniform);
     return NULL;
 }
 
-void rlr_res_uniform_update(rlr_res_uniform_t* ubo, uint64_t offset, void* data, uint64_t size) {
+void rlr_ubo_update(rlr_ubo_t* ubo, size_t offset, const void* data, size_t size) {
     if(ubo->is_static) {
         return;
     }
@@ -50,11 +47,11 @@ void rlr_res_uniform_update(rlr_res_uniform_t* ubo, uint64_t offset, void* data,
     rlr_backend()->update_buffer_orphaned(RLR_BACKEND_BUFFER_UNIFORM, size, data);
 }
 
-void rlr_res_uniform_bind(const rlr_res_uniform_t* ubo, uint8_t ubo_slot) {
+void rlr_ubo_bind(const rlr_ubo_t* ubo, uint8_t ubo_slot) {
     rlr_backend()->bind_uniform_buffer(ubo->buffer, ubo_slot);
 }
 
-void rlr_res_uniform_free(rlr_res_uniform_t* ubo) {
+void rlr_ubo_free(rlr_ubo_t* ubo) {
     if(!ubo) {
         return;
     }

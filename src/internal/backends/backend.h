@@ -46,6 +46,16 @@ typedef enum rlr_backend_stencil_func_t {
     RLR_BACKEND_STENCIL_FUNC_ALWAYS      = 0x0207,
 } rlr_backend_stencil_func_t;
 
+typedef enum rlr_backend_filter_type_t {
+    RLR_BACKEND_FILTER_NEAREST           = 0x2600,
+    RLR_BACKEND_FILTER_LINEAR            = 0x2601,
+    RLR_BACKEND_FILTER_LINEAR_MIPMAP     = 0x2703
+} rlr_backend_filter_type_t;
+
+typedef enum rlr_backend_wrap_type_t {
+    RLR_BACKEND_FILTER_CLAMP_TO_EDGE     = 0x812F
+} rlr_backend_wrap_type_t;
+
 typedef enum rlr_backend_stencil_op_t {
     RLR_BACKEND_STENCIL_OP_KEEP         = 0x1E00,
     RLR_BACKEND_STENCIL_OP_ZERO         = 0,
@@ -79,9 +89,6 @@ typedef struct rlr_gpu_capabilities_t {
     X(uint64_t,                 create_texture,                 (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
     X(uint64_t,                 create_compressed_texture,      (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, int32_t filter_min, int32_t filter_mag, int32_t wrap_s, int32_t wrap_t)) \
     X(uint64_t,                 create_buffer,                  ()) \
-    X(uint64_t,                 create_linear_texture,          (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, bool may_compress)) \
-    X(uint64_t,                 create_linear_mipmap_texture,   (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, bool may_compress)) \
-    X(uint64_t,                 create_nearest_texture,         (const uint8_t* color_data, uint32_t width, uint32_t height, int32_t channels, bool use_srgb_color_space, bool may_compress)) \
     X(uint64_t,                 create_cube_map_texture,        (const uint8_t* right, const uint8_t* left, const uint8_t* top, const uint8_t* bottom, const uint8_t* front, const uint8_t* back, uint32_t width, uint32_t height, int32_t channels)) \
     X(uint64_t,                 create_animation_texture,       (rlr_affine_rows_t* matrices, uint32_t matrix_count, uint32_t width)) \
     X(uint64_t,                 create_shader,                  (const char* vertex_shader, const char* fragment_shader, char* error, uint64_t error_size)) \

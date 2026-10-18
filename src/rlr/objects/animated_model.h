@@ -3,11 +3,11 @@
 #include <stdint.h>
 #include "../resources/animated_model.h"
 #include "../math/matrix.h"
-#include "../def.h"
+#include "../types/res.h"
 
 typedef struct rlr_obj_animated_model_t rlr_obj_animated_model_t;
 
-rlr_obj_animated_model_t* rlr_obj_animated_model_create(rlr_res_animated_model_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale);
+rlr_obj_animated_model_t* rlr_obj_animated_model_create(rlr_anm_mdl_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale);
 rlr_vec3_t rlr_obj_animated_model_get_translation(const rlr_obj_animated_model_t* model);
 rlr_quat_t rlr_obj_animated_model_get_rotation(const rlr_obj_animated_model_t* model);
 rlr_vec3_t rlr_obj_animated_model_get_scale(const rlr_obj_animated_model_t* model);

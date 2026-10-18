@@ -2,14 +2,27 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "../../rlr/math/vec.h"
-#include "../../rlr/def.h"
+#include "../types/res.h"
 
-typedef struct rlr_res_animated_model_t rlr_res_animated_model_t;
+/**
+ * @param file_glb The file location of the animated model to load from
+ * 
+ * @return The pointer to the animated model. Returns `NULL` on failure
+ * 
+ * @warning The animated model needs to be free with `rlr_anm_mdl_free`
+ * @warning Only binary glTF models are supported
+ */
+rlr_anm_mdl_t* rlr_anm_mdl_load(const char* file_glb);
 
-rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_location);
-void rlr_res_animated_model_free(rlr_res_animated_model_t* model);
+/**
+ * @param model The animated model to look up the animation index from
+ * @param animation_name The name of the animation
+ * 
+ * @return The index of the animation. Returns -1 if the animation doesn't exist
+ */
+int32_t rlr_anm_mdl_get_animation_index(const rlr_anm_mdl_t* model, const char* animation_name);
 
-/*
-    returns -1 if the animation doesnt exist
-*/
-int32_t rlr_res_animated_model_get_animation_index(const rlr_res_animated_model_t* model, const char* animation_name);
+/**
+ * @param model The pointer to the animated model to free. If `NULL` is provided, nothing will be done
+ */
+void rlr_anm_mdl_free(rlr_anm_mdl_t* model);

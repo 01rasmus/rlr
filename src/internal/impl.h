@@ -11,7 +11,7 @@
 typedef struct rlr_backend_t rlr_backend_t;
 typedef struct GLFWwindow GLFWwindow;
 
-typedef struct rlr_res_material_t rlr_res_material_t;
+typedef struct rlr_material_t rlr_material_t;
 
 typedef bool (*rlr_pipeline_init_function_t)();
 
@@ -57,13 +57,14 @@ typedef struct rlr_uniform_bone_info_t {
     uint32_t joint_count;
 } rlr_uniform_bone_info_t;
 
-typedef rlr_res_material_t rlr_uniform_material_t;
+typedef rlr_material_t rlr_uniform_material_t;
 
 typedef struct rlr_t {
     GLFWwindow* window;
     rlr_backend_t* backend;
 
     //configuration
+    const char* storage_identifier;
     int32_t framebuffer_width;
     int32_t framebuffer_height;
     rlr_vec2_t mouse_pos;
@@ -73,7 +74,6 @@ typedef struct rlr_t {
 
     //callbacks
     void* input_user;
-    void* log_user;
     rlr_input_key_callback_t callback_key_input;
     rlr_input_mouse_callback_t callback_mouse_input;
 
@@ -87,9 +87,9 @@ typedef struct rlr_t {
     rlr_pipeline_ui_t pipeline_ui;
 
     //built in resources
-    rlr_res_texture_t* texture_white;
-    rlr_res_cube_map_t* cube_map_white;
-    rlr_res_uniform_t* ubos[RLR_INTERNAL_UBO_COUNT];
+    rlr_tex_t* texture_white;
+    rlr_cub_map_t* cube_map_white;
+    rlr_ubo_t* ubos[RLR_INTERNAL_UBO_COUNT];
 
     //statistics
     rlr_statistics_t statistics_total;

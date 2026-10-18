@@ -35,7 +35,7 @@ rlr_obj_model_occluder_t* rlr_obj_model_occluder_create(rlr_rect_t rectangle, rl
     return occluder;
 err:
     rlr_obj_model_occluder_free(occluder);
-    return RLR_NULL;
+    return NULL;
 }
 
 void rlr_obj_model_occluder_set_visiblity(rlr_obj_model_occluder_t* mo, bool visible) {

@@ -1,40 +1,57 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include "types/input.h"
+#include "types/misc.h"
+#include "types/log.h"
+#include "types/res.h"
+#include "types/obj.h"
 #include "math/quat.h"
 #include "math/vec.h"
-#include "def.h"
 
-typedef struct rlr_statistics_t {
-    uint64_t draw_call_count;
-    uint64_t frame_count;
-    double time;
-} rlr_statistics_t;
+/**
+ * @param title The window title
+ * @param storage_identifier The identifier to use to store cached data or settings
+ * @param flags Flags to set certain behaviour for the renderer. See @ref rlr_init_flag_t
+ * 
+ * @return Zero on failure, non-zero on success
+ */
+int32_t rlr_init(const char* title, const char* storage_identifier, rlr_init_flag_t flags);
 
-void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags);
-void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags, rlr_log_callback_t log_callback, bool log_callback_add_new_line);
+/**
+ * @param title The window title
+ * @param storage_identifier The identifier to use to store cached data or settings
+ * @param log_callback Override for the default logging function
+ * @param log_user A user pointer that will is passed to the log callback function
+ * @param flags Flags to set certain behaviour for the renderer. See @ref rlr_init_flag_t
+ * 
+ * @return Zero on failure, non-zero on success
+ */
+int32_t rlr_init_log(const char* title, const char* storage_identifier, rlr_log_callback_t log_callback, void* log_user, rlr_init_flag_t flags);
 
 bool rlr_update();
 void rlr_free();
 
 void rlr_set_clear_color(float r, float g, float b, float a);
-void rlr_set_cube_map(rlr_res_cube_map_t* cube_map_id);
+void rlr_set_cube_map(rlr_cub_map_t* cube_map_id);
 rlr_vec2_t rlr_get_framebuffer_size();
 rlr_vec2_t rlr_get_mouse_position();
 
+//storage
+FILE* rlr_storage_fopen(const char* sub_directory, uint64_t hash, const char* file_type, const char* modes);
+
 //callbacks
 void rlr_set_input_user(void* user);
-void rlr_set_log_user(void* user);
 void rlr_set_mouse_input_callback(rlr_input_mouse_callback_t func);
 void rlr_set_key_input_callback(rlr_input_key_callback_t func);
-void rlr_set_log_callback(rlr_log_callback_t func, bool add_new_line);
 
 //screen / world convertions
 bool rlr_screen_pos_to_ground(rlr_vec2_t mouse_pos, rlr_vec3_t* out_position);
 rlr_vec2_t rlr_world_to_screen(rlr_vec3_t world_pos);
 
 //default resources
-rlr_res_texture_t* rlr_default_texture();
+rlr_tex_t* rlr_default_texture();
 
 //camera
 void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation);

@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include "../math/rect.h"
 #include "../math/anchor.h"
-#include "../def.h"
+#include "../types/res.h"
+#include "../types/input.h"
 
 typedef struct rlr_obj_mouse_input_area_t rlr_obj_mouse_input_area_t;
 

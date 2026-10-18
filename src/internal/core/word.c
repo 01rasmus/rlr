@@ -103,7 +103,7 @@ static bool try_parse_turn_off_rich_text(const char* p, const char** end) {
     return true;
 }
 
-word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_glyph, rlr_res_font_t* font, float font_size, float space_width, float height, float width, const char* text) {
+word_measure_context_t* rlr_word_measure(const rlr_font_glyph_t* unknown_glyph, rlr_font_t* font, float font_size, float space_width, float height, float width, const char* text) {
     
     //reset
     arrsetlen(ctx.glyphs, 0);
@@ -190,7 +190,7 @@ word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_gly
         }
 
         uint32_t font_index;
-        const rlr_res_font_glyph_t* glyph = rlr_res_font_get_glyph(font, unicode, &font_index);
+        const rlr_font_glyph_t* glyph = rlr_font_get_glyph(font, unicode, &font_index);
         if(!glyph) {
             if(!unknown_glyph) {
                 continue;
@@ -225,7 +225,7 @@ word_measure_context_t* rlr_word_measure(const rlr_res_font_glyph_t* unknown_gly
     return &ctx;
 }
 
-bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, float original_size, rlr_rect_t rectangle, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
+bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float original_size, rlr_rect_t rectangle, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
     if(!font) {
         goto err;
     }
@@ -233,8 +233,8 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
     float text_size = original_size * font->size_scale;
     rlr_vec2_t local_anchor_vec = rlr_anchor_vec(local_anchor);
     uint32_t index;
-    const rlr_res_font_glyph_t* space_glyph = rlr_res_font_get_glyph(font, ' ', &index);
-    const rlr_res_font_glyph_t* unknown_glyph = rlr_res_font_get_glyph(font, '?', &index);
+    const rlr_font_glyph_t* space_glyph = rlr_font_get_glyph(font, ' ', &index);
+    const rlr_font_glyph_t* unknown_glyph = rlr_font_get_glyph(font, '?', &index);
     float x = rectangle.x - (rectangle.width * local_anchor_vec.x);
     float start_y = (rectangle.y + text_size) - (rectangle.height * local_anchor_vec.y) - (font->vertical_offset * text_size);
     float space_width = space_glyph ? ((space_glyph->advance * text_size)) : text_size;
@@ -297,7 +297,7 @@ bool rlr_word_generate(rlr_res_font_t* font, rlr_vec2_t* out_measured_size, floa
             current_width = start_pos;
         }
         
-        const rlr_res_font_glyph_t* glyph = g->glyph;
+        const rlr_font_glyph_t* glyph = g->glyph;
         float draw_x1 = x + glyph->plane_left * final_text_size;
         float draw_y1 = y - glyph->plane_top * final_text_size;
         float draw_x2 = x + glyph->plane_right * final_text_size;

@@ -25,7 +25,7 @@ static inline uint32_t npo2(uint32_t x) {
     return x + 1;
 }
 
-static inline void reset_rects(stbrp_rect* rects, rlr_res_texture_atlas_tile_step_ctx_t* steps, size_t count) {
+static inline void reset_rects(stbrp_rect* rects, rlr_tex_atl_tile_step_ctx_t* steps, size_t count) {
     for(size_t i = 0; i < count; i++) {
         rects[i].id = (int32_t)i;
         rects[i].x = 0;
@@ -35,11 +35,12 @@ static inline void reset_rects(stbrp_rect* rects, rlr_res_texture_atlas_tile_ste
     }
 }
 
-static inline void atlas_done_loading(rlr_res_texture_atlas_t* atlas) {
+static inline void atlas_done_loading(rlr_tex_atl_t* atlas) {
     //we are done, create gpu texture
-    atlas->texture = rlr_res_texture_load_from_memory(atlas->temp_texture, atlas->texture_side_size, atlas->texture_side_size, atlas->channels, atlas->use_srgb_color_space, atlas->filter, true);
+    uint64_t flags = (atlas->use_srgb_color_space ? RLR_TEX_FLAG_SRGB : 0) | RLR_TEX_FLAG_COMPRESS;
+    atlas->texture = rlr_tex_load_mem_raw(atlas->temp_texture, atlas->texture_side_size, atlas->texture_side_size, atlas->channels, atlas->filter, flags);
     if(!atlas->texture) {
-        rlr_res_texture_atlas_free(atlas);
+        rlr_tex_atl_free(atlas);
         return;
     }
 
@@ -114,23 +115,31 @@ static void extrude_texture_tile(uint8_t* data, uint32_t x, uint32_t y, uint32_t
     }
 }
 
-rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_instant(rlr_res_texture_atlas_tile_desc_t* descriptions, size_t description_count, uint32_t channels, bool srgb, rlr_res_texture_filter_t filter) {
-    rlr_res_texture_atlas_t* atlas = rlr_res_texture_atlas_create_instant(descriptions, description_count, channels, srgb, filter);
+rlr_tex_atl_t* rlr_tex_atl_load(rlr_tex_atl_tile_dsc_t* descriptions, size_t description_count, uint32_t channels, bool srgb, rlr_tex_filter_t filter) {
+    rlr_tex_atl_t* atlas = rlr_tex_atl_load(descriptions, description_count, channels, srgb, filter);
     if(!atlas) {
-        return NULL;
+        goto err;
     }
 
-    while(!rlr_res_texture_atlas_is_loaded(atlas)) {
-        rlr_res_texture_atlas_step(atlas);
+    size_t steps = rlr_tex_atl_get_step_count(atlas);
+    for(size_t i = 0; i < steps; i++) {
+        rlr_tex_atl_atlas_step(atlas);
+    }
+
+    if(!rlr_tex_atl_atlas_step(atlas)) {
+        goto err;
     }
 
     return atlas;
+err:
+    rlr_tex_atl_free(atlas);
+    return NULL;
 }
 
-rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_atlas_tile_desc_t* descriptions, size_t description_count, uint32_t channels, bool srgb, rlr_res_texture_filter_t filter) {
+rlr_tex_atl_t* rlr_tex_atl_load_stpd(rlr_tex_atl_tile_dsc_t* descriptions, size_t description_count, uint32_t channels, bool srgb, rlr_tex_filter_t filter) {
     stbrp_rect* rects = NULL;
     stbrp_node* nodes = NULL;
-    rlr_res_texture_atlas_t* atlas = malloc(sizeof(rlr_res_texture_atlas_t));
+    rlr_tex_atl_t* atlas = malloc(sizeof(rlr_tex_atl_t));
     if(!atlas) {
         goto err;
     }
@@ -140,7 +149,7 @@ rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_at
         goto err;
     }
 
-    *atlas = (rlr_res_texture_atlas_t){
+    *atlas = (rlr_tex_atl_t){
         .texture = NULL,
         .channels = channels,
         .use_srgb_color_space = srgb,
@@ -156,7 +165,7 @@ rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_at
 
     //caution: this array is not allowed to ever be reallocated
     //tiles must have stable addresses
-    atlas->tiles = malloc(sizeof(rlr_res_texture_atlas_tile_t) * description_count);
+    atlas->tiles = malloc(sizeof(rlr_tex_atl_tile_t) * description_count);
     if(!atlas->tiles) {
         goto err;
     }
@@ -164,7 +173,7 @@ rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_at
     //get area and sizes of the tiles that are to be loaded
     double area = 0.0;
     for(size_t i = 0; i < description_count; i++) {
-        rlr_res_texture_atlas_tile_desc_t* desc = &descriptions[i];
+        rlr_tex_atl_tile_dsc_t* desc = &descriptions[i];
 
         //get the size of the image
         uint32_t rw = desc->resize_width;
@@ -192,7 +201,7 @@ rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_at
 
         //set padding automatically if it's not set
         uint32_t padding = desc->padding;
-        if(atlas->filter != RLR_RES_TEXTURE_FILTER_NEAREST && padding == 0) {
+        if(atlas->filter != RLR_TEX_FILTER_NEAREST && padding == 0) {
             uint32_t size = rw < rh ? rw : rh;
             if(size <= 16) {
                 padding = 2;
@@ -211,10 +220,9 @@ rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_at
         area += (double)ew + (double)eh;
 
         //add step entry
-        rlr_res_texture_atlas_tile_step_ctx_t ctx = {
+        rlr_tex_atl_tile_step_ctx_t ctx = {
             .filepath = loaded ? desc->filepath : NULL,
             .dest = desc->destination,
-            .dest_offset = desc->destination_offset,
             .external_width = ew,
             .external_height = eh,
             .internal_width = rw,
@@ -299,7 +307,7 @@ rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_at
     //fill uv data
     for(size_t i = 0; i < description_count; i++) {
         stbrp_rect* rect = &rects[i];
-        rlr_res_texture_atlas_tile_step_ctx_t* step = &atlas->steps[rect->id];
+        rlr_tex_atl_tile_step_ctx_t* step = &atlas->steps[rect->id];
         uint32_t padding = step->external_width - step->internal_width;
         step->u = rect->x + padding;
         step->v = rect->y + padding;
@@ -311,26 +319,26 @@ rlr_res_texture_atlas_t* rlr_res_texture_atlas_create_stepped(rlr_res_texture_at
 err:
     free(rects);
     free(nodes);
-    rlr_res_texture_atlas_free(atlas);
+    rlr_tex_atl_free(atlas);
     return NULL;
 }
 
-size_t rlr_res_texture_atlas_get_step_count(const rlr_res_texture_atlas_t* atlas) {
+size_t rlr_tex_atl_get_step_count(const rlr_tex_atl_t* atlas) {
     return atlas->tile_count;
 }
 
-void rlr_res_texture_atlas_step(rlr_res_texture_atlas_t* atlas) {
+bool rlr_tex_atl_atlas_step(rlr_tex_atl_t* atlas) {
     if(atlas->is_loaded) {
-        return;
+        return true;
     }
     
     //set atlas tile
     size_t index = atlas->current_step++;
-    rlr_res_texture_atlas_tile_step_ctx_t* step = &atlas->steps[index];
-    rlr_res_texture_atlas_tile_t** tile = step->dest + step->dest_offset;
+    rlr_tex_atl_tile_step_ctx_t* step = &atlas->steps[index];
+    rlr_tex_atl_tile_t** tile = step->dest + step->dest_offset;
 
     //set atlas tile
-    atlas->tiles[index] = (rlr_res_texture_atlas_tile_t){
+    atlas->tiles[index] = (rlr_tex_atl_tile_t){
         .texture = NULL,
         .size = rlr_vec2(step->internal_width, step->internal_height),
         .uv = rlr_vec2(step->u, step->v)
@@ -347,21 +355,18 @@ void rlr_res_texture_atlas_step(rlr_res_texture_atlas_t* atlas) {
     //check if its done
     if(atlas->current_step == arrlen(atlas->steps)) {
         atlas_done_loading(atlas);
-        return;
+        return true;
     }
+    return false;
 }
 
-bool rlr_res_texture_atlas_is_loaded(const rlr_res_texture_atlas_t* atlas) {
-    return atlas->is_loaded;
-}
-
-void rlr_res_texture_atlas_free(rlr_res_texture_atlas_t* atlas) {
+void rlr_tex_atl_free(rlr_tex_atl_t* atlas) {
     if(!atlas) {
         return;
     }
 
     arrfree(atlas->steps);
-    rlr_res_texture_free(atlas->texture);
+    rlr_tex_free(atlas->texture);
     free(atlas->tiles);
     free(atlas->temp_texture);
     free(atlas);

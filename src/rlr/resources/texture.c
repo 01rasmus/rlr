@@ -1,4 +1,6 @@
+#include <inttypes.h>
 #include <stdint.h>
+#include <string.h>
 #include <stb_image.h>
 #include <cgltf.h>
 #include "../../internal/core/res_types.h"
@@ -6,157 +8,159 @@
 #include "../rlr.h"
 #include "texture.h"
 
-rlr_res_texture_t* rlr_res_texture_load(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter) {
-    return rlr_res_texture_load_ext(texture_path, use_srgb_color_space, filter, true);
-}
+static rlr_tex_t* _rlr_tex_load_mem_raw_impl(const void* color, uint32_t width, uint32_t height, uint32_t channels, uint32_t min_filter, uint32_t mag_filter, uint32_t wrap_s, uint32_t wrap_t, uint64_t flags) {
+    rlr_tex_t* tex = NULL;
 
-rlr_res_texture_t* rlr_res_texture_load_ext(const char* texture_path, bool use_srgb_color_space, rlr_res_texture_filter_t filter, bool may_compress) {
-    uint8_t* data = NULL;
-
-    int32_t w = 0;
-    int32_t h = 0;
-    int32_t channels = 0;
-    data = stbi_load(texture_path, &w, &h, &channels, 0);
-    if(!data) {
-        rlr_log_error("failed to load file \"%s\"", texture_path);
+    if(width % 4 != 0 || height % 4 != 0) {
+        rlr_log_error("texture's size(%dx%d) has a side that is not divisible by 4", width, height);
         goto err;
     }
 
-    if(w % 4 != 0 || h % 4 != 0) {
-        rlr_log_error("texture \"%s\"'s size(%dx%d) has a side that is not divisible by 4", texture_path, w, h);
+    if(channels == 0 || channels > 4) {
+        rlr_log_error("invalid channel count %" PRIu32, channels);
         goto err;
     }
 
-    rlr_res_texture_t* texture = rlr_res_texture_load_from_memory(data, w, h, channels, use_srgb_color_space, filter, may_compress);
-    if(!texture) {
-        rlr_log_error("could not load texture \"%s\"", texture_path);
+    tex = malloc(sizeof(rlr_tex_t));
+    if(!tex) {
+        rlr_log_error("pointer to the texture handle for texture is null");
         goto err;
     }
+    tex->texture = 0;
+    tex->width = width;
+    tex->height = height;
 
-    stbi_image_free(data);
-    rlr_log("loaded texture %s", texture_path);
-    return texture;
+    bool compress = (flags & RLR_TEX_FLAG_COMPRESS) != 0;
+    bool srgb = (flags & RLR_TEX_FLAG_SRGB) != 0;
+
+    if(compress) {
+        tex->texture = rlr_backend()->create_compressed_texture(color, width, height, channels, srgb, min_filter, mag_filter, wrap_s, wrap_t);
+    } else {
+        tex->texture = rlr_backend()->create_texture(color, width, height, channels, srgb, min_filter, mag_filter, wrap_s, wrap_t);
+    }
+
+    if(tex->texture == 0) {
+        rlr_log_error("backend handle for texture \"%s\" is null");
+        goto err;
+    }
+    
+    return tex;
 err:
-    stbi_image_free(data);
+    rlr_tex_free(tex);
     return NULL;
 }
 
-rlr_res_texture_t* rlr_res_texture_load_from_memory(const uint8_t* data, uint32_t width, uint32_t height, uint32_t channels, bool use_srgb_color_space, rlr_res_texture_filter_t filter, bool may_compress) {
-    rlr_res_texture_t* texture = NULL;
-
-    if(width % 4 != 0 || height % 4 != 0) {
-        rlr_log_error("texture size(%dx%d) has a side that is not divisible by 4", width, height);
-        goto err;
-    }
-
-    texture = malloc(sizeof(rlr_res_texture_t));
-    if(!texture) {
-        rlr_log_error("pointer to the texture handle is null");
-        goto err;
-    }
-
-    texture->texture = 0;
-    texture->width = width;
-    texture->height = height;
+static rlr_tex_t* _rlr_tex_load_mem_raw_preset_filter_impl(const void* color, uint32_t width, uint32_t height, uint32_t channels, rlr_tex_filter_t filter, uint64_t flags) {
+    uint32_t min_filter;
+    uint32_t mag_filter;
+    uint32_t wrap_s;
+    uint32_t wrap_t;
 
     switch(filter) {
-        case RLR_RES_TEXTURE_FILTER_NEAREST: {
-            texture->texture = rlr_backend()->create_nearest_texture(data, width, height, channels, use_srgb_color_space, may_compress);
+        case RLR_TEX_FILTER_LINEAR: {
+            min_filter = RLR_BACKEND_FILTER_LINEAR;
+            mag_filter = RLR_BACKEND_FILTER_LINEAR;
+            wrap_s = RLR_BACKEND_FILTER_CLAMP_TO_EDGE;
+            wrap_t = RLR_BACKEND_FILTER_CLAMP_TO_EDGE;
             break;
         }
-        case RLR_RES_TEXTURE_FILTER_LINEAR: {
-            texture->texture = rlr_backend()->create_linear_texture(data, width, height, channels, use_srgb_color_space, may_compress);
+        case RLR_TEX_FILTER_LINEAR_MIPMAP: {
+            min_filter = RLR_BACKEND_FILTER_LINEAR_MIPMAP;
+            mag_filter = RLR_BACKEND_FILTER_LINEAR;
+            wrap_s = RLR_BACKEND_FILTER_CLAMP_TO_EDGE;
+            wrap_t = RLR_BACKEND_FILTER_CLAMP_TO_EDGE;
+            break;
+        }
+        case RLR_TEX_FILTER_NEAREST: {
+            min_filter = RLR_BACKEND_FILTER_NEAREST;
+            mag_filter = RLR_BACKEND_FILTER_NEAREST;
+            wrap_s = RLR_BACKEND_FILTER_CLAMP_TO_EDGE;
+            wrap_t = RLR_BACKEND_FILTER_CLAMP_TO_EDGE;
             break;
         }
         default:
-        case RLR_RES_TEXTURE_FILTER_LINEAR_MIPMAP: {
-            texture->texture = rlr_backend()->create_linear_mipmap_texture(data, width, height, channels, use_srgb_color_space, may_compress);
-            break;
-        }
+            rlr_log_error("invalid filter id 0x%" PRIx32, filter);
+            return NULL;
     }
 
-    if(texture->texture == 0) {
-        rlr_log_error("backend handle for texture is null");
+    return _rlr_tex_load_mem_raw_impl(color, width, height, channels, min_filter, mag_filter, wrap_s, wrap_t, flags);
+}
+
+rlr_tex_t* rlr_tex_load(const char* file, rlr_tex_filter_t filter, uint64_t flags) {
+    uint32_t width;
+    uint32_t height;
+    uint32_t channels;
+    uint8_t* data = stbi_load(file, &width, &height, &channels, 0);
+    rlr_tex_t* tex = NULL;
+    if(data) {
+        tex = _rlr_tex_load_mem_raw_preset_filter_impl(data, width, height, channels, filter, flags);
+    }
+    stbi_image_free(data);
+    return tex;
+}
+
+rlr_tex_t* rlr_tex_load_mem(const void* color, size_t color_len, rlr_tex_filter_t filter, uint64_t flags) {
+    uint32_t width;
+    uint32_t height;
+    uint32_t channels;
+    uint8_t* data = stbi_load_from_memory(color, color_len, &width, &height, &channels, 0);
+    rlr_tex_t* tex = NULL;
+    if(data) {
+        tex = _rlr_tex_load_mem_raw_preset_filter_impl(data, width, height, channels, filter, flags);
+    }
+    stbi_image_free(data);
+    return tex;
+}
+
+rlr_tex_t* rlr_tex_load_raw(const char* file, uint32_t width, uint32_t height, uint32_t channels, rlr_tex_filter_t filter, uint64_t flags) {
+    FILE* f = fopen(file, "rb");
+    void* color = NULL;
+    if(!f) {
+        rlr_log_error("could not open the file \"%s\"", file);
         goto err;
     }
 
-    return texture;
+    size_t size = width * height * channels;
+    color = malloc(size);
+    if(!color) {
+        goto err;
+    }
+
+    size_t read = fread(color, 1, size, f);
+    if(read != size) {
+        rlr_log_error("tried to read %zu bytes but only read %zu", size, read);
+        goto err;
+    }
+
+    if(f) {
+        fclose(f);
+    }
+    return _rlr_tex_load_mem_raw_preset_filter_impl(color, width, height, channels, filter, flags);
 err:
-    rlr_res_texture_free(texture);
+    if(f) {
+        fclose(f);
+    }
     return NULL;
 }
 
-void rlr_res_texture_copy_subtex(rlr_res_texture_t* texture, const uint8_t* texture_data, uint32_t u, uint32_t v, uint32_t width, uint32_t height) {
-    rlr_backend()->copy_sub_texture(texture->texture, u, v, width, height, texture->channels, texture_data);
+rlr_tex_t* rlr_tex_load_mem_raw(const void* color, uint32_t width, uint32_t height, uint32_t channels, rlr_tex_filter_t filter, uint64_t flags) {
+    return _rlr_tex_load_mem_raw_preset_filter_impl(color, width, height, channels, filter, flags);
 }
 
-rlr_res_texture_t* rlr_res_texture_default() {
-    rlr_res_texture_t* texture = NULL;
-    uint8_t data[3] = {255, 255, 255};
-    uint64_t texture_handle = rlr_backend()->create_nearest_texture(data, 1, 1, 3, false, false);
-    if(texture_handle == 0) {
-        goto err;
-    }
-    texture = malloc(sizeof(rlr_res_texture_t));
-    if(!texture) {
-        goto err;
-    }
-    *texture = (rlr_res_texture_t){
-        .height = 1,
-        .width = 1,
-        .channels = 3,
-        .texture = texture_handle
-    };
-    return texture;
-err:
-    rlr_res_texture_free(texture);
-    return NULL;
-}
-
-rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
+rlr_tex_t* rlr_tex_load_cgltf_albedo(cgltf_texture* tex) {
     if(!tex) {
         return NULL;
     }
 
-    uint8_t* data = NULL;
-    rlr_res_texture_t* texture = NULL;
-
-    texture = malloc(sizeof(rlr_res_texture_t));
-    if(!texture) {
-        rlr_log_error("pointer to the texture handle is null");
-        goto err;
-    }
-
     if(!tex || !tex->image || !tex->image->buffer_view) {
         rlr_log_error("glb texture isn't loaded");
-        goto err;
+        return NULL;
     }
 
     cgltf_buffer_view* view = tex->image->buffer_view;
     if(!view->buffer || !view->buffer->data) {
         rlr_log_error("glb texture isn't loaded");
-        goto err;
-    }
-
-    uint8_t* texture_data = (uint8_t*)view->buffer->data + view->offset;
-    size_t size = view->size;
-
-    texture->texture = 0;
-    texture->height = 0;
-    texture->width = 0;
-
-    int32_t w = 0;
-    int32_t h = 0;
-    int32_t channels = 0;
-    data = stbi_load_from_memory(texture_data, size, &w, &h, &channels, 0);
-    if(!data) {
-        rlr_log_error("failed to parse glb texture");
-        goto err;
-    }
-
-    if(w % 4 != 0 || h % 4 != 0) {
-        rlr_log_error("glb model \"%s\"'s base texture size(%dx%d) has a side that is not divisible by 4", "unknown", w, h);
-        goto err;
+        return NULL;
     }
 
     cgltf_sampler sampler;
@@ -164,36 +168,30 @@ rlr_res_texture_t* rlr_res_texture_load_cgltf_base(cgltf_texture* tex) {
         sampler = (*tex->sampler);
     } else {
         sampler = (cgltf_sampler) {
+            .min_filter = cgltf_filter_type_linear_mipmap_nearest,
             .mag_filter = cgltf_filter_type_linear,
-            .min_filter = cgltf_filter_type_linear,
             .wrap_s = cgltf_wrap_mode_clamp_to_edge,
             .wrap_t = cgltf_wrap_mode_clamp_to_edge
         };
     }
 
-    texture->texture = rlr_backend()->create_compressed_texture(data, w, h, channels, true, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t);
-    if(texture->texture == 0) {
-        rlr_log_error("the backend texture handle is null");
-        goto err;
+    uint32_t width;
+    uint32_t height;
+    uint32_t channels;
+    uint8_t* data = stbi_load_from_memory((uint8_t*)view->buffer->data + view->offset, view->size, &width, &height, &channels, 0);
+    if(!data) {
+        return NULL;
     }
 
-    texture->width = w;
-    texture->height = h;
-    texture->channels = channels;
-
     stbi_image_free(data);
-    return texture;
-err:
-    stbi_image_free(data);
-    rlr_res_texture_free(texture);
-    return NULL;
+    return _rlr_tex_load_mem_raw_impl(data, width, height, channels, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t, RLR_TEX_FLAG_COMPRESS | RLR_TEX_FLAG_SRGB);
 }
 
-void rlr_res_texture_bind(const rlr_res_texture_t* texture, uint8_t texture_slot) {
+void rlr_tex_bind(const rlr_tex_t* texture, uint8_t texture_slot) {
     rlr_backend()->bind_texture(texture->texture, RLR_BACKEND_TEXTURE_2D, texture_slot);
 }
 
-void rlr_res_texture_free(rlr_res_texture_t* texture) {
+void rlr_tex_free(rlr_tex_t* texture) {
     if(!texture) {
         return;
     }

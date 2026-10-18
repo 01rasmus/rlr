@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -21,8 +22,8 @@
 #include "impl.h"
 
 static rlr_t* ctx = NULL;
-rlr_log_callback_t ctx_callback_log = NULL;
-bool ctx_callback_log_add_newline = true;
+static rlr_log_callback_t ctx_callback_log = NULL;
+static void* ctx_log_user = NULL;
 
 rlr_vec2_t rlr_quad_vertices[4] = {
     rlr_vec2(0, 0),
@@ -54,7 +55,7 @@ static void _rlr_log_default_callback(rlr_log_level_t log_level, const char* log
         [RLR_LOG_LEVEL_ERROR] =     "[ERRO]",
         [RLR_LOG_LEVEL_DEBUG] =     "[DEBU]",
     };
-    printf("%s %s:%d: %s", log_level_strings[log_level], file, line, log);
+    printf("%s %s:%d: %s\n", log_level_strings[log_level], file, line, log);
 }
 
 static void rlr_set_framebuffer_size() {
@@ -70,21 +71,68 @@ static void rlr_set_framebuffer_size() {
         };
         ctx->framebuffer_width = width;
         ctx->framebuffer_height = height;
-        rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_UI], 0, &ui_uniform, sizeof(rlr_uniform_ui_t));
+        rlr_ubo_update(ctx->ubos[RLR_INTERNAL_UBO_UI], 0, &ui_uniform, sizeof(rlr_uniform_ui_t));
         rlr_backend()->set_viewport(0, 0, width, height);
         rlr_set_camera(ctx->camera_pos, ctx->camera_rot);
     }
 }
 
-void rlr_init(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags) {
-    rlr_init_ext(title, window_width, window_height, flags, _rlr_log_default_callback, true);
+static rlr_tex_t* _rlr_tex_def() {
+    size_t w = 4;
+    size_t h = 4;
+    size_t c = 4;
+    uint8_t data[w * h * c];
+    memset(data, 255, sizeof(data));
+    return rlr_tex_load_mem_raw(data, w, h, c, RLR_TEX_FILTER_NEAREST, 0);
 }
 
-void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_height, rlr_init_flags_t flags, rlr_log_callback_t log_callback, bool log_callback_add_new_line) {
+static rlr_cub_map_t* _rlr_cub_map_def() {
+    rlr_cub_map_t* cm = NULL;
+
+    cm = malloc(sizeof(rlr_cub_map_t));
+    if(!cm) {
+        rlr_log_error("pointer to the cube map is null");
+        goto err;
+    }
+
+    const uint8_t white[3] = {255, 255, 255};
+    cm->texture = rlr_backend()->create_cube_map_texture(white, white, white, white, white, white, 1, 1, 3);
+    if(!cm->texture) {
+        rlr_log_error("backend texture handle is null");
+        goto err;
+    }
+
+    return cm;
+err:
+    rlr_cub_map_free(cm);
+    return NULL;
+}
+
+int32_t rlr_init(const char* title, const char* storage_identifier, rlr_init_flag_t flags) {
+    return rlr_init_log(
+        title,
+        storage_identifier,
+        _rlr_log_default_callback,
+        NULL,
+        flags
+    );
+}
+
+int32_t rlr_init_log(const char* title, const char* storage_identifier, rlr_log_callback_t log_callback, void* log_user, rlr_init_flag_t flags) {
 
     //setup logging
     ctx_callback_log = log_callback;
-    ctx_callback_log_add_newline = log_callback_add_new_line;
+    ctx_log_user = log_user;
+
+    //check desc input
+    if(!title) {
+        rlr_log_error("no window title was provided");
+        goto err;
+    }
+    if(!storage_identifier) {
+        rlr_log_error("no storage identifier was provided");
+        goto err;
+    }
 
     //allocate
     ctx = malloc(sizeof(rlr_t));
@@ -101,6 +149,7 @@ void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_heig
     ctx->statistics_total = (rlr_statistics_t){0};
     ctx->statistics_temp = (rlr_statistics_t){0};
     ctx->statistics_timer = 0.0;
+    ctx->storage_identifier = storage_identifier;
 
     if(!glfwInit()) {
         rlr_log_error("could not initialize glfw");
@@ -108,8 +157,8 @@ void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_heig
     }
 
     //dynamic backend selection
-    GLFWmonitor* monitor = ((RLR_INIT_FLAG_FULLSCREEN & flags) == RLR_INIT_FLAG_FULLSCREEN) ? glfwGetPrimaryMonitor() : NULL;
-    if(!rlr_internal_backend_selection(&ctx->window, &ctx->backend, monitor, window_width, window_height, title)) {
+    GLFWmonitor* monitor = (flags & RLR_INIT_FLAG_FULLSCREEN) > 0 ? glfwGetPrimaryMonitor() : NULL;
+    if(!rlr_internal_backend_selection(&ctx->window, &ctx->backend, monitor, 1024, 768, title)) {
         rlr_log_error("could not find a suitable backend");
         goto err;
     }
@@ -127,25 +176,25 @@ void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_heig
     );
 
     //setup callbacks and swap interval
-    glfwSwapInterval((RLR_INIT_FLAG_VSYNC & flags) == RLR_INIT_FLAG_VSYNC ? 1 : 0);
+    glfwSwapInterval(flags & RLR_INIT_FLAG_VSYNC > 0);
     glfwSetMouseButtonCallback(ctx->window, _rlr_mouse_button_callback);
     glfwSetKeyCallback(ctx->window, _rlr_key_callback);
 
     //setup uniform buffer objects
-    rlr()->ubos[RLR_INTERNAL_UBO_MODEL]             = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_model_t));
-    rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL]          = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_material_t));
-    rlr()->ubos[RLR_INTERNAL_UBO_ENVIRONMENT]       = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_environment_t));
-    rlr()->ubos[RLR_INTERNAL_UBO_UI]                = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_ui_t));
-    rlr()->ubos[RLR_INTERNAL_UBO_BONE_TRANSLATION]  = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_bone_pos_t));
-    rlr()->ubos[RLR_INTERNAL_UBO_BONE_ROTATION]     = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_bone_quat_t));
-    rlr()->ubos[RLR_INTERNAL_UBO_BONE_INFO]         = rlr_res_uniform_create_dynamic(sizeof(rlr_uniform_bone_info_t));
+    rlr()->ubos[RLR_INTERNAL_UBO_MODEL]             = rlr_ubo_create(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL]          = rlr_ubo_create(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_ENVIRONMENT]       = rlr_ubo_create(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_UI]                = rlr_ubo_create(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_BONE_TRANSLATION]  = rlr_ubo_create(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_BONE_ROTATION]     = rlr_ubo_create(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_BONE_INFO]         = rlr_ubo_create(NULL, 0, false);
     for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {
-        rlr_res_uniform_t* ubo = rlr()->ubos[i];
+        rlr_ubo_t* ubo = rlr()->ubos[i];
         if(ubo == NULL) {
             rlr_log_error("could not initialize internal uniform buffer objects");
             goto err;
         }
-        rlr_res_uniform_bind(ubo, i);
+        rlr_ubo_bind(ubo, i);
     }
 
     //setup pipelines
@@ -177,8 +226,8 @@ void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_heig
     ctx->last_time = glfwGetTime();
 
     //setup default resources
-    ctx->texture_white = rlr_res_texture_default();
-    ctx->cube_map_white = rlr_res_cube_map_default();
+    ctx->texture_white = _rlr_tex_def();
+    ctx->cube_map_white = _rlr_cub_map_def();
     if(!ctx->texture_white) {
         rlr_log_error("could not create the default white texture");
         goto err;
@@ -187,12 +236,12 @@ void rlr_init_ext(const char* title, uint32_t window_width, uint32_t window_heig
         rlr_log_error("could not create the default white cube map texture");
         goto err;
     }
-    rlr_res_cube_map_bind(ctx->cube_map_white, 4);
+    rlr_cub_map_bind(ctx->cube_map_white, 4);
     rlr_log("initialized rlr");
-    return;
+    return 1;
 err:
     rlr_free();
-    return;
+    return 0;
 }
 
 rlr_t* rlr() {
@@ -215,7 +264,17 @@ void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation) {
     ctx->camera_pos = pos;
     ctx->camera_rot = rotation;
     ctx->view_projection = view_projection;
-    rlr_res_uniform_update(ctx->ubos[RLR_INTERNAL_UBO_MODEL], 0, &ubo_model, sizeof(rlr_uniform_model_t));
+    rlr_ubo_update(ctx->ubos[RLR_INTERNAL_UBO_MODEL], 0, &ubo_model, sizeof(rlr_uniform_model_t));
+}
+
+FILE* rlr_storage_fopen(const char* sub_directory, uint64_t hash, const char* file_type, const char* modes) {
+    char location[512];
+    snprintf(location, sizeof(location), "~/.local/shared/%s/%s/%" PRIx64 ".%s", ctx->storage_identifier, sub_directory, hash, file_type);
+    FILE* f = fopen(location, modes);
+    if(!f) {
+        rlr_log_error("could not open storage file \"%s\"", location);
+    }
+    return f;
 }
 
 rlr_vec3_t rlr_get_camera_pos() {
@@ -230,8 +289,8 @@ void rlr_set_clear_color(float r, float g, float b, float a) {
     rlr_backend()->set_clear_color(r, g, b, a);
 }
 
-void rlr_set_cube_map(rlr_res_cube_map_t* cube_map) {
-    rlr_res_cube_map_bind(cube_map, 4);
+void rlr_set_cube_map(rlr_cub_map_t* cube_map) {
+    rlr_cub_map_bind(cube_map, 4);
 }
 
 rlr_vec2_t rlr_get_framebuffer_size() {
@@ -309,21 +368,12 @@ void rlr_set_input_user(void* user) {
     ctx->input_user = user;
 }
 
-void rlr_set_log_user(void* user) {
-    ctx->log_user = user;
-}
-
 void rlr_set_mouse_input_callback(rlr_input_mouse_callback_t func) {
     ctx->callback_mouse_input = func;
 }
 
 void rlr_set_key_input_callback(rlr_input_key_callback_t func) {
     ctx->callback_key_input = func;
-}
-
-void rlr_set_log_callback(rlr_log_callback_t func, bool add_new_line) {
-    ctx_callback_log = func;
-    ctx_callback_log_add_newline = add_new_line;
 }
 
 rlr_vec2_t rlr_get_mouse_position() {
@@ -356,7 +406,7 @@ rlr_statistics_t* rlr_get_statistics() {
     return &ctx->statistics_interval;
 }
 
-rlr_res_texture_t* rlr_default_texture() {
+rlr_tex_t* rlr_default_texture() {
     return ctx->texture_white;
 }
 
@@ -378,13 +428,7 @@ void _rlr_log(const char* file, uint64_t line, rlr_log_level_t log_level, const 
     va_start(args, format);
     size_t len = vsnprintf(string, sizeof(string), format, args);
     va_end(args);
-    if(ctx_callback_log_add_newline) {
-        string[len] = '\n';
-        string[len+1] = 0;
-    } else {
-        string[len] = 0;
-    }
-    ctx_callback_log(log_level, string, file, line, ctx->log_user);
+    ctx_callback_log(log_level, string, file, line, ctx_log_user);
 }
 
 bool rlr_update() {
@@ -460,11 +504,11 @@ void rlr_free() {
     rlr_pipeline_input_deinit();
 
     //free resources
-    rlr_res_texture_free(ctx->texture_white);
+    rlr_tex_free(ctx->texture_white);
 
     //free ubos
     for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {
-        rlr_res_uniform_free(rlr()->ubos[i]);
+        rlr_ubo_free(rlr()->ubos[i]);
     }
 
     //free backend API and window

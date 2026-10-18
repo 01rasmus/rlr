@@ -19,7 +19,7 @@ typedef struct rlr_obj_label_instance_ctx_t {
 } rlr_obj_label_instance_ctx_t;
 
 typedef struct rlr_obj_label_t {
-    rlr_res_font_t* font;
+    rlr_font_t* font;
     rlr_obj_label_instance_ctx_t* instance_ctxs;
     size_t instance_ctxs_len;
     rlr_rect_t rectangle;
@@ -121,7 +121,7 @@ typedef struct rlr_obj_mouse_input_area_t {
 typedef struct rlr_obj_nine_patch_t {
     rlr_anchor_t screen_anchor;
     rlr_anchor_t local_anchor;
-    rlr_res_texture_t* texture;
+    rlr_tex_t* texture;
     uint64_t cmd_id;
     uint64_t instances[9];
     rlr_nine_patch_t nine_patch;

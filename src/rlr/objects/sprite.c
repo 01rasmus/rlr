@@ -18,18 +18,18 @@ static rlr_rect_t _rlr_obj_sprite_make_instance_rectangle(rlr_anchor_t local_anc
     };
 }
 
-rlr_obj_sprite_t* rlr_obj_sprite_create(rlr_res_texture_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
-    rlr_res_texture_t* tex = texture == NULL ? rlr_default_texture() : texture;
+rlr_obj_sprite_t* rlr_obj_sprite_create(rlr_tex_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
+    rlr_tex_t* tex = texture == NULL ? rlr_default_texture() : texture;
     return rlr_obj_sprite_create_ext(tex, rectangle, screen_anchor, local_anchor, layer, rlr_rect(0, 0, tex->width, tex->height), rlr_rect(0, 0, 0, 0));
 }
 
-rlr_obj_sprite_t* rlr_obj_sprite_create_from_atlas_tile(rlr_res_texture_atlas_tile_t* tile, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
+rlr_obj_sprite_t* rlr_obj_sprite_create_from_atlas_tile(rlr_tex_atl_tile_t* tile, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
     return rlr_obj_sprite_create_ext(tile->texture, rectangle, screen_anchor, local_anchor, layer, rlr_rect(tile->uv.x, tile->uv.y, tile->size.x, tile->size.y), rlr_rect(0, 0, 0, 0));
 }
 
-rlr_obj_sprite_t* rlr_obj_sprite_create_ext(rlr_res_texture_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer, rlr_rect_t uv, rlr_rect_t scissor) {
+rlr_obj_sprite_t* rlr_obj_sprite_create_ext(rlr_tex_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer, rlr_rect_t uv, rlr_rect_t scissor) {
     rlr_obj_sprite_t* sprite = NULL;
-    rlr_res_texture_t* tex = texture == NULL ? rlr_default_texture() : texture;
+    rlr_tex_t* tex = texture == NULL ? rlr_default_texture() : texture;
     rlr_pipeline_ui_draw_command_t* cmd = rlr_pipeline_ui_find_draw_command(tex, NULL, layer);
 
     rlr_rect_t instance_rect = _rlr_obj_sprite_make_instance_rectangle(local_anchor, rectangle);
@@ -62,7 +62,7 @@ err:
     return sprite;
 }
 
-void rlr_obj_sprite_set_texture_from_atlas_tile(rlr_obj_sprite_t* sprite, rlr_res_texture_atlas_tile_t* tile) {
+void rlr_obj_sprite_set_texture_from_atlas_tile(rlr_obj_sprite_t* sprite, rlr_tex_atl_tile_t* tile) {
     rlr_pipeline_ui_draw_command_t* new_cmd = rlr_pipeline_ui_find_draw_command(tile->texture, NULL, sprite->layer);
     rlr_vec2_t new_uv = rlr_vec2(tile->uv.x / tile->texture->width, tile->uv.y / tile->texture->height);
     rlr_vec2_t new_uv_size = rlr_vec2(tile->size.x / tile->texture->width, tile->size.y / tile->texture->height);
@@ -87,7 +87,7 @@ void rlr_obj_sprite_set_texture_from_atlas_tile(rlr_obj_sprite_t* sprite, rlr_re
     sprite->cmd_id = new_cmd->id;
 }
 
-void rlr_obj_sprite_set_texture(rlr_obj_sprite_t* sprite, rlr_res_texture_t* texture) {
+void rlr_obj_sprite_set_texture(rlr_obj_sprite_t* sprite, rlr_tex_t* texture) {
     rlr_pipeline_ui_draw_command_t* new_cmd = rlr_pipeline_ui_find_draw_command(texture, NULL, sprite->layer);
     if(new_cmd->id == sprite->cmd_id) {
         return;

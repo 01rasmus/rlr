@@ -9,8 +9,8 @@
     for(int64_t i = 0; i < sizeof(ARRAY) / sizeof(ARRAY[0]); i++) \
         stbi_image_free(ARRAY[i]);
 
-rlr_res_cube_map_t* rlr_res_cube_map_load(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back) {
-    rlr_res_cube_map_t* cm = NULL;
+rlr_cub_map_t* rlr_cub_map_load(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back) {
+    rlr_cub_map_t* cm = NULL;
     uint8_t* texture_data[6] = {0};
     const char* texture_locations[6] = {
         right,
@@ -21,7 +21,7 @@ rlr_res_cube_map_t* rlr_res_cube_map_load(const char* right, const char* left, c
         back
     };
 
-    cm = malloc(sizeof(rlr_res_cube_map_t));
+    cm = malloc(sizeof(rlr_cub_map_t));
     if(!cm) {
         rlr_log_error("pointer to the cube map is null");
         goto err;
@@ -59,37 +59,15 @@ rlr_res_cube_map_t* rlr_res_cube_map_load(const char* right, const char* left, c
     return cm;
 err:
     FREE_TEXTURE_DATA(texture_data);
-    rlr_res_cube_map_free(cm);
+    rlr_cub_map_free(cm);
     return NULL;
 }
 
-rlr_res_cube_map_t* rlr_res_cube_map_default() {
-    rlr_res_cube_map_t* cm = NULL;
-
-    cm = malloc(sizeof(rlr_res_cube_map_t));
-    if(!cm) {
-        rlr_log_error("pointer to the cube map is null");
-        goto err;
-    }
-
-    const uint8_t white[3] = {255, 255, 255};
-    cm->texture = rlr_backend()->create_cube_map_texture(white, white, white, white, white, white, 1, 1, 3);
-    if(!cm->texture) {
-        rlr_log_error("backend texture handle is null");
-        goto err;
-    }
-
-    return cm;
-err:
-    rlr_res_cube_map_free(cm);
-    return NULL;
-}
-
-void rlr_res_cube_map_bind(const rlr_res_cube_map_t* cm, uint8_t texture_slot) {
+void rlr_cub_map_bind(const rlr_cub_map_t* cm, uint8_t texture_slot) {
     rlr_backend()->bind_texture(cm->texture, RLR_BACKEND_TEXTURE_CUBE_MAP, texture_slot);
 }
 
-void rlr_res_cube_map_free(rlr_res_cube_map_t* cm) {
+void rlr_cub_map_free(rlr_cub_map_t* cm) {
     if(!cm) {
         return;
     }

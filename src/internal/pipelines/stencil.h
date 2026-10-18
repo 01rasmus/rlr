@@ -13,7 +13,7 @@ typedef struct rlr_pipeline_stencil_occluder_instance_t {
 } rlr_pipeline_stencil_occluder_instance_t;
 
 typedef struct rlr_pipeline_stencil_t {
-    rlr_res_shader_t* shader;
+    rlr_shader_t* shader;
     uint64_t vao;
     uint64_t vbo;
     uint64_t ebo;

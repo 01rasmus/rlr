@@ -4,3 +4,6 @@
 [submodule "lib/rlpp"]
 	path = lib/rlpp
 	url = https://github.com/01rasmus/rlpp.git
+[submodule "lib/rlmesh"]
+	path = lib/rlmesh
+	url = https://github.com/01rasmus/rlmesh.git

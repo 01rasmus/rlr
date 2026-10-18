@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cgltf.h>
+#define RLMESH_IMPLEMENTATION
+#define RLMESH_STATIC
+#include <rlmesh/rlmesh.h>
 #include "../../internal/core/res_types.h"
 #include "../../external/stb_ds.h"
 #include "../../internal/impl.h"
@@ -181,13 +184,16 @@ static cgltf_node* find_mesh_node_for_skin(cgltf_data* data, cgltf_skin* skin) {
     return NULL;
 }
 
-static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
-    rlr_res_animations_t final = {0};
+static rlr_animations_t load_animations(cgltf_data* model, float fps) {
+    rlr_animations_t final = {0};
     rlr_mat4x4_t* matrices = NULL;
 
-    if(model->skins_count != 1) {
-        rlr_log_error("err: more than 1 skin detected.. %d\n", model->skins_count);
-        return (rlr_res_animations_t){0};
+    if(model->skins_count > 1) {
+        rlr_log_error("found %zu skins but expeceted 1", model->skins_count);
+        return (rlr_animations_t){0};
+    } else if(model->skins_count == 0) {
+        rlr_log_error("no skins found");
+        return (rlr_animations_t){0};
     }
     cgltf_skin* skin = &model->skins[0];
     rlr_affine_rows_t* animation_matrices = NULL; // the final, baked, gpu data
@@ -203,7 +209,7 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     //make identity pose(which is used for meshes that don't have any weights and joints)
     for(int32_t i = 0; i < joint_count; i++) {
         arrpush(animation_matrices, rlr_mat4x4_to_affine_rows(&rlr_mat4x4_ident));
-        arrpush(final.samples, ((rlr_res_animation_sample_t){
+        arrpush(final.samples, ((rlr_animation_sample_t){
             .rotation = rlr_quat_ident,
             .translation = rlr_vec3(0.0, 0.0, 0.0)
         }));
@@ -214,12 +220,12 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
     
     for(int64_t i = 0; i < model->animations_count; i++) {
         cgltf_animation* animation = &model->animations[i];
-        rlr_res_animation_meta_t anim_meta = {0};
+        rlr_animation_meta_t anim_meta = {0};
         if(animation->name) {
-            strncpy(anim_meta.name, animation->name, RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH - 1);
-            anim_meta.name[RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH - 1] = '\0';
+            strncpy(anim_meta.name, animation->name, RLR_ANM_MDL_ANIMATION_NAME_LENGTH - 1);
+            anim_meta.name[RLR_ANM_MDL_ANIMATION_NAME_LENGTH - 1] = '\0';
         } else {
-            strncpy(anim_meta.name, "unknown animation", RLR_RES_ANIMATED_MODEL_ANIMATION_NAME_LENGTH - 1);
+            strncpy(anim_meta.name, "unknown animation", RLR_ANM_MDL_ANIMATION_NAME_LENGTH - 1);
         }
         anim_meta.fps = fps;
         anim_meta.duration = animation_duration(animation);
@@ -285,7 +291,7 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
                 arrpush(animation_matrices, affine_rows);
 
                 //extract translation and rotation to make samples
-                rlr_res_animation_sample_t sample = {
+                rlr_animation_sample_t sample = {
                     .translation = rlr_mat4x4_extract_translation(&final_mat),
                     .rotation = rlr_mat4x4_extract_rotation(&final_mat)
                 };
@@ -300,46 +306,47 @@ static rlr_res_animations_t load_animations(cgltf_data* model, float fps) {
         arrpush(final.metas, anim_meta);
     }
 
-    final.animation_texture = rlr_backend()->create_animation_texture(animation_matrices, arrlenu(animation_matrices), RLR_RES_ANIMATED_MODEL_ANIMATION_TEXTURE_SIZE);
+    final.animation_texture = rlr_backend()->create_animation_texture(animation_matrices, arrlenu(animation_matrices), RLR_ANM_MDL_ANIMATION_TEXTURE_SIZE);
     rlr_log_debug("tex %d", final.animation_texture);
     rlr_log_debug("baked animation data info: matrix count=%d; size=%d; texel count=%d", arrlen(animation_matrices), arrlen(animation_matrices) * sizeof(rlr_affine_mat4x3_t), arrlen(animation_matrices) * 4);
     return final;
 }
 
-rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_location) {
+rlr_anm_mdl_t* rlr_anm_mdl_load(const char* file_glb) {
     cgltf_data* data = NULL;
-    rlr_res_animated_model_t* model = NULL;
-    rlr_animated_model_vertex_t* vertices = NULL;
+    rlr_anm_mdl_t* model = NULL;
+    rlr_anm_vert_t* vertices = NULL;
     uint32_t* indices = NULL;
+    rlmesh_t* optimized_mesh = NULL;
     
-    model = malloc(sizeof(rlr_res_animated_model_t));
+    model = malloc(sizeof(rlr_anm_mdl_t));
     if(!model) {
         rlr_log_error("pointer to the animated model handle is null");
         goto err;
     }
     
     model->meshes = NULL;
-    model->animations = (rlr_res_animations_t) {
+    model->animations = (rlr_animations_t) {
         .animation_texture = 0,
         .joint_count = 0,
         .metas = NULL
     };
     
-    data = rlr_res_model_load_glb(glb_model_location);
+    data = rlr_mdl_load_glb(file_glb);
     if(!data) {
         goto err;
     }
     
     //load the animations first
-    model->animations = load_animations(data, RLR_RES_ANIMATED_MODEL_ANIMATION_FPS);
+    model->animations = load_animations(data, RLR_ANM_MDL_ANIMATION_FPS);
     if(model->animations.animation_texture == 0) {
-        rlr_log_error("could not load animation from \"%s\"", glb_model_location);
+        rlr_log_error("could not load animation from \"%s\"", file_glb);
         goto err;
     }
 
     rlr_log_debug("animation count: %d with %d joints", arrlen(model->animations.metas), model->animations.joint_count);
     for(int32_t i = 0; i < arrlen(model->animations.metas); i++) {
-        rlr_res_animation_meta_t* meta = &model->animations.metas[i];
+        rlr_animation_meta_t* meta = &model->animations.metas[i];
         rlr_log_debug("animation \"%s\" is %f seconds long. It's animation matrices starts at offset %d and it has %d animation keyframes", meta->name, meta->duration, meta->pose_offset, meta->pose_count);
     }
 
@@ -448,11 +455,11 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
                     cgltf_accessor_read_float(accessor_weights, v, weights, 4);
                 }
                 
-                rlr_animated_model_vertex_t vertex = {
-                    .pos = rlr_vec3(pos[0], pos[1], pos[2]),
-                    .normal = rlr_vec3(norm[0], norm[1], norm[2]),
-                    .uv = rlr_vec2(uv[0], uv[1]),
-                };
+                rlr_anm_vert_t vertex;
+                memset(&vertex, 0, sizeof(vertex));
+                vertex.pos = rlr_vec3(pos[0], pos[1], pos[2]);
+                vertex.normal = rlr_vec3(norm[0], norm[1], norm[2]);
+                vertex.uv = rlr_vec2(uv[0], uv[1]);
 
                 if(has_joints && has_weights) {
                     for(uint32_t jw = 0; jw < 4; jw++) {
@@ -486,30 +493,34 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
                     uint32_t index = cgltf_accessor_read_index(primitive->indices, ind);
                     arrpush(indices, index);
                 }
-                rlr_log_debug("mesh %s: vertices=%u indices=%u triangles=%u",
-                    mesh->name,
-                    count_position,
-                    primitive->indices->count,
-                    primitive->indices->count / 3);
-            } else {
-                rlr_log_debug("mesh %s: vertices=%u indices=%u triangles=%u",
-                    mesh->name,
-                    count_position,
-                    count_position,
-                    count_position / 3);
-                for(size_t i = 0; i < count_position; i++) {
-                    arrpush(indices, i);
-                }
             }
+
+            size_t index_count = arrlenu(indices);
+            optimized_mesh = rlmesh_create(vertices, sizeof(vertices[0]), arrlenu(vertices), indices, sizeof(uint32_t), index_count);
+            if(!optimized_mesh) {
+                rlr_log_error("unable to optimize glb model \"%s\"", file_glb);
+                goto err;
+            }
+
+            rlr_log_debug(
+                "optimization stats for \"%s\"\n\t\t\tbefore\tafter\n\tnum vert\t%zu\t%zu\n\tnum indx\t%zu\t%zu\n\n\tindices size\t%zu\n\tvertices size\t%zu",
+                mesh->name,
+                arrlenu(vertices),
+                optimized_mesh->vertex_count,
+                arrlenu(indices),
+                optimized_mesh->index_count,
+                optimized_mesh->indices_size,
+                optimized_mesh->vertices_size
+            );
                 
             //create mesh
-            arrpush(model->meshes, (rlr_res_animated_mesh_t){0});
-            rlr_res_animated_mesh_t* mesh = &arrlast(model->meshes);
+            arrpush(model->meshes, (rlr_anm_mesh_t){0});
+            rlr_anm_mesh_t* mesh = &arrlast(model->meshes);
             mesh->is_skinned = has_joints && has_weights;
             mesh->material_ubo = NULL;
             mesh->vbo = rlr_backend()->create_buffer();
             mesh->ebo = rlr_backend()->create_buffer();
-            mesh->index_count = arrlenu(indices);
+            mesh->index_count = optimized_mesh->index_count;
             if(mesh->vbo == 0 || mesh->ebo == 0) {
                 rlr_log_error("unable to create buffers");
                 goto err;
@@ -518,9 +529,13 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
             //fill buffers
             rlr_backend()->bind_vertex_array(0);
             rlr_backend()->bind_buffer(mesh->vbo, RLR_BACKEND_BUFFER_ARRAY);
-            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, sizeof(rlr_animated_model_vertex_t) * arrlenu(vertices), vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
+            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ARRAY, optimized_mesh->vertices_size, optimized_mesh->vertices, RLR_BACKEND_BUFFER_USAGE_STATIC);
             rlr_backend()->bind_buffer(mesh->ebo, RLR_BACKEND_BUFFER_ELEMENT_ARRAY);
-            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ELEMENT_ARRAY, sizeof(uint32_t) * arrlenu(indices), indices, RLR_BACKEND_BUFFER_USAGE_STATIC);
+            rlr_backend()->update_buffer(RLR_BACKEND_BUFFER_ELEMENT_ARRAY, optimized_mesh->indices_size, optimized_mesh->indices, RLR_BACKEND_BUFFER_USAGE_STATIC);
+
+            //cleanup optimized mesh
+            rlmesh_free(optimized_mesh);
+            optimized_mesh = NULL;
 
             //material
             if(!rlr_res_model_parse_cgltf_material(primitive->material, &mesh->material_ubo, &mesh->texture_base)) {
@@ -530,15 +545,16 @@ rlr_res_animated_model_t* rlr_res_animated_model_load_glb(const char* glb_model_
     }
 
     cgltf_free(data);
-    rlr_log("loaded animated model %s", glb_model_location);
+    rlr_log("loaded animated model %s", file_glb);
     return model;
 err:
     cgltf_free(data);
-    rlr_res_animated_model_free(model);
+    rlmesh_free(optimized_mesh);
+    rlr_anm_mdl_free(model);
     return NULL;
 }
 
-int32_t rlr_res_animated_model_get_animation_index(const rlr_res_animated_model_t* model, const char* animation_name) {
+int32_t rlr_anm_mdl_get_animation_index(const rlr_anm_mdl_t* model, const char* animation_name) {
     for(int32_t i = 0; i < arrlen(model->animations.metas); i++) {
         if(strcmp(model->animations.metas[i].name, animation_name) == 0) {
             return i;
@@ -547,7 +563,7 @@ int32_t rlr_res_animated_model_get_animation_index(const rlr_res_animated_model_
     return -1;
 }
 
-void rlr_res_animated_model_free(rlr_res_animated_model_t* model) {
+void rlr_anm_mdl_free(rlr_anm_mdl_t* model) {
     if(!model) {
         return;
     }
@@ -556,11 +572,11 @@ void rlr_res_animated_model_free(rlr_res_animated_model_t* model) {
     arrfree(model->animations.metas);
 
     for(int32_t i = 0; i < arrlen(model->meshes); i++) {
-        rlr_res_animated_mesh_t* mesh = &model->meshes[i];
+        rlr_anm_mesh_t* mesh = &model->meshes[i];
         rlr_backend()->free_buffer(mesh->ebo);
         rlr_backend()->free_buffer(mesh->vbo);
-        rlr_res_uniform_free(mesh->material_ubo);
-        rlr_res_texture_free(mesh->texture_base);
+        rlr_ubo_free(mesh->material_ubo);
+        rlr_tex_free(mesh->texture_base);
     }
     arrfree(model->meshes);
     free(model);
