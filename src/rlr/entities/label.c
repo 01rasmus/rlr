@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <utf8.h>
 #include "../../external/stb_ds.h"
 #include "../../internal/backends/backend.h"
@@ -45,25 +46,46 @@ static void remove_instances(rlr_lbl_t* label) {
     }
 }
 
-rlr_lbl_t* rlr_lbl_create(rlr_rect_t rect, float size, uint32_t layer, const char* text, rlr_font_t* font_id) {
-    return rlr_lbl_create_ext(rect, size, layer, font_id, RLR_ANCH_TOP_LEFT, RLR_ANCH_TOP_LEFT, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, text);
+static char* vstrcpy(const char* format, va_list args_orig, size_t* out_str_len) {
+    va_list args[2];
+    va_copy(args[0], args_orig);
+    va_copy(args[1], args_orig);
+
+    size_t str_len = vsnprintf(NULL, 0, format, args[0]);
+    *out_str_len = str_len;
+    if(str_len == 0) {
+        goto err;
+    }
+    size_t str_cap = str_len + 1;
+    char* copy = malloc(str_cap);
+    if(!copy) {
+        goto err;
+    }
+    vsnprintf(copy, str_cap, format, args[1]);
+
+    va_end(args[0]);
+    va_end(args[1]);
+    return copy;
+err:
+    va_end(args[0]);
+    va_end(args[1]);
+    return NULL;
 }
 
-rlr_lbl_t* rlr_lbl_create_ext(rlr_rect_t rectangle, float text_size, uint32_t layer, rlr_font_t* font, rlr_anchor_t screen_anchor, rlr_anchor_t local_anhor, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, const char* format, ...) {
+static rlr_lbl_t* _rlr_lbl_create_impl(rlr_font_t* font, rlr_anch_rect_t anch_rect, float text_size, rlr_hori_algn_t hori_algn, rlr_vert_algn_t vert_algn, uint32_t layer, const char* format, va_list args) {
     rlr_lbl_t* label = malloc(sizeof(rlr_lbl_t));
     rlr_shader_t* text_shader = rlr_pipeline_ui_get_text_shader();
+    char* temp_str = NULL;
     if(label == NULL  || font == NULL || text_shader == NULL) {
         goto err;
     }
 
     size_t ctx_count = 1 + font->fallback_fonts_len;
     label->font = font;
-    label->rectangle = rectangle;
+    label->anch_rect = anch_rect;
     label->size = text_size;
-    label->screen_anchor = screen_anchor;
-    label->local_anchor = local_anhor;
-    label->horizontal_alignment = horizontal_alignment;
-    label->vertical_alignment = vertical_alignment;
+    label->horizontal_alignment = hori_algn;
+    label->vertical_alignment = vert_algn;
     label->visible = true;
     label->instance_ctxs = malloc(sizeof(rlr_label_instance_ctx_t) * ctx_count);
     label->instance_ctxs_len = ctx_count;
@@ -94,19 +116,84 @@ rlr_lbl_t* rlr_lbl_create_ext(rlr_rect_t rectangle, float text_size, uint32_t la
         };
     }
 
-    if(!rlr_word_generate(label->font, NULL, text_size, rectangle, horizontal_alignment, vertical_alignment, local_anhor, screen_anchor, gen_text, format, label)) {
-        goto err;
+    size_t len;
+    temp_str = vstrcpy(format, args, &len);
+
+    //only evaluate if there was a string
+    if(len > 0) {
+        if(!temp_str) {
+            goto err;
+        }
+    
+        if(!rlr_word_generate(label->font, NULL, text_size, anch_rect.rect, hori_algn, vert_algn, anch_rect.local_anchor, anch_rect.screen_anchor, gen_text, temp_str, label)) {
+            goto err;
+        }
     }
 
+    free(temp_str);
     return label;
 err:
+    free(temp_str);
     rlr_lbl_free(label);
     return NULL;
 }
 
-void rlr_lbl_set_text(rlr_lbl_t* label, const char* text) {
+rlr_lbl_t* rlr_lbl_create(rlr_font_t* font, float x, float y, float size, uint32_t layer, const char* format, ...) {
+    rlr_anch_rect_t anch_rect = rlr_anch_rect_xywh(x, y, 10000000.0, 10000000.0, RLR_ANCH_TOP_LEFT);
+    va_list args;
+    va_start(args, format);
+    rlr_lbl_t* label = _rlr_lbl_create_impl(font, anch_rect, size, RLR_HORI_ALGN_LEFT, RLR_VERT_ALGN_TOP, layer, format, args);
+    va_end(args);
+    return label;
+}
+
+rlr_lbl_t* rlr_lbl_create_anch(rlr_font_t* font, rlr_anch_rect_t anch_rect, float size, uint32_t layer, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    rlr_lbl_t* label = _rlr_lbl_create_impl(font, anch_rect, size, RLR_HORI_ALGN_LEFT, RLR_VERT_ALGN_TOP, layer, format, args);
+    va_end(args);
+    return label;
+}
+
+rlr_lbl_t* rlr_lbl_create_anch_algn(rlr_font_t* font, rlr_anch_rect_t anch_rect, float text_size, rlr_hori_algn_t hori_algn, rlr_vert_algn_t vert_algn, uint32_t layer, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    rlr_lbl_t* label = _rlr_lbl_create_impl(font, anch_rect, text_size, hori_algn, vert_algn, layer, format, args);
+    va_end(args);
+    return label;
+}
+
+void rlr_lbl_set_textf(rlr_lbl_t* label, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    size_t len;
+    char* temp_str = vstrcpy(format, args, &len);
+    va_end(args);
+    if(!temp_str || len == 0) {
+        free(temp_str);
+        return;
+    }
+    
     remove_instances(label);
-    rlr_word_generate(label->font, NULL, label->size, label->rectangle, label->horizontal_alignment, label->vertical_alignment, label->local_anchor, label->screen_anchor, gen_text, text, label);
+    rlr_word_generate(label->font, NULL, label->size, label->anch_rect.rect, label->horizontal_alignment, label->vertical_alignment, label->anch_rect.local_anchor, label->anch_rect.screen_anchor, gen_text, temp_str, label);
+    free(temp_str);
+}
+
+void rlr_lbl_set_textf_anch(rlr_lbl_t* label, rlr_anch_rect_t anch_rect, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    size_t len;
+    char* temp_str = vstrcpy(format, args, &len);
+    va_end(args);
+    if(!temp_str || len == 0) {
+        free(temp_str);
+        return;
+    }
+    
+    label->anch_rect = anch_rect;
+    remove_instances(label);
+    rlr_word_generate(label->font, NULL, label->size, label->anch_rect.rect, label->horizontal_alignment, label->vertical_alignment, label->anch_rect.local_anchor, label->anch_rect.screen_anchor, gen_text, temp_str, label);
+    free(temp_str);
 }
 
 void rlr_lbl_set_vis(rlr_lbl_t* label, bool visible) {
@@ -118,10 +205,6 @@ void rlr_lbl_set_vis(rlr_lbl_t* label, bool visible) {
             rlr_pipeline_ui_set_sprite_instance_visability(ctx->cmd_id, ctx->instance_indices[j], visible);
         }
     }
-}
-
-void rlr_lbl_set_rect(rlr_lbl_t* label, rlr_rect_t rect) {
-    label->rectangle = rect;
 }
 
 void rlr_lbl_free(rlr_lbl_t* label) {

@@ -9,12 +9,10 @@
 
 typedef struct rlr_pipeline_input_mouse_area_t {
     rlpp_id_t id;
-    rlr_rect_t rect;
+    rlr_anch_rect_t anch_rect;
     void* user;
     int64_t layer;
     bool enabled;
-    rlr_anchor_t local_anchor;
-    rlr_anchor_t screen_anchor;
 
     rlr_input_area_on_enter_t on_enter;
     rlr_input_area_on_leave_t on_leave;

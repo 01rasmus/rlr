@@ -22,11 +22,9 @@ typedef struct rlr_lbl_t {
     rlr_font_t* font;
     rlr_label_instance_ctx_t* instance_ctxs;
     size_t instance_ctxs_len;
-    rlr_rect_t rectangle;
-    rlr_anchor_t screen_anchor;
-    rlr_anchor_t local_anchor;
-    rlr_horizontal_alignment_t horizontal_alignment;
-    rlr_vertical_alignment_t vertical_alignment;
+    rlr_anch_rect_t anch_rect;
+    rlr_hori_algn_t horizontal_alignment;
+    rlr_vert_algn_t vertical_alignment;
     float size;
     bool visible;
 } rlr_lbl_t;
@@ -35,8 +33,7 @@ typedef struct rlr_lbl_t {
     Sprite entity
 */
 typedef struct rlr_spr_t {
-    rlr_rect_t rect;
-    rlr_anchor_t local_anchor;
+    rlr_anch_rect_t anch_rect;
     uint32_t layer;
     uint64_t cmd_id;
     uint64_t instance_index;
@@ -104,9 +101,7 @@ typedef struct rlr_sta_obj_t {
 */
 typedef struct rlr_mdl_occl_t {
     rlpp_ref_t instance_ref;
-    rlr_anchor_t screen_anchor;
-    rlr_anchor_t local_anchor;
-    rlr_rect_t rectangle;
+    rlr_anch_rect_t anch_rect;
     uint32_t index;
     bool visible;
 } rlr_mdl_occl_t;
@@ -122,11 +117,10 @@ typedef struct rlr_ms_inpt_area_t {
     Nine patch entity
 */
 typedef struct rlr_npatch_t {
-    rlr_anchor_t screen_anchor;
-    rlr_anchor_t local_anchor;
     rlr_tex_t* texture;
     uint64_t cmd_id;
     uint64_t instances[9];
     rlr_npatch_desc_t nine_patch;
+    rlr_anch_rect_t anch_rect;
     bool visible;
 } rlr_npatch_t;

@@ -3,26 +3,24 @@
 #include "model_occluder.h"
 
 static void make_instance(rlr_pipeline_stencil_occluder_instance_t* instance, rlr_mdl_occl_t* mo) {
-    rlr_vec2_t screen_anchor_vec = rlr_anchor_vec(mo->screen_anchor);
-    rlr_vec2_t local_anchor_vec = rlr_anchor_vec(mo->local_anchor);
-    float width = mo->rectangle.width;
-    float height = mo->rectangle.height;
+    rlr_vec2_t screen_anchor_vec = rlr_anchor_vec(mo->anch_rect.screen_anchor);
+    rlr_vec2_t local_anchor_vec = rlr_anchor_vec(mo->anch_rect.local_anchor);
+    float width = mo->anch_rect.rect.width;
+    float height = mo->anch_rect.rect.height;
 
-    instance->pos = rlr_vec2(mo->rectangle.x - (width * local_anchor_vec.x), mo->rectangle.y - (height * local_anchor_vec.y));
+    instance->pos = rlr_vec2(mo->anch_rect.rect.x - (width * local_anchor_vec.x), mo->anch_rect.rect.y - (height * local_anchor_vec.y));
     instance->screen_anchor = screen_anchor_vec;
     instance->size = rlr_vec2(width, height);
     instance->visible = mo->visible == true ? 1 : 0;
 }
 
-rlr_mdl_occl_t* rlr_mdl_occl_create(rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor) {
+rlr_mdl_occl_t* rlr_mdl_occl_create(rlr_anch_rect_t anch_rect) {
     rlr_mdl_occl_t* occluder = malloc(sizeof(rlr_mdl_occl_t));
     if(!occluder) {
         goto err;
     }
 
-    occluder->rectangle = rectangle;
-    occluder->local_anchor = local_anchor;
-    occluder->screen_anchor = screen_anchor;
+    occluder->anch_rect = anch_rect;
     occluder->visible = true;
 
     rlr_pipeline_stencil_occluder_instance_t inst = {0};
@@ -43,8 +41,8 @@ void rlr_mdl_occl_set_vis(rlr_mdl_occl_t* mo, bool visible) {
     rlr_pipeline_stencil_set_model_occluder_instance_visability(mo->instance_ref, visible);
 }
 
-void rlr_mdl_occl_set_rect(rlr_mdl_occl_t* mo, rlr_rect_t rectangle) {
-    mo->rectangle = rectangle;
+void rlr_mdl_occl_set_anch_rect(rlr_mdl_occl_t* mo, rlr_anch_rect_t anch_rect) {
+    mo->anch_rect = anch_rect;
     make_instance(rlr_pipeline_stencil_get_and_dirty_model_occluder_instance(mo->instance_ref), mo);
 }
 

@@ -21,6 +21,18 @@ bool rlr_rect_contains_pos(const rlr_rect_t* rect, const rlr_vec2_t pos) {
     return true;
 }
 
+bool rlr_anch_rect_contains_pos(const rlr_anch_rect_t* ar, rlr_vec2_t pos, rlr_vec2_t screen_size) {
+    rlr_vec2_t screen_anchor_vec = rlr_vec2_mul(rlr_anchor_vec(ar->screen_anchor), screen_size);
+    rlr_vec2_t rect_anchor_vec = rlr_vec2_mul(rlr_anchor_vec(ar->local_anchor), rlr_vec2(ar->rect.width, ar->rect.height));
+    rlr_rect_t rect = {
+        .x = ar->rect.x + screen_anchor_vec.x - rect_anchor_vec.x,
+        .y = ar->rect.y + screen_anchor_vec.y - rect_anchor_vec.y,
+        .width = ar->rect.width,
+        .height = ar->rect.height
+    };
+    return rlr_rect_contains_pos(&rect, pos);
+}
+
 rlr_anch_rect_t rlr_anch_rect_inset(rlr_anch_rect_t ar, float amount) {
     rlr_vec2_t vec = rlr_anchor_vec(ar.local_anchor);
     ar.rect.width -= amount * 2.0;
@@ -114,4 +126,16 @@ void rlr_anch_rect_subdiv_matrix(const rlr_anch_rect_t ar, uint32_t horizontal_d
             remaining_horizontal = rlr_anch_rect_inset_left(remaining_horizontal, seg_width);
         }
     }
+}
+
+void rlr_anch_rect_split_hori(const rlr_anch_rect_t ar, float ratio, rlr_anch_rect_t out_anch_rects[2]) {
+    float take_left = ar.rect.width * ratio;
+    out_anch_rects[0] = rlr_anch_rect_take_left(ar, take_left);
+    out_anch_rects[1] = rlr_anch_rect_inset_left(ar, take_left);
+}
+
+void rlr_anch_rect_split_vert(const rlr_anch_rect_t ar, float ratio, rlr_anch_rect_t out_anch_rects[2]) {
+    float take_top = ar.rect.height * ratio;
+    out_anch_rects[0] = rlr_anch_rect_take_top(ar, take_top);
+    out_anch_rects[1] = rlr_anch_rect_inset_top(ar, take_top);
 }

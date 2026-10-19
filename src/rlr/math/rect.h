@@ -24,6 +24,7 @@ typedef struct rlr_anch_rect_t {
 #define rlr_anch_rect_xywh_scrn(X, Y, W, H, LOCAL_ANCHOR, SCREEN_ANCHOR)    ((rlr_anch_rect_t){.rect = {.x = (X), .y = (Y), .width = (W), .height = (H)}, .local_anchor = (LOCAL_ANCHOR), .screen_anchor = (SCREEN_ANCHOR)})
 
 bool rlr_rect_contains_pos(const rlr_rect_t* rect, const rlr_vec2_t pos);
+bool rlr_anch_rect_contains_pos(const rlr_anch_rect_t* ar, rlr_vec2_t pos, rlr_vec2_t screen_size);
 rlr_anch_rect_t rlr_anch_rect_inset(rlr_anch_rect_t ar, float amount);
 rlr_anch_rect_t rlr_anch_rect_inset_vert(rlr_anch_rect_t ar, float amount);
 rlr_anch_rect_t rlr_anch_rect_inset_hori(rlr_anch_rect_t ar, float amount);
@@ -34,6 +35,8 @@ rlr_anch_rect_t rlr_anch_rect_inset_right(rlr_anch_rect_t ar, float amount);
 void rlr_anch_rect_subdiv_vert(const rlr_anch_rect_t ar, uint32_t divisions, rlr_anch_rect_t* out_anchors);
 void rlr_anch_rect_subdiv_hori(const rlr_anch_rect_t ar, uint32_t divisions, rlr_anch_rect_t* out_anchors);
 void rlr_anch_rect_subdiv_matrix(const rlr_anch_rect_t ar, uint32_t horizontal_divisons, uint32_t vertical_divisions, rlr_anch_rect_t* out_anchors);
+void rlr_anch_rect_split_hori(const rlr_anch_rect_t ar, float ratio, rlr_anch_rect_t out_anch_rects[2]);
+void rlr_anch_rect_split_vert(const rlr_anch_rect_t ar, float ratio, rlr_anch_rect_t out_anch_rects[2]);
 
 inline rlr_anch_rect_t rlr_anch_rect_outset(rlr_anch_rect_t ar, float amount) {
     return rlr_anch_rect_inset(ar, -amount);

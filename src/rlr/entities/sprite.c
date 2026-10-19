@@ -6,40 +6,30 @@
 #include "../rlr.h"
 #include "sprite.h"
 
-static rlr_rect_t _rlr_spr_make_instance_rectangle(rlr_anchor_t local_anchor, rlr_rect_t rectangle) {
-    float width = rectangle.width;
-    float height = rectangle.height;
-    rlr_vec2_t local_anchor_vec = rlr_anchor_vec(local_anchor);
+static rlr_rect_t _rlr_spr_make_instance_rectangle(rlr_anch_rect_t ar) {
+    float width = ar.rect.width;
+    float height = ar.rect.height;
+    rlr_vec2_t local_anchor_vec = rlr_anchor_vec(ar.local_anchor);
     return (rlr_rect_t) {
-        .x = rectangle.x - (width * local_anchor_vec.x),
-        .y = rectangle.y - (height * local_anchor_vec.y),
+        .x = ar.rect.x - (width * local_anchor_vec.x),
+        .y = ar.rect.y - (height * local_anchor_vec.y),
         .width = width,
         .height = height,
     };
 }
 
-rlr_spr_t* rlr_spr_create(rlr_tex_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
-    rlr_tex_t* tex = texture == NULL ? rlr_default_texture() : texture;
-    return rlr_spr_create_ext(tex, rectangle, screen_anchor, local_anchor, layer, rlr_rect(0, 0, tex->width, tex->height), rlr_rect(0, 0, 0, 0));
-}
-
-rlr_spr_t* rlr_spr_create_from_tile(rlr_tex_atl_tile_t* tile, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
-    return rlr_spr_create_ext(tile->texture, rectangle, screen_anchor, local_anchor, layer, rlr_rect(tile->uv.x, tile->uv.y, tile->size.x, tile->size.y), rlr_rect(0, 0, 0, 0));
-}
-
-rlr_spr_t* rlr_spr_create_ext(rlr_tex_t* texture, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer, rlr_rect_t uv, rlr_rect_t scissor) {
+static inline rlr_spr_t* _rlr_spr_create_impl(rlr_tex_t* tex, rlr_anch_rect_t anch_rect, float u, float v, float tile_w, float tile_h, uint32_t layer) {
     rlr_spr_t* sprite = NULL;
-    rlr_tex_t* tex = texture == NULL ? rlr_default_texture() : texture;
     rlr_pipeline_ui_draw_command_t* cmd = rlr_pipeline_ui_find_draw_command(tex, NULL, layer);
 
-    rlr_rect_t instance_rect = _rlr_spr_make_instance_rectangle(local_anchor, rectangle);
+    rlr_rect_t instance_rect = _rlr_spr_make_instance_rectangle(anch_rect);
     rlr_instance_data_ui_t data = {
         .color = UINT32_MAX,
         .pos = rlr_vec2(instance_rect.x, instance_rect.y),
         .size = rlr_vec2(instance_rect.width, instance_rect.height),
-        .uv = rlr_vec2(uv.x / tex->width, uv.y / tex->height),
-        .uv_size = rlr_vec2(uv.width / tex->width, uv.height / tex->height),
-        .screen_anchor = screen_anchor,
+        .uv = rlr_vec2(u, v),
+        .uv_size = rlr_vec2(tile_w, tile_h),
+        .screen_anchor = anch_rect.screen_anchor,
         .visible = true,
     };
     uint64_t instance_index = rlr_pipeline_ui_add_sprite_instance(cmd, data);
@@ -49,8 +39,7 @@ rlr_spr_t* rlr_spr_create_ext(rlr_tex_t* texture, rlr_rect_t rectangle, rlr_anch
     }
 
     *sprite = (rlr_spr_t){
-        .rect = rectangle,
-        .local_anchor = local_anchor,
+        .anch_rect = anch_rect,
         .cmd_id = cmd->id,
         .instance_index = instance_index,
         .layer = layer,
@@ -60,6 +49,24 @@ rlr_spr_t* rlr_spr_create_ext(rlr_tex_t* texture, rlr_rect_t rectangle, rlr_anch
 err:
     rlr_spr_free(sprite);
     return sprite;
+}
+
+rlr_spr_t* rlr_spr_create(rlr_tex_t* texture, rlr_anch_rect_t anch_rect, uint32_t layer) {
+    rlr_tex_t* tex = texture == NULL ? rlr_default_texture() : texture;
+    return _rlr_spr_create_impl(tex, anch_rect, 0.0, 0.0, tex->width, tex->height, layer);
+}
+
+rlr_spr_t* rlr_spr_create_from_tile(rlr_tex_atl_tile_t* tile, rlr_anch_rect_t anch_rect, uint32_t layer) {
+    rlr_tex_t* tex = tile->texture == NULL ? rlr_default_texture() : tile->texture;
+    return _rlr_spr_create_impl(tex, anch_rect, tile->uv.x / tex->width, tile->uv.y / tex->height, tile->size.x / tex->width, tile->size.y / tex->height, layer);
+}
+
+rlr_spr_t* rlr_spr_create_col_rect(rlr_color_t col, rlr_anch_rect_t anch_rect, uint32_t layer) {
+    rlr_spr_t* spr = rlr_spr_create(NULL, anch_rect, layer);
+    if(spr) {
+        rlr_spr_set_col(spr, col);
+    }
+    return spr;
 }
 
 void rlr_spr_set_tex_from_tile(rlr_spr_t* sprite, rlr_tex_atl_tile_t* tile) {
@@ -103,47 +110,33 @@ void rlr_spr_set_tex(rlr_spr_t* sprite, rlr_tex_t* texture) {
     sprite->cmd_id = new_cmd->id;
 }
 
-void rlr_spr_set_col(rlr_spr_t* sprite, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+void rlr_spr_set_col(rlr_spr_t* sprite, rlr_color_t col) {
     rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
-    instance->color = (a << 24) | (b << 16) | (g << 8) | r;
+    instance->color = rlr_color_as_uint(col);
 }
 
 void rlr_spr_set_vis(rlr_spr_t* sprite, bool visible) {
     rlr_pipeline_ui_set_sprite_instance_visability(sprite->cmd_id, sprite->instance_index, visible);
 }
 
-void rlr_spr_set_rect(rlr_spr_t* sprite, rlr_rect_t rect) {
+void rlr_spr_set_anch_rect(rlr_spr_t* sprite, rlr_anch_rect_t anch_rect) {
     rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
-    rlr_rect_t instance_rect = _rlr_spr_make_instance_rectangle(sprite->local_anchor, rect);
+    rlr_rect_t instance_rect = _rlr_spr_make_instance_rectangle(anch_rect);
     instance->pos = rlr_vec2(instance_rect.x, instance_rect.y);
     instance->size = rlr_vec2(instance_rect.width, instance_rect.height);
-    sprite->rect = rect;
+    sprite->anch_rect = anch_rect;
 }
 
-void rlr_spr_set_lcl_anch(rlr_spr_t* sprite, rlr_anchor_t anchor) {
-    rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
-    rlr_rect_t instance_rect = _rlr_spr_make_instance_rectangle(anchor, sprite->rect);
-    instance->pos = rlr_vec2(instance_rect.x, instance_rect.y);
-    instance->size = rlr_vec2(instance_rect.width, instance_rect.height);
-    sprite->local_anchor = anchor;
-}
-
-void rlr_spr_set_scrn_anch(rlr_spr_t* sprite, rlr_anchor_t anchor) {
-    rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
-    instance->screen_anchor = anchor;
-}
-
-rlr_rect_t rlr_spr_get_rect(const rlr_spr_t* sprite) {
-    return sprite->rect;
+rlr_anch_rect_t rlr_spr_get_anch_rect(const rlr_spr_t* sprite) {
+    return sprite->anch_rect;
 }
 
 rlr_anchor_t rlr_spr_get_lcl_anch(const rlr_spr_t* sprite) {
-    return sprite->local_anchor;
+    return sprite->anch_rect.local_anchor;
 }
 
 rlr_anchor_t rlr_spr_get_scrn_anch(const rlr_spr_t* sprite) {
-    const rlr_instance_data_ui_t const* instance = rlr_pipeline_ui_get_sprite_instance(sprite->cmd_id, sprite->instance_index);
-    return instance->screen_anchor;
+    return sprite->anch_rect.screen_anchor;
 }
 
 uint32_t rlr_spr_get_col(const rlr_spr_t* sprite) {

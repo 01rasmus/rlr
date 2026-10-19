@@ -225,7 +225,7 @@ word_measure_context_t* rlr_word_measure(const rlr_font_glyph_t* unknown_glyph, 
     return &ctx;
 }
 
-bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float original_size, rlr_rect_t rectangle, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
+bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float original_size, rlr_rect_t rectangle, rlr_hori_algn_t horizontal_alignment, rlr_vert_algn_t vertical_alignment, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
     if(!font) {
         goto err;
     }
@@ -244,7 +244,7 @@ bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float or
     float current_width = 0.0;
 
     word_measure_context_t* ctx = rlr_word_measure(unknown_glyph, font, text_size, space_width, rectangle.height, rectangle.width, text);
-    start_y += rlr_vertical_start_position(vertical_alignment, rectangle.height - ctx->row_count * text_size);
+    start_y += rlr_vert_start_pos(vertical_alignment, rectangle.height - ctx->row_count * text_size);
 
     uint32_t current_word = 0;
     uint32_t current_row = 0;
@@ -258,7 +258,7 @@ bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float or
     float rem_width = rlr_word_calculate_remaining_row_width(ctx, rectangle.width, 0, horizontal_alignment, text_size, space_width, &row_word_count);
     float sw = rlr_word_calculate_space_width(rem_width, space_width, row_word_count, horizontal_alignment);
 
-    float start_pos = rlr_horizontal_start_position(horizontal_alignment, rem_width);
+    float start_pos = rlr_hori_start_pos(horizontal_alignment, rem_width);
     x += start_pos;
     current_width += start_pos;
 
@@ -292,7 +292,7 @@ bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float or
                 max_width = current_width;
             }
 
-            float start_pos = rlr_horizontal_start_position(horizontal_alignment, rem_width);
+            float start_pos = rlr_hori_start_pos(horizontal_alignment, rem_width);
             x = start_x + start_pos;
             current_width = start_pos;
         }
@@ -351,7 +351,7 @@ err:
     return false;
 }
 
-float rlr_word_calculate_remaining_row_width(word_measure_context_t* c, float width, uint32_t glyphs_offset, rlr_horizontal_alignment_t alignment, float font_size, float space_width, uint32_t* row_word_count) {
+float rlr_word_calculate_remaining_row_width(word_measure_context_t* c, float width, uint32_t glyphs_offset, rlr_hori_algn_t alignment, float font_size, float space_width, uint32_t* row_word_count) {
     uint32_t words = 1;
     float words_width = 0.0;
     uint32_t row = c->glyphs[glyphs_offset].row;
@@ -371,7 +371,7 @@ float rlr_word_calculate_remaining_row_width(word_measure_context_t* c, float wi
         words_width += g->glyph->advance * font_size;
     }
 
-    if(alignment != RLR_HORIZONTAL_ALIGNMENT_JUSTIFIED) {
+    if(alignment != RLR_HORI_ALGN_JUSTIFIED) {
         words_width += space_width * (float)(words - 1);
     }
 
@@ -379,13 +379,13 @@ float rlr_word_calculate_remaining_row_width(word_measure_context_t* c, float wi
     return width - words_width;
 }
 
-float rlr_word_calculate_space_width(float remaining_row_width, float real_space_width, uint32_t row_word_count, rlr_horizontal_alignment_t alignment) {
+float rlr_word_calculate_space_width(float remaining_row_width, float real_space_width, uint32_t row_word_count, rlr_hori_algn_t alignment) {
     switch(alignment) {
-        case RLR_HORIZONTAL_ALIGNMENT_LEFT:
-        case RLR_HORIZONTAL_ALIGNMENT_CENTER:
-        case RLR_HORIZONTAL_ALIGNMENT_RIGHT:
+        case RLR_HORI_ALGN_LEFT:
+        case RLR_HORI_ALGN_CENTER:
+        case RLR_HORI_ALGN_RIGHT:
             return real_space_width;
-        case RLR_HORIZONTAL_ALIGNMENT_JUSTIFIED:
+        case RLR_HORI_ALGN_JUSTIFIED:
             return row_word_count > 1 ? remaining_row_width / (float)(row_word_count - 1) : remaining_row_width;
     }
 }
