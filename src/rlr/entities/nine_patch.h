@@ -1,7 +1,6 @@
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
-#include "../math/anchor.h"
 #include "../math/rect.h"
 #include "../types/entity.h"
 #include "../types/res.h"

@@ -1,6 +1,4 @@
 #pragma once
-#include <stdbool.h>
-#include <stdint.h>
 #include "../math/matrix.h"
 #include "../types/entity.h"
 #include "../types/res.h"
