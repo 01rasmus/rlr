@@ -22,7 +22,7 @@ typedef struct rlr_lbl_t {
     rlr_font_t* font;
     rlr_label_instance_ctx_t* instance_ctxs;
     size_t instance_ctxs_len;
-    rlr_anch_rect_t anch_rect;
+    rlr_rect_t rect;
     rlr_hori_algn_t horizontal_alignment;
     rlr_vert_algn_t vertical_alignment;
     float size;
@@ -33,7 +33,7 @@ typedef struct rlr_lbl_t {
     Sprite entity
 */
 typedef struct rlr_spr_t {
-    rlr_anch_rect_t anch_rect;
+    rlr_rect_t rect;
     uint32_t layer;
     uint64_t cmd_id;
     uint64_t instance_index;
@@ -101,7 +101,7 @@ typedef struct rlr_sta_obj_t {
 */
 typedef struct rlr_mdl_occl_t {
     rlpp_ref_t instance_ref;
-    rlr_anch_rect_t anch_rect;
+    rlr_rect_t rect;
     uint32_t index;
     bool visible;
 } rlr_mdl_occl_t;
@@ -121,6 +121,6 @@ typedef struct rlr_npatch_t {
     uint64_t cmd_id;
     uint64_t instances[9];
     rlr_npatch_desc_t nine_patch;
-    rlr_anch_rect_t anch_rect;
+    rlr_rect_t rect;
     bool visible;
 } rlr_npatch_t;

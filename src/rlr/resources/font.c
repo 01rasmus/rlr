@@ -151,9 +151,9 @@ void rlr_font_set_size_scale(rlr_font_t* font, float scale) {
     font->size_scale = scale;
 }
 
-rlr_vec2_t rlr_font_measure(rlr_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...) {
+rlr_vec2_t rlr_font_measure(rlr_font_t* font, rlr_vec2_t available_size, float text_size, const char* format, ...) {
     rlr_vec2_t size = {0};
-    if(!rlr_word_generate(font, &size, text_size, rectangle, RLR_HORI_ALGN_LEFT, RLR_VERT_ALGN_TOP, RLR_ANCH_TOP_LEFT, RLR_ANCH_TOP_LEFT, NULL, format, NULL)) {
+    if(!rlr_word_generate(font, &size, text_size, rlr_rect_lcl(0, 0, available_size.x, available_size.y, RLR_ANCH_TOP_LEFT), RLR_HORI_ALGN_LEFT, RLR_VERT_ALGN_TOP, NULL, format, NULL)) {
         return (rlr_vec2_t){0};
     }
     return size;

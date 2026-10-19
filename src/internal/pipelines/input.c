@@ -26,7 +26,7 @@ static inline void rlr_pipeline_input_update_mouse_areas(rlr_pipeline_input_t* p
             continue;
         }
 
-        if(rlr_anch_rect_contains_pos(&area->anch_rect, mouse_position, screen_size)) {
+        if(rlr_rect_contains_pos(&area->rect, mouse_position, screen_size)) {
 
             //only pick the area with the highest layer if multiple overlap
             if(best_area && best_area->layer > area->layer) {
@@ -75,7 +75,7 @@ rlpp_id_t rlr_pipeline_input_add_area(rlr_pipeline_input_mouse_area_t input_area
     (*area) = (rlr_pipeline_input_mouse_area_t){
         .id = id,
         .user = input_area.user,
-        .anch_rect = input_area.anch_rect,
+        .rect = input_area.rect,
         .enabled = input_area.enabled,
         .layer = input_area.layer,
         .on_enter = input_area.on_enter == NULL ? default_area_on_enter : input_area.on_enter,

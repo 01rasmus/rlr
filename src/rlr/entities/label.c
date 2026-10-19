@@ -72,7 +72,7 @@ err:
     return NULL;
 }
 
-static rlr_lbl_t* _rlr_lbl_create_impl(rlr_font_t* font, rlr_anch_rect_t anch_rect, float text_size, rlr_hori_algn_t hori_algn, rlr_vert_algn_t vert_algn, uint32_t layer, const char* format, va_list args) {
+static rlr_lbl_t* _rlr_lbl_create_impl(rlr_font_t* font, rlr_rect_t rect, float text_size, rlr_hori_algn_t hori_algn, rlr_vert_algn_t vert_algn, uint32_t layer, const char* format, va_list args) {
     rlr_lbl_t* label = malloc(sizeof(rlr_lbl_t));
     rlr_shader_t* text_shader = rlr_pipeline_ui_get_text_shader();
     char* temp_str = NULL;
@@ -82,7 +82,7 @@ static rlr_lbl_t* _rlr_lbl_create_impl(rlr_font_t* font, rlr_anch_rect_t anch_re
 
     size_t ctx_count = 1 + font->fallback_fonts_len;
     label->font = font;
-    label->anch_rect = anch_rect;
+    label->rect = rect;
     label->size = text_size;
     label->horizontal_alignment = hori_algn;
     label->vertical_alignment = vert_algn;
@@ -125,7 +125,7 @@ static rlr_lbl_t* _rlr_lbl_create_impl(rlr_font_t* font, rlr_anch_rect_t anch_re
             goto err;
         }
     
-        if(!rlr_word_generate(label->font, NULL, text_size, anch_rect.rect, hori_algn, vert_algn, anch_rect.local_anchor, anch_rect.screen_anchor, gen_text, temp_str, label)) {
+        if(!rlr_word_generate(label->font, NULL, text_size, rect, hori_algn, vert_algn, gen_text, temp_str, label)) {
             goto err;
         }
     }
@@ -139,26 +139,26 @@ err:
 }
 
 rlr_lbl_t* rlr_lbl_create(rlr_font_t* font, float x, float y, float size, uint32_t layer, const char* format, ...) {
-    rlr_anch_rect_t anch_rect = rlr_anch_rect_xywh(x, y, 10000000.0, 10000000.0, RLR_ANCH_TOP_LEFT);
+    rlr_rect_t rect = rlr_rect_lcl(x, y, 10000000.0, 10000000.0, RLR_ANCH_TOP_LEFT);
     va_list args;
     va_start(args, format);
-    rlr_lbl_t* label = _rlr_lbl_create_impl(font, anch_rect, size, RLR_HORI_ALGN_LEFT, RLR_VERT_ALGN_TOP, layer, format, args);
+    rlr_lbl_t* label = _rlr_lbl_create_impl(font, rect, size, RLR_HORI_ALGN_LEFT, RLR_VERT_ALGN_TOP, layer, format, args);
     va_end(args);
     return label;
 }
 
-rlr_lbl_t* rlr_lbl_create_anch(rlr_font_t* font, rlr_anch_rect_t anch_rect, float size, uint32_t layer, const char* format, ...) {
+rlr_lbl_t* rlr_lbl_create_rect(rlr_font_t* font, rlr_rect_t rect, float size, uint32_t layer, const char* format, ...) {
     va_list args;
     va_start(args, format);
-    rlr_lbl_t* label = _rlr_lbl_create_impl(font, anch_rect, size, RLR_HORI_ALGN_LEFT, RLR_VERT_ALGN_TOP, layer, format, args);
+    rlr_lbl_t* label = _rlr_lbl_create_impl(font, rect, size, RLR_HORI_ALGN_LEFT, RLR_VERT_ALGN_TOP, layer, format, args);
     va_end(args);
     return label;
 }
 
-rlr_lbl_t* rlr_lbl_create_anch_algn(rlr_font_t* font, rlr_anch_rect_t anch_rect, float text_size, rlr_hori_algn_t hori_algn, rlr_vert_algn_t vert_algn, uint32_t layer, const char* format, ...) {
+rlr_lbl_t* rlr_lbl_create_rect_algn(rlr_font_t* font, rlr_rect_t rect, float text_size, rlr_hori_algn_t hori_algn, rlr_vert_algn_t vert_algn, uint32_t layer, const char* format, ...) {
     va_list args;
     va_start(args, format);
-    rlr_lbl_t* label = _rlr_lbl_create_impl(font, anch_rect, text_size, hori_algn, vert_algn, layer, format, args);
+    rlr_lbl_t* label = _rlr_lbl_create_impl(font, rect, text_size, hori_algn, vert_algn, layer, format, args);
     va_end(args);
     return label;
 }
@@ -175,11 +175,11 @@ void rlr_lbl_set_textf(rlr_lbl_t* label, const char* format, ...) {
     }
     
     remove_instances(label);
-    rlr_word_generate(label->font, NULL, label->size, label->anch_rect.rect, label->horizontal_alignment, label->vertical_alignment, label->anch_rect.local_anchor, label->anch_rect.screen_anchor, gen_text, temp_str, label);
+    rlr_word_generate(label->font, NULL, label->size, label->rect, label->horizontal_alignment, label->vertical_alignment, gen_text, temp_str, label);
     free(temp_str);
 }
 
-void rlr_lbl_set_textf_anch(rlr_lbl_t* label, rlr_anch_rect_t anch_rect, const char* format, ...) {
+void rlr_lbl_set_textf_rect(rlr_lbl_t* label, rlr_rect_t rect, const char* format, ...) {
     va_list args;
     va_start(args, format);
     size_t len;
@@ -190,9 +190,9 @@ void rlr_lbl_set_textf_anch(rlr_lbl_t* label, rlr_anch_rect_t anch_rect, const c
         return;
     }
     
-    label->anch_rect = anch_rect;
+    label->rect = rect;
     remove_instances(label);
-    rlr_word_generate(label->font, NULL, label->size, label->anch_rect.rect, label->horizontal_alignment, label->vertical_alignment, label->anch_rect.local_anchor, label->anch_rect.screen_anchor, gen_text, temp_str, label);
+    rlr_word_generate(label->font, NULL, label->size, label->rect, label->horizontal_alignment, label->vertical_alignment, gen_text, temp_str, label);
     free(temp_str);
 }
 

@@ -26,7 +26,7 @@ typedef struct rlr_npatch_desc_t {
 #define rlr_npatch_desc_lrtb_mid(LEFT, RIGHT, TOP, BOT) \
     ((rlr_npatch_desc_t){.left = (LEFT), .right = (RIGHT), .top = (TOP), .bottom = (BOT), .show_middle = true})
 
-rlr_npatch_t* rlr_npatch_create(rlr_tex_t* texture, rlr_npatch_desc_t nine_patch, rlr_anch_rect_t anch_rect, uint32_t layer);
+rlr_npatch_t* rlr_npatch_create(rlr_tex_t* texture, rlr_npatch_desc_t nine_patch, rlr_rect_t rect, uint32_t layer);
 void rlr_npatch_set_vis(rlr_npatch_t* np, bool visible);
-void rlr_npatch_set_anch_rect(rlr_npatch_t* np, rlr_anch_rect_t anch_rect);
+void rlr_npatch_set_rect(rlr_npatch_t* np, rlr_rect_t rect);
 void rlr_npatch_free(rlr_npatch_t* np);

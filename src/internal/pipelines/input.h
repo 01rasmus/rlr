@@ -9,7 +9,7 @@
 
 typedef struct rlr_pipeline_input_mouse_area_t {
     rlpp_id_t id;
-    rlr_anch_rect_t anch_rect;
+    rlr_rect_t rect;
     void* user;
     int64_t layer;
     bool enabled;

@@ -22,7 +22,6 @@ typedef struct rlr_pipeline_ui_draw_command_t {
     rlr_shader_t* shader;
     rlr_tex_t* texture;
     uint32_t layer;
-    rlr_rect_t scissor;
     uint64_t vao;
     uint64_t instance_vbo;
     bool should_scissor;

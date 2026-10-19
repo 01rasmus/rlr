@@ -225,26 +225,26 @@ word_measure_context_t* rlr_word_measure(const rlr_font_glyph_t* unknown_glyph, 
     return &ctx;
 }
 
-bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float original_size, rlr_rect_t rectangle, rlr_hori_algn_t horizontal_alignment, rlr_vert_algn_t vertical_alignment, rlr_anchor_t local_anchor, rlr_anchor_t screen_anchor, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
+bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float original_size, rlr_rect_t rect, rlr_hori_algn_t horizontal_alignment, rlr_vert_algn_t vertical_alignment, rlr_word_generate_callback_t gen_callback, const char* text, void* user) {
     if(!font) {
         goto err;
     }
 
     float text_size = original_size * font->size_scale;
-    rlr_vec2_t local_anchor_vec = rlr_anchor_vec(local_anchor);
+    rlr_vec2_t local_anchor_vec = rlr_anchor_vec(rect.local_anchor);
     uint32_t index;
     const rlr_font_glyph_t* space_glyph = rlr_font_get_glyph(font, ' ', &index);
     const rlr_font_glyph_t* unknown_glyph = rlr_font_get_glyph(font, '?', &index);
-    float x = rectangle.x - (rectangle.width * local_anchor_vec.x);
-    float start_y = (rectangle.y + text_size) - (rectangle.height * local_anchor_vec.y) - (font->vertical_offset * text_size);
+    float x = rect.x - (rect.width * local_anchor_vec.x);
+    float start_y = (rect.y + text_size) - (rect.height * local_anchor_vec.y) - (font->vertical_offset * text_size);
     float space_width = space_glyph ? ((space_glyph->advance * text_size)) : text_size;
     float start_x = x;
 
     float max_width = 0.0;
     float current_width = 0.0;
 
-    word_measure_context_t* ctx = rlr_word_measure(unknown_glyph, font, text_size, space_width, rectangle.height, rectangle.width, text);
-    start_y += rlr_vert_start_pos(vertical_alignment, rectangle.height - ctx->row_count * text_size);
+    word_measure_context_t* ctx = rlr_word_measure(unknown_glyph, font, text_size, space_width, rect.height, rect.width, text);
+    start_y += rlr_vert_start_pos(vertical_alignment, rect.height - ctx->row_count * text_size);
 
     uint32_t current_word = 0;
     uint32_t current_row = 0;
@@ -255,7 +255,7 @@ bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float or
 
     uint32_t row_word_count = 0;
 
-    float rem_width = rlr_word_calculate_remaining_row_width(ctx, rectangle.width, 0, horizontal_alignment, text_size, space_width, &row_word_count);
+    float rem_width = rlr_word_calculate_remaining_row_width(ctx, rect.width, 0, horizontal_alignment, text_size, space_width, &row_word_count);
     float sw = rlr_word_calculate_space_width(rem_width, space_width, row_word_count, horizontal_alignment);
 
     float start_pos = rlr_hori_start_pos(horizontal_alignment, rem_width);
@@ -284,7 +284,7 @@ bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float or
         }
 
         if(current_row != g->row) {
-            rem_width = rlr_word_calculate_remaining_row_width(ctx, rectangle.width, i, horizontal_alignment, text_size, space_width, &row_word_count);
+            rem_width = rlr_word_calculate_remaining_row_width(ctx, rect.width, i, horizontal_alignment, text_size, space_width, &row_word_count);
             sw = rlr_word_calculate_space_width(rem_width, space_width, row_word_count, horizontal_alignment);
             current_row = g->row;
 
@@ -322,7 +322,7 @@ bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float or
                 italic_sheer,
                 rlr_vec2(draw_x1 + italic_sheer_offset, draw_y1),
                 rlr_vec2(width, height),
-                screen_anchor,
+                rect.screen_anchor,
                 rlr_vec2(u1, v1),
                 rlr_vec2(u2 - u1, v2 - v1),
                 glyph->font->px_range,

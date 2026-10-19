@@ -63,13 +63,13 @@ void rlr_font_set_size_scale(rlr_font_t* font, float scale);
 
 /**
  * @param font The font to measure with
- * @param rectangle The bounds of the measurement. The calculated size can never be larger than the rectangles size
+ * @param available_size The available size of the measurement. The calculated size can never be larger than this size
  * @param text_size The size of the text to measure with
  * @param format A normal `printf` style format string. Every paramater after this will be used for the string formatter. It uses `snprintf` internally
  * 
  * @return A 2-dimensional vector of the area used
  */
-rlr_vec2_t rlr_font_measure(rlr_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...);
+rlr_vec2_t rlr_font_measure(rlr_font_t* font, rlr_vec2_t available_size, float text_size, const char* format, ...);
 
 /**
  * @warning If the font does not have the unicode character,
