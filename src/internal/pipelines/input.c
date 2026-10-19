@@ -38,7 +38,7 @@ static inline void rlr_pipeline_input_update_mouse_areas(rlr_pipeline_input_t* p
         }
 
         rlr_rect_t anchored_rect = make_anchored_rect(&area->rect, screen_size, area->local_anchor, area->screen_anchor);
-        if(rlr_rect_contains_position(&anchored_rect, mouse_position)) {
+        if(rlr_rect_contains_pos(&anchored_rect, mouse_position)) {
 
             //only pick the area with the highest layer if multiple overlap
             if(best_area && best_area->layer > area->layer) {
