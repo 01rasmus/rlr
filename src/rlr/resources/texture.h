@@ -68,5 +68,3 @@ void rlr_tex_bind(const rlr_tex_t* texture, uint8_t texture_slot);
  * @param texture The pointer to the texture to free. If `NULL` is provided, nothing will be done
  */
 void rlr_tex_free(rlr_tex_t* texture);
-
-rlr_tex_t* rlr_tex_load_cgltf_albedo(cgltf_texture* tex);

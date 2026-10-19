@@ -162,7 +162,7 @@ rlr_sta_mdl_t* rlr_sta_mdl_load(const char* file_glb) {
             optimized_mesh = NULL;
 
             //material
-            if(!rlr_res_model_parse_cgltf_material(primitive->material, &mesh->material_ubo, &mesh->texture_base)) {
+            if(!rlr_mdl_parse_cgltf_material(primitive->material, &mesh->material_ubo, &mesh->texture_base)) {
                 goto err;
             }
         }

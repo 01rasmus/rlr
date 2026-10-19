@@ -6,7 +6,7 @@
 #include "types/misc.h"
 #include "types/log.h"
 #include "types/res.h"
-#include "types/obj.h"
+#include "types/entity.h"
 #include "math/quat.h"
 #include "math/vec.h"
 

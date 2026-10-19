@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "../../external/stb_ds.h"
-#include "../../rlr/objects/animated_model.h"
-#include "../../rlr/objects/static_model.h"
+#include "../../rlr/entities/animated_model.h"
+#include "../../rlr/entities/static_model.h"
 #include "../../rlr/resources/animated_model.h"
 #include "../../rlr/resources/static_model.h"
 #include "../../rlr/resources/uniform.h"
@@ -481,7 +481,7 @@ err:
     return false;
 }
 
-static inline bool rlr_pipeline_update_animation_state(rlr_pipeline_model_t* pm, rlr_pipeline_animated_model_draw_command_t* cmd, rlr_obj_animation_state_t* state, double delta_time, float* out_lerp, uint32_t* out_pose_a, uint32_t* out_pose_b) {
+static inline bool rlr_pipeline_update_animation_state(rlr_pipeline_model_t* pm, rlr_pipeline_animated_model_draw_command_t* cmd, rlr_animation_state_t* state, double delta_time, float* out_lerp, uint32_t* out_pose_a, uint32_t* out_pose_b) {
     if(state->animation_index == -1) {
         return false;
     }
@@ -817,7 +817,7 @@ uint32_t rlr_pipeline_model_add_animated_model_instance(rlr_pipeline_animated_mo
     return arrlen(command->instances) - 1;
 }
 
-bool rlpp_pipeline_model_set_animated_model_animation_state(rlr_obj_animated_model_t* model) {
+bool rlpp_pipeline_model_set_animated_model_animation_state(rlr_anm_obj_t* model) {
     rlr_pipeline_model_t* pm = RLR_PIPELINE_MODEL;
     model->animation_state_ref = rlpp_alloc_to_ref(pm->animation_states, ((rlr_pipeline_animated_model_animation_state_t){
         .animation_states = {

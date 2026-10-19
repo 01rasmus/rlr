@@ -1,7 +1,7 @@
 #include <utf8.h>
 #include "../../external/stb_ds.h"
 #include "../../internal/backends/backend.h"
-#include "../../internal/core/obj_types.h"
+#include "../../internal/core/entity_types.h"
 #include "../../internal/core/res_types.h"
 #include "../../internal/core/word.h"
 #include "../../internal/impl.h"
@@ -11,7 +11,7 @@
 #include "label.h"
 
 void gen_text(void* user, uint32_t color, float italic_sheer, rlr_vec2_t pos, rlr_vec2_t size, rlr_anchor_t screen_anchor, rlr_vec2_t uv, rlr_vec2_t uv_size, float px_range, uint32_t font_index) {
-    rlr_obj_label_t* label = user;
+    rlr_lbl_t* label = user;
 
     rlr_instance_data_ui_t instance = {
         .color = color,
@@ -24,7 +24,7 @@ void gen_text(void* user, uint32_t color, float italic_sheer, rlr_vec2_t pos, rl
         .px_range = px_range,
         .visible = label->visible == true ? 1 : 0,
     };
-    rlr_obj_label_instance_ctx_t* ctx = &label->instance_ctxs[font_index];
+    rlr_label_instance_ctx_t* ctx = &label->instance_ctxs[font_index];
     rlr_pipeline_ui_draw_command_t* cmd = rlpp_get_unchecked(rlr()->pipeline_ui.commands, ctx->cmd_id);
     if(!cmd) {
         return;
@@ -34,9 +34,9 @@ void gen_text(void* user, uint32_t color, float italic_sheer, rlr_vec2_t pos, rl
     arrpush(ctx->instance_indices, id);
 }
 
-static void remove_instances(rlr_obj_label_t* label) {
+static void remove_instances(rlr_lbl_t* label) {
     for(size_t i = 0; i < label->instance_ctxs_len; i++) {
-        rlr_obj_label_instance_ctx_t* ctx = &label->instance_ctxs[i];
+        rlr_label_instance_ctx_t* ctx = &label->instance_ctxs[i];
 
         for(size_t j = 0; j < arrlenu(ctx->instance_indices); j++) {
             rlr_pipeline_ui_remove_sprite_instance(ctx->cmd_id, ctx->instance_indices[j]);
@@ -45,12 +45,12 @@ static void remove_instances(rlr_obj_label_t* label) {
     }
 }
 
-rlr_obj_label_t* rlr_obj_label_create(rlr_rect_t rect, float size, uint32_t layer, const char* text, rlr_font_t* font_id) {
-    return rlr_obj_label_create_ext(rect, size, layer, font_id, RLR_ANCHOR_TOP_LEFT, RLR_ANCHOR_TOP_LEFT, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, text);
+rlr_lbl_t* rlr_lbl_create(rlr_rect_t rect, float size, uint32_t layer, const char* text, rlr_font_t* font_id) {
+    return rlr_lbl_create_ext(rect, size, layer, font_id, RLR_ANCH_TOP_LEFT, RLR_ANCH_TOP_LEFT, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, text);
 }
 
-rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size, uint32_t layer, rlr_font_t* font, rlr_anchor_t screen_anchor, rlr_anchor_t local_anhor, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, const char* format, ...) {
-    rlr_obj_label_t* label = malloc(sizeof(rlr_obj_label_t));
+rlr_lbl_t* rlr_lbl_create_ext(rlr_rect_t rectangle, float text_size, uint32_t layer, rlr_font_t* font, rlr_anchor_t screen_anchor, rlr_anchor_t local_anhor, rlr_horizontal_alignment_t horizontal_alignment, rlr_vertical_alignment_t vertical_alignment, const char* format, ...) {
+    rlr_lbl_t* label = malloc(sizeof(rlr_lbl_t));
     rlr_shader_t* text_shader = rlr_pipeline_ui_get_text_shader();
     if(label == NULL  || font == NULL || text_shader == NULL) {
         goto err;
@@ -65,7 +65,7 @@ rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size,
     label->horizontal_alignment = horizontal_alignment;
     label->vertical_alignment = vertical_alignment;
     label->visible = true;
-    label->instance_ctxs = malloc(sizeof(rlr_obj_label_instance_ctx_t) * ctx_count);
+    label->instance_ctxs = malloc(sizeof(rlr_label_instance_ctx_t) * ctx_count);
     label->instance_ctxs_len = ctx_count;
     if(!label->instance_ctxs) {
         goto err;
@@ -76,7 +76,7 @@ rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size,
     if(!cmd) {
         goto err;
     }
-    label->instance_ctxs[0] = (rlr_obj_label_instance_ctx_t){
+    label->instance_ctxs[0] = (rlr_label_instance_ctx_t){
         .cmd_id = cmd->id,
         .instance_indices = NULL
     };
@@ -88,7 +88,7 @@ rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size,
             goto err;
         }
 
-        label->instance_ctxs[i] = (rlr_obj_label_instance_ctx_t){
+        label->instance_ctxs[i] = (rlr_label_instance_ctx_t){
             .cmd_id = fallback_cmd->id,
             .instance_indices = NULL
         };
@@ -100,19 +100,19 @@ rlr_obj_label_t* rlr_obj_label_create_ext(rlr_rect_t rectangle, float text_size,
 
     return label;
 err:
-    rlr_obj_label_free(label);
+    rlr_lbl_free(label);
     return NULL;
 }
 
-void rlr_obj_label_set_text(rlr_obj_label_t* label, const char* text) {
+void rlr_lbl_set_text(rlr_lbl_t* label, const char* text) {
     remove_instances(label);
     rlr_word_generate(label->font, NULL, label->size, label->rectangle, label->horizontal_alignment, label->vertical_alignment, label->local_anchor, label->screen_anchor, gen_text, text, label);
 }
 
-void rlr_obj_label_set_visability(rlr_obj_label_t* label, bool visible) {
+void rlr_lbl_set_vis(rlr_lbl_t* label, bool visible) {
     label->visible = visible;
     for(size_t i = 0; i < label->instance_ctxs_len; i++) {
-        rlr_obj_label_instance_ctx_t* ctx = &label->instance_ctxs[i];
+        rlr_label_instance_ctx_t* ctx = &label->instance_ctxs[i];
 
         for(size_t j = 0; j < arrlenu(ctx->instance_indices); j++) {
             rlr_pipeline_ui_set_sprite_instance_visability(ctx->cmd_id, ctx->instance_indices[j], visible);
@@ -120,11 +120,11 @@ void rlr_obj_label_set_visability(rlr_obj_label_t* label, bool visible) {
     }
 }
 
-void rlr_obj_label_set_rectangle(rlr_obj_label_t* label, rlr_rect_t rect) {
+void rlr_lbl_set_rect(rlr_lbl_t* label, rlr_rect_t rect) {
     label->rectangle = rect;
 }
 
-void rlr_obj_label_free(rlr_obj_label_t* label) {
+void rlr_lbl_free(rlr_lbl_t* label) {
     if(!label) {
         return;
     }

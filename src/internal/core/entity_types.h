@@ -1,7 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>
-#include "../../rlr/objects/nine_patch.h"
+#include "../../rlr/entities/nine_patch.h"
 #include "../../external/rlpp.h"
 #include "../../rlr/math/alignment.h"
 #include "../../rlr/math/anchor.h"
@@ -10,17 +10,17 @@
 #include "../../rlr/math/vec.h"
 #include "res_types.h"
 
-/*
-    label
-*/
-typedef struct rlr_obj_label_instance_ctx_t {
+typedef struct rlr_label_instance_ctx_t {
     uint64_t cmd_id;
     uint64_t* instance_indices;
-} rlr_obj_label_instance_ctx_t;
+} rlr_label_instance_ctx_t;
 
-typedef struct rlr_obj_label_t {
+/*
+    Label entity
+*/
+typedef struct rlr_lbl_t {
     rlr_font_t* font;
-    rlr_obj_label_instance_ctx_t* instance_ctxs;
+    rlr_label_instance_ctx_t* instance_ctxs;
     size_t instance_ctxs_len;
     rlr_rect_t rectangle;
     rlr_anchor_t screen_anchor;
@@ -29,18 +29,18 @@ typedef struct rlr_obj_label_t {
     rlr_vertical_alignment_t vertical_alignment;
     float size;
     bool visible;
-} rlr_obj_label_t;
+} rlr_lbl_t;
 
 /*
-    sprite
+    Sprite entity
 */
-typedef struct rlr_obj_sprite_t {
+typedef struct rlr_spr_t {
     rlr_rect_t rect;
     rlr_anchor_t local_anchor;
     uint32_t layer;
     uint64_t cmd_id;
     uint64_t instance_index;
-} rlr_obj_sprite_t;
+} rlr_spr_t;
 
 /*
     animated model
@@ -49,14 +49,17 @@ typedef struct rlr_obj_sprite_t {
 #define RLR_OBJ_ANIMATION_PRIMARY           0
 #define RLR_OBJ_ANIMATION_SECONDARY         1
 
-typedef struct rlr_obj_animation_state_t {
+typedef struct rlr_animation_state_t {
     int32_t animation_index;
     float animation_time;
     float animation_speed;
     bool animation_loop;
-} rlr_obj_animation_state_t;
+} rlr_animation_state_t;
 
-typedef struct rlr_obj_animated_model_t {
+/*
+    Animated object entity (an instance of an animated model)
+*/
+typedef struct rlr_anm_obj_t {
 
     //trs
     rlr_vec3_t translation;
@@ -74,12 +77,12 @@ typedef struct rlr_obj_animated_model_t {
     uint32_t cmd_generation;
     uint32_t object_index;
     uint32_t instance_index;
-} rlr_obj_animated_model_t;
+} rlr_anm_obj_t;
 
 /*
-    static model
+    Static object entity (an instance of a static model)
 */
-typedef struct rlr_obj_static_model_t {
+typedef struct rlr_sta_obj_t {
 
     //trs
     rlr_vec3_t translation;
@@ -94,36 +97,36 @@ typedef struct rlr_obj_static_model_t {
     uint32_t cmd_generation;
     uint32_t object_index;
     uint32_t instance_index;
-} rlr_obj_static_model_t;
+} rlr_sta_obj_t;
 
 /*
-    model occluder
+    Model occluder entity
 */
-typedef struct rlr_obj_model_occluder_t {
+typedef struct rlr_mdl_occl_t {
     rlpp_ref_t instance_ref;
     rlr_anchor_t screen_anchor;
     rlr_anchor_t local_anchor;
     rlr_rect_t rectangle;
     uint32_t index;
     bool visible;
-} rlr_obj_model_occluder_t;
+} rlr_mdl_occl_t;
 
 /*
-    mouse input area
+    Mouse input area entity
 */
-typedef struct rlr_obj_mouse_input_area_t {
+typedef struct rlr_ms_inpt_area_t {
     rlpp_id_t id;
-} rlr_obj_mouse_input_area_t;
+} rlr_ms_inpt_area_t;
 
 /*
-    nine patch
+    Nine patch entity
 */
-typedef struct rlr_obj_nine_patch_t {
+typedef struct rlr_npatch_t {
     rlr_anchor_t screen_anchor;
     rlr_anchor_t local_anchor;
     rlr_tex_t* texture;
     uint64_t cmd_id;
     uint64_t instances[9];
-    rlr_nine_patch_t nine_patch;
+    rlr_npatch_desc_t nine_patch;
     bool visible;
-} rlr_obj_nine_patch_t;
+} rlr_npatch_t;

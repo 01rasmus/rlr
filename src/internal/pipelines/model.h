@@ -2,9 +2,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "../../rlr/math/matrix.h"
-#include "../core/obj_types.h"
+#include "../core/entity_types.h"
 #include "../../rlr/types/res.h"
-#include "../../rlr/types/obj.h"
+#include "../../rlr/types/entity.h"
 
 #define MAX_UBO_SIZE    16384
 
@@ -21,7 +21,7 @@ typedef struct rlr_pipeline_static_model_instance_t {
 } rlr_pipeline_static_model_instance_t;
 
 typedef struct rlr_pipeline_animated_model_animation_state_t {
-    rlr_obj_animation_state_t animation_states[RLR_OBJ_ANIMATION_STATE_COUNT];
+    rlr_animation_state_t animation_states[RLR_OBJ_ANIMATION_STATE_COUNT];
     float transition_time;
     float current_transition_time;
 
@@ -109,4 +109,4 @@ void rlr_pipeline_model_update_static_model_instance(uint32_t cmd_index, uint32_
 uint32_t rlr_pipeline_model_add_animated_model_instance(rlr_pipeline_animated_model_draw_command_t* command, rlr_pipeline_animated_model_instance_t data);
 void rlr_pipeline_model_update_animated_model_instance(uint32_t cmd_index, uint32_t cmd_generation, uint32_t instance_index, rlr_pipeline_animated_model_instance_t data);
 void rlr_pipeline_model_swap_animation_states(uint32_t cmd_index, uint32_t cmd_generation, uint32_t instance_index);
-bool rlpp_pipeline_model_set_animated_model_animation_state(rlr_obj_animated_model_t* model);
+bool rlpp_pipeline_model_set_animated_model_animation_state(rlr_anm_obj_t* model);

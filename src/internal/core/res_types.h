@@ -15,6 +15,9 @@ typedef struct rlr_tex_t {
     float height;
 } rlr_tex_t;
 
+rlr_tex_t* rlr_tex_load_mem_raw_impl(const void* color, uint32_t width, uint32_t height, uint32_t channels, uint32_t min_filter, uint32_t mag_filter, uint32_t wrap_s, uint32_t wrap_t, uint64_t flags);
+rlr_tex_t* rlr_tex_load_mem_raw_preset_filter_impl(const void* color, uint32_t width, uint32_t height, uint32_t channels, rlr_tex_filter_t filter, uint64_t flags);
+
 /*
     uniform
 */
@@ -86,7 +89,8 @@ typedef struct rlr_material_t {
 } rlr_material_t;
 
 cgltf_data* rlr_mdl_load_glb(const char* filename);
-bool rlr_res_model_parse_cgltf_material(cgltf_material* material, rlr_ubo_t** out_material_ubo, rlr_tex_t** out_base_texture);
+bool rlr_mdl_parse_cgltf_material(cgltf_material* material, rlr_ubo_t** out_material_ubo, rlr_tex_t** out_base_texture);
+rlr_tex_t* rlr_mdll_load_cgltf_albedo_tex(cgltf_texture* tex);
 
 /*
     animated model

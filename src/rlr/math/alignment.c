@@ -20,5 +20,5 @@ float rlr_vertical_start_position(rlr_vertical_alignment_t alignment, float rema
             return remaining_height / 2;
         case RLR_VERTICAL_ALIGNMENT_BOTTOM:
             return remaining_height;
-    }    
+    }
 }

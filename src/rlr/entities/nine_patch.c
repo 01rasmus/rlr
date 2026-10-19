@@ -1,15 +1,15 @@
 #include <stdlib.h>
-#include "../../internal/core/obj_types.h"
+#include "../../internal/core/entity_types.h"
 #include "../../internal/core/res_types.h"
 #include "../../internal/impl.h"
 #include "nine_patch.h"
 
 typedef struct callback_ctx_t {
-    rlr_obj_nine_patch_t* np;
+    rlr_npatch_t* np;
     rlr_pipeline_ui_draw_command_t* cmd;
 } callback_ctx_t;
 
-static void generate_instance_data(rlr_tex_t* texture, bool visible, rlr_nine_patch_t nine_patch, rlr_rect_t rect, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, void* user, void (*on_instance)(uint8_t index, rlr_instance_data_ui_t data, void* user)) {
+static void generate_instance_data(rlr_tex_t* texture, bool visible, rlr_npatch_desc_t nine_patch, rlr_rect_t rect, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, void* user, void (*on_instance)(uint8_t index, rlr_instance_data_ui_t data, void* user)) {
 
     //rectangle coordinates
     float x0 = 0.0;
@@ -83,13 +83,13 @@ static void callback_instance_create(uint8_t index, rlr_instance_data_ui_t data,
 }
 
 static void callback_instance_update(uint8_t index, rlr_instance_data_ui_t data, void* user) {
-    rlr_obj_nine_patch_t* np = user;
+    rlr_npatch_t* np = user;
     rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(np->cmd_id, np->instances[index]);
     *instance = data;
 }
 
-rlr_obj_nine_patch_t* rlr_obj_nine_patch_create(rlr_tex_t* texture, rlr_nine_patch_t nine_patch, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
-    rlr_obj_nine_patch_t* np = malloc(sizeof(rlr_obj_nine_patch_t));
+rlr_npatch_t* rlr_npatch_create(rlr_tex_t* texture, rlr_npatch_desc_t nine_patch, rlr_rect_t rectangle, rlr_anchor_t screen_anchor, rlr_anchor_t local_anchor, uint32_t layer) {
+    rlr_npatch_t* np = malloc(sizeof(rlr_npatch_t));
     if(!np) {
         goto err;
     }
@@ -98,7 +98,7 @@ rlr_obj_nine_patch_t* rlr_obj_nine_patch_create(rlr_tex_t* texture, rlr_nine_pat
     if(!cmd) {
         goto err;
     }
-    *np = (rlr_obj_nine_patch_t){
+    *np = (rlr_npatch_t){
         .cmd_id = cmd->id,
         .instances = {0},
         .nine_patch = nine_patch,
@@ -119,7 +119,7 @@ err:
     return NULL;
 }
 
-void rlr_obj_nine_patch_set_visability(rlr_obj_nine_patch_t* np, bool visible) {
+void rlr_npatch_set_vis(rlr_npatch_t* np, bool visible) {
     np->visible = visible;
     size_t count = sizeof(np->instances) / sizeof(np->instances[0]);
     if(!np->nine_patch.show_middle) {
@@ -131,11 +131,11 @@ void rlr_obj_nine_patch_set_visability(rlr_obj_nine_patch_t* np, bool visible) {
     }
 }
 
-void rlr_obj_nine_patch_set_rectangle(rlr_obj_nine_patch_t* np, rlr_rect_t rect) {
+void rlr_npatch_set_rect(rlr_npatch_t* np, rlr_rect_t rect) {
     generate_instance_data(np->texture, np->visible, np->nine_patch, rect, np->screen_anchor, np->local_anchor, np, callback_instance_update);
 }
 
-void rlr_obj_nine_patch_free(rlr_obj_nine_patch_t* np) {
+void rlr_npatch_free(rlr_npatch_t* np) {
     if(!np) {
         return;
     }

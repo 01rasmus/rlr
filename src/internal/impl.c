@@ -15,8 +15,8 @@
 #include "../rlr/resources/uniform.h"
 #include "../rlr/resources/shader.h"
 #include "../rlr/resources/font.h"
-#include "../rlr/objects/label.h"
-#include "../rlr/objects/sprite.h"
+#include "../rlr/entities/label.h"
+#include "../rlr/entities/sprite.h"
 #include "../rlr/math/matrix.h"
 #include "../rlr/rlr.h"
 #include "impl.h"
@@ -118,6 +118,30 @@ int32_t rlr_init(const char* title, const char* storage_identifier, rlr_init_fla
     );
 }
 
+#include <sys/stat.h>
+#include <errno.h>
+
+static inline int32_t _create_dir(const char* dir) {
+    errno = 0;
+    int32_t r = mkdir(dir, S_IRWXU);
+    if(r == 0) {
+        return 1;
+    }
+    if(errno == EEXIST) {
+        return 1;
+    }
+    rlr_log_error("failed to create the directory \"%s\": %s", dir, strerror(errno));
+    return 0;
+}
+
+static inline const char* get_home() {
+    const char* home = getenv("XDG_DATA_HOME");
+    if(!home) {
+        home = getenv("HOME");
+    }
+    return home;
+}
+
 int32_t rlr_init_log(const char* title, const char* storage_identifier, rlr_log_callback_t log_callback, void* log_user, rlr_init_flag_t flags) {
 
     //setup logging
@@ -150,6 +174,19 @@ int32_t rlr_init_log(const char* title, const char* storage_identifier, rlr_log_
     ctx->statistics_temp = (rlr_statistics_t){0};
     ctx->statistics_timer = 0.0;
     ctx->storage_identifier = storage_identifier;
+
+    //create storage folders
+    const char* home = get_home();
+    char dir[1024];
+    char* locs[] = {
+        "tex_cache"
+    };
+    snprintf(dir, sizeof(dir), "%s/.local/share/%s", home, storage_identifier);
+    _create_dir(dir);
+    for(size_t i = 0; i < sizeof(locs) / sizeof(*locs); i++) {
+        snprintf(dir, sizeof(dir), "%s/.local/share/%s/%s", home, storage_identifier, locs[i]);
+        _create_dir(dir);
+    }
 
     if(!glfwInit()) {
         rlr_log_error("could not initialize glfw");

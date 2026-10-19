@@ -8,13 +8,13 @@
 #include "../rlr.h"
 #include "font.h"
 
-typedef struct rlr_res_font_load_context_t {
+typedef struct rlr_font_load_context_t {
     rlr_font_t* font;
     rlr_tex_t* tex;
-} rlr_res_font_load_context_t;
+} rlr_font_load_context_t;
 
 void _rlr_font_csv_callback(uint32_t row, const char** columns, size_t count, void* user) {
-    rlr_res_font_load_context_t* ctx = (rlr_res_font_load_context_t*)user;
+    rlr_font_load_context_t* ctx = (rlr_font_load_context_t*)user;
 
     char* end = NULL;
     uint32_t unicode = strtoul(columns[0], &end, 10);
@@ -126,7 +126,7 @@ rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, floa
         font->texture = rlr_default_texture();
     }
 
-    rlr_res_font_load_context_t ctx = {
+    rlr_font_load_context_t ctx = {
         .font = font,
         .tex = font->texture,
     };
@@ -153,7 +153,7 @@ void rlr_font_set_size_scale(rlr_font_t* font, float scale) {
 
 rlr_vec2_t rlr_font_measure(rlr_font_t* font, rlr_rect_t rectangle, float text_size, const char* format, ...) {
     rlr_vec2_t size = {0};
-    if(!rlr_word_generate(font, &size, text_size, rectangle, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, RLR_ANCHOR_TOP_LEFT, RLR_ANCHOR_TOP_LEFT, NULL, format, NULL)) {
+    if(!rlr_word_generate(font, &size, text_size, rectangle, RLR_HORIZONTAL_ALIGNMENT_LEFT, RLR_VERTICAL_ALIGNMENT_TOP, RLR_ANCH_TOP_LEFT, RLR_ANCH_TOP_LEFT, NULL, format, NULL)) {
         return (rlr_vec2_t){0};
     }
     return size;
