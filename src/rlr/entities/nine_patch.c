@@ -88,7 +88,7 @@ static void callback_instance_update(uint8_t index, rlr_instance_data_ui_t data,
     *instance = data;
 }
 
-rlr_npatch_t* rlr_npatch_create(rlr_tex_t* texture, rlr_npatch_desc_t nine_patch, rlr_rect_t rect, uint32_t layer) {
+rlr_npatch_t* rlr_npatch_new(rlr_tex_t* texture, rlr_npatch_desc_t nine_patch, rlr_rect_t rect, uint32_t layer) {
     rlr_npatch_t* np = malloc(sizeof(rlr_npatch_t));
     if(!np) {
         goto err;

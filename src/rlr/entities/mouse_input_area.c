@@ -1,7 +1,7 @@
 #include "../../internal/impl.h"
 #include "mouse_input_area.h"
 
-rlr_ms_inpt_area_t* rlr_ms_inpt_area_create_hov_click(rlr_rect_t rect, void* user, rlr_input_area_on_enter_t on_enter, rlr_input_area_on_leave_t on_leave, rlr_input_area_on_pressed_t on_pressed, rlr_input_area_on_release_t on_release, uint32_t layer) {
+rlr_ms_inpt_area_t* rlr_ms_inpt_area_new_hov_click(rlr_rect_t rect, void* user, rlr_input_area_on_enter_t on_enter, rlr_input_area_on_leave_t on_leave, rlr_input_area_on_pressed_t on_pressed, rlr_input_area_on_release_t on_release, uint32_t layer) {
     rlr_ms_inpt_area_t* obj = malloc(sizeof(rlr_ms_inpt_area_t));
     if(!obj) {
         goto err;
@@ -27,12 +27,12 @@ err:
     return NULL;
 }
 
-rlr_ms_inpt_area_t* rlr_ms_inpt_area_create_hov(rlr_rect_t rect, void* user, rlr_input_area_on_enter_t on_enter, rlr_input_area_on_leave_t on_leave, uint32_t layer) {
-    return rlr_ms_inpt_area_create_hov_click(rect, user, on_enter, on_leave, NULL, NULL, layer);
+rlr_ms_inpt_area_t* rlr_ms_inpt_area_new_hov(rlr_rect_t rect, void* user, rlr_input_area_on_enter_t on_enter, rlr_input_area_on_leave_t on_leave, uint32_t layer) {
+    return rlr_ms_inpt_area_new_hov_click(rect, user, on_enter, on_leave, NULL, NULL, layer);
 }
 
-rlr_ms_inpt_area_t* rlr_ms_inpt_area_create_click(rlr_rect_t rect, void* user, rlr_input_area_on_pressed_t on_pressed, rlr_input_area_on_release_t on_release, uint32_t layer) {
-    return rlr_ms_inpt_area_create_hov_click(rect, user, NULL, NULL, on_pressed, on_release, layer);
+rlr_ms_inpt_area_t* rlr_ms_inpt_area_new_click(rlr_rect_t rect, void* user, rlr_input_area_on_pressed_t on_pressed, rlr_input_area_on_release_t on_release, uint32_t layer) {
+    return rlr_ms_inpt_area_new_hov_click(rect, user, NULL, NULL, on_pressed, on_release, layer);
 }
 
 void rlr_ms_inpt_area_set_enabled(rlr_ms_inpt_area_t* obj, bool enabled) {

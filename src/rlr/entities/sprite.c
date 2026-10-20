@@ -48,18 +48,18 @@ err:
     return sprite;
 }
 
-rlr_spr_t* rlr_spr_create(rlr_tex_t* texture, rlr_rect_t rect, uint32_t layer) {
+rlr_spr_t* rlr_spr_new(rlr_tex_t* texture, rlr_rect_t rect, uint32_t layer) {
     rlr_tex_t* tex = texture == NULL ? rlr_default_texture() : texture;
     return _rlr_spr_create_impl(tex, rect, 0.0, 0.0, tex->width, tex->height, layer);
 }
 
-rlr_spr_t* rlr_spr_create_from_tile(rlr_tex_atl_tile_t* tile, rlr_rect_t rect, uint32_t layer) {
+rlr_spr_t* rlr_spr_new_from_tile(rlr_tex_atl_tile_t* tile, rlr_rect_t rect, uint32_t layer) {
     rlr_tex_t* tex = tile->texture == NULL ? rlr_default_texture() : tile->texture;
     return _rlr_spr_create_impl(tex, rect, tile->uv.x / tex->width, tile->uv.y / tex->height, tile->size.x / tex->width, tile->size.y / tex->height, layer);
 }
 
-rlr_spr_t* rlr_spr_create_col_rect(rlr_color_t col, rlr_rect_t rect, uint32_t layer) {
-    rlr_spr_t* spr = rlr_spr_create(NULL, rect, layer);
+rlr_spr_t* rlr_spr_new_col_rect(rlr_color_t col, rlr_rect_t rect, uint32_t layer) {
+    rlr_spr_t* spr = rlr_spr_new(NULL, rect, layer);
     if(spr) {
         rlr_spr_set_col(spr, col);
     }

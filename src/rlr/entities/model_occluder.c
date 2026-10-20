@@ -14,7 +14,7 @@ static void make_instance(rlr_pipeline_stencil_occluder_instance_t* instance, rl
     instance->visible = mo->visible == true ? 1 : 0;
 }
 
-rlr_mdl_occl_t* rlr_mdl_occl_create(rlr_rect_t rect) {
+rlr_mdl_occl_t* rlr_mdl_occl_new(rlr_rect_t rect) {
     rlr_mdl_occl_t* occluder = malloc(sizeof(rlr_mdl_occl_t));
     if(!occluder) {
         goto err;

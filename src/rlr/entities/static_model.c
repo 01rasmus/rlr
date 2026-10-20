@@ -6,7 +6,7 @@
 #include "../math/matrix.h"
 #include "static_model.h"
 
-rlr_sta_obj_t* rlr_sta_obj_create(rlr_sta_mdl_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
+rlr_sta_obj_t* rlr_sta_obj_new(rlr_sta_mdl_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
     rlr_sta_obj_t* obj = malloc(sizeof(rlr_sta_obj_t));
     if(!obj) {
         goto err;

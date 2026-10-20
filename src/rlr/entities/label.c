@@ -138,7 +138,7 @@ err:
     return NULL;
 }
 
-rlr_lbl_t* rlr_lbl_create(rlr_font_t* font, float x, float y, float size, uint32_t layer, const char* format, ...) {
+rlr_lbl_t* rlr_lbl_new(rlr_font_t* font, float x, float y, float size, uint32_t layer, const char* format, ...) {
     rlr_rect_t rect = rlr_rect_lcl(x, y, 10000000.0, 10000000.0, RLR_ANCH_TOP_LEFT);
     va_list args;
     va_start(args, format);
@@ -147,7 +147,7 @@ rlr_lbl_t* rlr_lbl_create(rlr_font_t* font, float x, float y, float size, uint32
     return label;
 }
 
-rlr_lbl_t* rlr_lbl_create_rect(rlr_font_t* font, rlr_rect_t rect, float size, uint32_t layer, const char* format, ...) {
+rlr_lbl_t* rlr_lbl_new_rect(rlr_font_t* font, rlr_rect_t rect, float size, uint32_t layer, const char* format, ...) {
     va_list args;
     va_start(args, format);
     rlr_lbl_t* label = _rlr_lbl_create_impl(font, rect, size, RLR_HORI_ALGN_LEFT, RLR_VERT_ALGN_TOP, layer, format, args);
@@ -155,7 +155,7 @@ rlr_lbl_t* rlr_lbl_create_rect(rlr_font_t* font, rlr_rect_t rect, float size, ui
     return label;
 }
 
-rlr_lbl_t* rlr_lbl_create_rect_algn(rlr_font_t* font, rlr_rect_t rect, float text_size, rlr_hori_algn_t hori_algn, rlr_vert_algn_t vert_algn, uint32_t layer, const char* format, ...) {
+rlr_lbl_t* rlr_lbl_new_rect_algn(rlr_font_t* font, rlr_rect_t rect, float text_size, rlr_hori_algn_t hori_algn, rlr_vert_algn_t vert_algn, uint32_t layer, const char* format, ...) {
     va_list args;
     va_start(args, format);
     rlr_lbl_t* label = _rlr_lbl_create_impl(font, rect, text_size, hori_algn, vert_algn, layer, format, args);

@@ -5,7 +5,7 @@
 #include "../../internal/core/entity_types.h"
 #include "animated_model.h"
 
-rlr_anm_obj_t* rlr_anm_obj_create(rlr_anm_mdl_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
+rlr_anm_obj_t* rlr_anm_obj_new(rlr_anm_mdl_t* model, rlr_vec3_t translation, rlr_quat_t rotation, rlr_vec3_t scale) {
     rlr_anm_obj_t* obj = malloc(sizeof(rlr_anm_obj_t));
     if(!obj) {
         goto err;
