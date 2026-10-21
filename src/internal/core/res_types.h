@@ -72,6 +72,7 @@ typedef struct rlr_font_t {
     rlr_font_glyph_t* glyphs;
     float px_range;
     float vertical_offset;
+    float horizontal_offset;
     float size_scale;
 } rlr_font_t;
 

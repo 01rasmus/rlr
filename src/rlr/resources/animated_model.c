@@ -554,7 +554,7 @@ err:
     return NULL;
 }
 
-int32_t rlr_anm_mdl_get_animation_index(const rlr_anm_mdl_t* model, const char* animation_name) {
+int32_t rlr_anm_mdl_get_anm_indx(const rlr_anm_mdl_t* model, const char* animation_name) {
     for(int32_t i = 0; i < arrlen(model->animations.metas); i++) {
         if(strcmp(model->animations.metas[i].name, animation_name) == 0) {
             return i;

@@ -20,7 +20,7 @@ rlr_anm_mdl_t* rlr_anm_mdl_load(const char* file_glb);
  * 
  * @return The index of the animation. Returns -1 if the animation doesn't exist
  */
-int32_t rlr_anm_mdl_get_animation_index(const rlr_anm_mdl_t* model, const char* animation_name);
+int32_t rlr_anm_mdl_get_anm_indx(const rlr_anm_mdl_t* model, const char* animation_name);
 
 /**
  * @param model The pointer to the animated model to free. If `NULL` is provided, nothing will be done

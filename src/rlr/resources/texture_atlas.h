@@ -83,7 +83,7 @@ static inline const rlr_tex_atl_tile_dsc_t rlr_tex_atl_tile_dsc_rsz_pad(const ch
 rlr_tex_atl_t* rlr_tex_atl_load(rlr_tex_atl_tile_dsc_t* descriptions, size_t description_count, uint32_t channels, bool srgb, rlr_tex_filter_t filter);
 
 /** 
- * @warning This function loads does not load the tile textures. To load them, @ref `rlr_tex_atl_atlas_step` needs to be called the same amount of times as there are description entries to divide the load into steps. To see the amount, @ref `rlr_tex_atl_get_step_count` can be used
+ * @warning This function loads does not load the tile textures. To load them, @ref `rlr_tex_atl_atlas_step` needs to be called the same amount of times as there are description entries to divide the load into steps. To see the amount, @ref `rlr_tex_atl_get_step_cnt` can be used
  * @warning The resulting texture atlas cannot be larger than 4096x4096
  * 
  * @param descriptions The array of tile descriptions to load
@@ -104,7 +104,7 @@ rlr_tex_atl_t* rlr_tex_atl_load_stpd(rlr_tex_atl_tile_dsc_t* descriptions, size_
  * 
  * @return The amount of steps needed to load the texture atlas fully
  */
-size_t rlr_tex_atl_get_step_count(const rlr_tex_atl_t* atlas);
+size_t rlr_tex_atl_get_step_cnt(const rlr_tex_atl_t* atlas);
 
 /**
  * @param atlas The texture atlas that is returned from @ref `rlr_tex_atl_load_stpd`

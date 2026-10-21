@@ -46,20 +46,29 @@ rlr_font_t* rlr_font_load(const char* file_csv, const char* file_tex, float px_r
 rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, float px_range, rlr_font_t** fallbacks, size_t fallback_len);
 
 /**
- * @brief Sets an offset for the generated text on a label vertically.
- *        It is a ratio of the height of a character. A value of `0` means no change.
- *        Typical values are between 0.0 and 1.0
+ * @brief Sets an offset for the generated glyphs on a label.
+ *        It is a ratio of the text size used when making the label.
+ *        A value of `0.0` means no change.
+ *        Typical values are between -1.0 and 1.0
+ * 
+ *        Example: If the rendered text size is 12 pixels and
+ *                 a horizontal offset is set to 0.5, the glyphs
+ *                 will be pushed 6 pixels to the right.
+ * 
+ *                 If the vertical offset is set to 0.5, the glyph
+ *                 will be pushed 6 pixels upwards.
  * 
  * @param font The font to set the adjustment to
- * @param fraction The amount to adjust with
+ * @param hori_frac The amount of horizontal adjustment
+ * @param vert_frac The amount of vertical adjustment
  */
-void rlr_font_set_vertical_offset(rlr_font_t* font, float fraction);
+void rlr_font_set_offset(rlr_font_t* font, float hori_frac, float vert_frac);
 
 /**
  * @param font The font to set the adjustment to
  * @param scale The scale to change the font's glyph size
  */
-void rlr_font_set_size_scale(rlr_font_t* font, float scale);
+void rlr_font_set_scale(rlr_font_t* font, float scale);
 
 /**
  * @param font The font to measure with
@@ -95,7 +104,7 @@ const rlr_font_glyph_t* rlr_font_get_glyph(rlr_font_t* font, uint32_t unicode, u
  * 
  * @return The amount of glyphs in the root font. Does not include the fallback fonts' glyphs
  */
-int32_t rlr_font_get_glyph_count(const rlr_font_t* font);
+int32_t rlr_font_get_glyph_cnt(const rlr_font_t* font);
 
 /**
  * @param ubo The pointer to the font to free. If `NULL` is provided, nothing will be done

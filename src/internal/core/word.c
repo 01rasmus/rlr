@@ -269,9 +269,11 @@ bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float or
 
         //fallback logic
         float fallback_vertical_offset = 0.0;
+        float horizontal_offset = (font->horizontal_offset * text_size);
         if(font != g->glyph->font) {
             final_text_size = final_text_size * g->glyph->font->size_scale;
             fallback_vertical_offset = (g->glyph->font->vertical_offset * final_text_size);
+            horizontal_offset = (g->glyph->font->horizontal_offset * final_text_size);
             font_index = g->font_index;
         }
 
@@ -298,9 +300,9 @@ bool rlr_word_generate(rlr_font_t* font, rlr_vec2_t* out_measured_size, float or
         }
         
         const rlr_font_glyph_t* glyph = g->glyph;
-        float draw_x1 = x + glyph->plane_left * final_text_size;
+        float draw_x1 = x + glyph->plane_left * final_text_size + horizontal_offset;
         float draw_y1 = y - glyph->plane_top * final_text_size;
-        float draw_x2 = x + glyph->plane_right * final_text_size;
+        float draw_x2 = x + glyph->plane_right * final_text_size + horizontal_offset;
         float draw_y2 = y - glyph->plane_bottom * final_text_size;
 
         float u1 = glyph->atlas_left;

@@ -104,6 +104,7 @@ rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, floa
     font->fallback_fonts = NULL;
     font->fallback_fonts_len = fallback_fonts != NULL ? fallback_font_count : 0;
     font->vertical_offset = 0.0;
+    font->horizontal_offset = 0.0;
     font->size_scale = 1.0;
     font->px_range = px_range;
     font->texture = NULL;
@@ -143,11 +144,12 @@ err:
     return NULL;
 }
 
-void rlr_font_set_vertical_offset(rlr_font_t* font, float vertical_offset_fraction) {
-    font->vertical_offset = vertical_offset_fraction;
+void rlr_font_set_offset(rlr_font_t* font, float hori_frac, float vert_frac) {
+    font->vertical_offset = vert_frac;
+    font->horizontal_offset = hori_frac;
 }
 
-void rlr_font_set_size_scale(rlr_font_t* font, float scale) {
+void rlr_font_set_scale(rlr_font_t* font, float scale) {
     font->size_scale = scale;
 }
 
@@ -178,7 +180,7 @@ const rlr_font_glyph_t* rlr_font_get_glyph(rlr_font_t* font, uint32_t unicode, u
     return NULL;
 }
 
-int32_t rlr_font_get_glyph_count(const rlr_font_t* font) {
+int32_t rlr_font_get_glyph_cnt(const rlr_font_t* font) {
     return hmlen(font->glyphs);
 }
 

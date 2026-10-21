@@ -121,7 +121,7 @@ rlr_tex_atl_t* rlr_tex_atl_load(rlr_tex_atl_tile_dsc_t* descriptions, size_t des
         goto err;
     }
 
-    size_t steps = rlr_tex_atl_get_step_count(atlas);
+    size_t steps = rlr_tex_atl_get_step_cnt(atlas);
     for(size_t i = 0; i < steps; i++) {
         rlr_tex_atl_atlas_step(atlas);
     }
@@ -323,7 +323,7 @@ err:
     return NULL;
 }
 
-size_t rlr_tex_atl_get_step_count(const rlr_tex_atl_t* atlas) {
+size_t rlr_tex_atl_get_step_cnt(const rlr_tex_atl_t* atlas) {
     return atlas->tile_count;
 }
 
