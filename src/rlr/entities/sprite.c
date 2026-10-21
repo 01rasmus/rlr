@@ -58,7 +58,7 @@ rlr_spr_t* rlr_spr_new_from_tile(rlr_tex_atl_tile_t* tile, rlr_rect_t rect, uint
     return _rlr_spr_create_impl(tex, rect, tile->uv.x / tex->width, tile->uv.y / tex->height, tile->size.x / tex->width, tile->size.y / tex->height, layer);
 }
 
-rlr_spr_t* rlr_spr_new_col_rect(rlr_color_t col, rlr_rect_t rect, uint32_t layer) {
+rlr_spr_t* rlr_spr_new_col_rect(rlr_col_t col, rlr_rect_t rect, uint32_t layer) {
     rlr_spr_t* spr = rlr_spr_new(NULL, rect, layer);
     if(spr) {
         rlr_spr_set_col(spr, col);
@@ -107,9 +107,9 @@ void rlr_spr_set_tex(rlr_spr_t* sprite, rlr_tex_t* texture) {
     sprite->cmd_id = new_cmd->id;
 }
 
-void rlr_spr_set_col(rlr_spr_t* sprite, rlr_color_t col) {
+void rlr_spr_set_col(rlr_spr_t* sprite, rlr_col_t col) {
     rlr_instance_data_ui_t* instance = rlr_pipeline_ui_get_and_dirty_sprite_instance(sprite->cmd_id, sprite->instance_index);
-    instance->color = rlr_color_as_uint(col);
+    instance->color = rlr_col_as_u32(col);
 }
 
 void rlr_spr_set_vis(rlr_spr_t* sprite, bool visible) {
