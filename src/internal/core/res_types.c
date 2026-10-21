@@ -110,8 +110,9 @@ rlr_tex_t* rlr_mdll_load_cgltf_albedo_tex(cgltf_texture* tex) {
         return NULL;
     }
 
+    rlr_tex_t* new_tex = rlr_tex_load_mem_raw_impl(data, width, height, channels, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t, RLR_TEX_FLAG_COMPRESS | RLR_TEX_FLAG_SRGB);
     stbi_image_free(data);
-    return rlr_tex_load_mem_raw_impl(data, width, height, channels, sampler.min_filter, sampler.mag_filter, sampler.wrap_s, sampler.wrap_t, RLR_TEX_FLAG_COMPRESS | RLR_TEX_FLAG_SRGB);
+    return new_tex;
 }
 
 rlr_tex_t* rlr_tex_load_mem_raw_impl(const void* color, uint32_t width, uint32_t height, uint32_t channels, uint32_t min_filter, uint32_t mag_filter, uint32_t wrap_s, uint32_t wrap_t, uint64_t flags) {
