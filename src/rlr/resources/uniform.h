@@ -11,7 +11,7 @@
  * 
  * @warning The UBO needs to be free with `rlr_ubo_free`
  */
-rlr_ubo_t* rlr_ubo_create(const void* initial_data, size_t data_size, bool is_static);
+rlr_ubo_t* rlr_ubo_new(const void* initial_data, size_t data_size, bool is_static);
 
 /**
  * @param ubo The UBO to update. If the UBO is static, this function does nothing

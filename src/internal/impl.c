@@ -218,13 +218,13 @@ int32_t rlr_init_log(const char* title, const char* storage_identifier, rlr_log_
     glfwSetKeyCallback(ctx->window, _rlr_key_callback);
 
     //setup uniform buffer objects
-    rlr()->ubos[RLR_INTERNAL_UBO_MODEL]             = rlr_ubo_create(NULL, 0, false);
-    rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL]          = rlr_ubo_create(NULL, 0, false);
-    rlr()->ubos[RLR_INTERNAL_UBO_ENVIRONMENT]       = rlr_ubo_create(NULL, 0, false);
-    rlr()->ubos[RLR_INTERNAL_UBO_UI]                = rlr_ubo_create(NULL, 0, false);
-    rlr()->ubos[RLR_INTERNAL_UBO_BONE_TRANSLATION]  = rlr_ubo_create(NULL, 0, false);
-    rlr()->ubos[RLR_INTERNAL_UBO_BONE_ROTATION]     = rlr_ubo_create(NULL, 0, false);
-    rlr()->ubos[RLR_INTERNAL_UBO_BONE_INFO]         = rlr_ubo_create(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_MODEL]             = rlr_ubo_new(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_MATERIAL]          = rlr_ubo_new(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_ENVIRONMENT]       = rlr_ubo_new(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_UI]                = rlr_ubo_new(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_BONE_TRANSLATION]  = rlr_ubo_new(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_BONE_ROTATION]     = rlr_ubo_new(NULL, 0, false);
+    rlr()->ubos[RLR_INTERNAL_UBO_BONE_INFO]         = rlr_ubo_new(NULL, 0, false);
     for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {
         rlr_ubo_t* ubo = rlr()->ubos[i];
         if(ubo == NULL) {

@@ -60,7 +60,7 @@ bool rlr_mdl_parse_cgltf_material(cgltf_material* material, rlr_ubo_t** out_mate
         mat.reflectiveness = 0.0;
     }
 
-    ubo = rlr_ubo_create(&mat, sizeof(mat), true);
+    ubo = rlr_ubo_new(&mat, sizeof(mat), true);
     if(ubo == NULL) {
         goto err;
     }

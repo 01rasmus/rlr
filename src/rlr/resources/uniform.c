@@ -4,7 +4,7 @@
 #include "../rlr.h"
 #include "uniform.h"
 
-rlr_ubo_t* rlr_ubo_create(const void* initial_data, size_t data_len, bool is_static) {
+rlr_ubo_t* rlr_ubo_new(const void* initial_data, size_t data_len, bool is_static) {
     rlr_ubo_t* uniform = NULL;
 
     uniform = malloc(sizeof(rlr_ubo_t));
