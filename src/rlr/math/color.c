@@ -24,24 +24,6 @@ rlr_col_t rlr_col_hex(const char hex[8]) {
     };
 }
 
-rlr_col_t rlr_col_rgb(uint8_t r, uint8_t g, uint8_t b) {
-    return (rlr_col_t){
-        .r = r,
-        .g = g,
-        .b = b,
-        .a = 255,
-    };
-}
-
-rlr_col_t rlr_col_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    return (rlr_col_t){
-        .r = r,
-        .g = g,
-        .b = b,
-        .a = a,
-    };
-}
-
 uint32_t rlr_col_as_u32(rlr_col_t color) {
     uint32_t as_uint;
     memcpy(&as_uint, &color, sizeof(uint32_t));
