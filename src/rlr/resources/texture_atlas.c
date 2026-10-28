@@ -116,7 +116,7 @@ static void extrude_texture_tile(uint8_t* data, uint32_t x, uint32_t y, uint32_t
 }
 
 rlr_tex_atl_t* rlr_tex_atl_load(rlr_tex_atl_tile_dsc_t* descriptions, size_t description_count, uint32_t channels, bool srgb, rlr_tex_filter_t filter) {
-    rlr_tex_atl_t* atlas = rlr_tex_atl_load(descriptions, description_count, channels, srgb, filter);
+    rlr_tex_atl_t* atlas = rlr_tex_atl_load_stpd(descriptions, description_count, channels, srgb, filter);
     if(!atlas) {
         goto err;
     }
