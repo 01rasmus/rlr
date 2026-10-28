@@ -96,11 +96,6 @@ rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, floa
         goto err;
     }
 
-    char* csv = rlr_str_load_from_file(file_csv);
-    if(!csv) {
-        goto err;
-    }
-
     font->fallback_fonts = NULL;
     font->fallback_fonts_len = fallback_fonts != NULL ? fallback_font_count : 0;
     font->vertical_offset = 0.0;
@@ -109,6 +104,11 @@ rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, floa
     font->px_range = px_range;
     font->texture = NULL;
     font->glyphs = NULL;
+
+    char* csv = rlr_str_load_from_file(file_csv);
+    if(!csv) {
+        goto err;
+    }
 
     //malloc fallback fonts
     font->fallback_fonts = malloc(sizeof(rlr_font_t) * fallback_font_count);
@@ -122,9 +122,9 @@ rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, floa
     //msdf textures need to use normal linear filtering (dont use mipmap filtering)
     //they should not be compressed either
     font->texture = rlr_tex_load(file_tex, RLR_TEX_FILTER_LINEAR, 0);
-
     if(!font->texture) {
-        font->texture = rlr_default_texture();
+        rlr_log_error("unable to load font texture \"%s\"", file_tex);
+        goto err;
     }
 
     rlr_font_load_context_t ctx = {
@@ -140,6 +140,47 @@ rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, floa
     return font;
 err:
     free(csv);
+    rlr_font_free(font);
+    return NULL;
+}
+
+rlr_font_t* rlr_font_load_mem(const char* csv, const uint8_t* tex, size_t tex_size, float px_range) {
+    rlr_font_t* font = NULL;
+
+    font = malloc(sizeof(rlr_font_t));
+    if(!font) {
+        rlr_log_error("pointer to the font handle is null");
+        goto err;
+    }
+
+    font->fallback_fonts = NULL;
+    font->fallback_fonts_len = 0;
+    font->vertical_offset = 0.0;
+    font->horizontal_offset = 0.0;
+    font->size_scale = 1.0;
+    font->px_range = px_range;
+    font->texture = NULL;
+    font->glyphs = NULL;
+
+    //msdf textures need to use normal linear filtering (dont use mipmap filtering)
+    //they should not be compressed either
+    font->texture = rlr_tex_load_mem(tex, tex_size, RLR_TEX_FILTER_LINEAR, 0);
+    if(!font->texture) {
+        rlr_log_error("unable to load font texture %p", tex);
+        goto err;
+    }
+
+    rlr_font_load_context_t ctx = {
+        .font = font,
+        .tex = font->texture,
+    };
+    if(!rlr_csv_parse(_rlr_font_csv_callback, csv, 10, ",", &ctx)) {
+        goto err;
+    }
+
+    rlr_log("loaded mtsdf font\n\tmeta:\t%p\n\tatlas:\t%p\n\tres:\t%p", csv, tex, font);
+    return font;
+err:
     rlr_font_free(font);
     return NULL;
 }

@@ -7,10 +7,7 @@
 
 /**
  * @brief Loads an MTSDF font from a csv and texture from file
- * 
- *        The fallbacks will be used if a label tries to render a glyph that
- *        the original font doesn't have.
- * 
+ *
  *        The fonts are generated with [msdf-atlas-gen](https://github.com/Chlumsky/msdf-atlas-gen)
  * 
  * @param file_csv The file location of the generated csv file
@@ -44,6 +41,23 @@ rlr_font_t* rlr_font_load(const char* file_csv, const char* file_tex, float px_r
  * @warning The font does not take ownership of the fallback fonts. If a fallback font is freed whilst its being used from a root font, use after free may happen
  */
 rlr_font_t* rlr_font_load_flbks(const char* file_csv, const char* file_tex, float px_range, rlr_font_t** fallbacks, size_t fallback_len);
+
+/**
+ * @brief Loads an MTSDF font from csv and encoded texture from memory
+ *
+ *        The fonts are generated with [msdf-atlas-gen](https://github.com/Chlumsky/msdf-atlas-gen)
+ * 
+ * @param csv The string of the csv file in memory
+ * @param tex The base pointer to the encoded texture in memory
+ * @param tex_size The size of the texture in bytes
+ * @param px_range The pixel range used to generate the font
+ * 
+ * @return Returns a pointer to the loaded font. Returns `NULL` on failure
+ * 
+ * @warning The font needs to be freed with `rlr_font_free`
+ * @warning The font does not take ownership of the fallback fonts. If a fallback font is freed whilst its being used from a root font, use after free may happen
+ */
+rlr_font_t* rlr_font_load_mem(const char* csv, const uint8_t* tex, size_t tex_size, float px_range);
 
 /**
  * @brief Sets an offset for the generated glyphs on a label.

@@ -19,6 +19,7 @@
 #include "../rlr/entities/sprite.h"
 #include "../rlr/math/matrix.h"
 #include "../rlr/rlr.h"
+#include "core/default_font.h"
 #include "impl.h"
 
 static rlr_t* ctx = NULL;
@@ -265,12 +266,17 @@ int32_t rlr_init_log(const char* title, const char* storage_identifier, rlr_log_
     //setup default resources
     ctx->texture_white = _rlr_tex_def();
     ctx->cube_map_white = _rlr_cub_map_def();
+    ctx->default_font = rlr_font_load_mem(rlr_default_font_csv, rlr_default_font_tex, rlr_default_font_tex_len, RLR_DEFAULT_FONT_PX_RANGE);
     if(!ctx->texture_white) {
         rlr_log_error("could not create the default white texture");
         goto err;
     }
     if(!ctx->cube_map_white) {
         rlr_log_error("could not create the default white cube map texture");
+        goto err;
+    }
+    if(!ctx->default_font) {
+        rlr_log_error("could not create the default font");
         goto err;
     }
     rlr_cub_map_bind(ctx->cube_map_white, 4);
@@ -447,6 +453,14 @@ rlr_tex_t* rlr_default_texture() {
     return ctx->texture_white;
 }
 
+rlr_cub_map_t* rlr_default_cube_map() {
+    return ctx->cube_map_white;
+}
+
+rlr_font_t* rlr_default_font() {
+    return ctx->default_font;
+}
+
 const char* rlr_get_gpu_name() {
     return rlr_backend()->get_gpu_name();
 }
@@ -542,6 +556,8 @@ void rlr_free() {
 
     //free resources
     rlr_tex_free(ctx->texture_white);
+    rlr_cub_map_free(ctx->cube_map_white);
+    rlr_font_free(ctx->default_font);
 
     //free ubos
     for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {

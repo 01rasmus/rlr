@@ -52,6 +52,8 @@ rlr_vec2_t rlr_world_to_screen(rlr_vec3_t world_pos);
 
 //default resources
 rlr_tex_t* rlr_default_texture();
+rlr_cub_map_t* rlr_default_cube_map();
+rlr_font_t* rlr_default_font();
 
 //camera
 void rlr_set_camera(rlr_vec3_t pos, rlr_quat_t rotation);

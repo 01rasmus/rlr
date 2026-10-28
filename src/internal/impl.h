@@ -89,6 +89,7 @@ typedef struct rlr_t {
     //built in resources
     rlr_tex_t* texture_white;
     rlr_cub_map_t* cube_map_white;
+    rlr_font_t* default_font;
     rlr_ubo_t* ubos[RLR_INTERNAL_UBO_COUNT];
 
     //statistics
