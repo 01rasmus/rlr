@@ -50,7 +50,7 @@ err:
 
 rlr_spr_t* rlr_spr_new(rlr_tex_t* texture, rlr_rect_t rect, uint32_t layer) {
     rlr_tex_t* tex = texture == NULL ? rlr_default_texture() : texture;
-    return _rlr_spr_create_impl(tex, rect, 0.0, 0.0, tex->width, tex->height, layer);
+    return _rlr_spr_create_impl(tex, rect, 0.0, 0.0, 1.0, 1.0, layer);
 }
 
 rlr_spr_t* rlr_spr_new_from_tile(rlr_tex_atl_tile_t* tile, rlr_rect_t rect, uint32_t layer) {

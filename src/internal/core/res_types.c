@@ -118,8 +118,13 @@ rlr_tex_t* rlr_mdll_load_cgltf_albedo_tex(cgltf_texture* tex) {
 rlr_tex_t* rlr_tex_load_mem_raw_impl(const void* color, uint32_t width, uint32_t height, uint32_t channels, uint32_t min_filter, uint32_t mag_filter, uint32_t wrap_s, uint32_t wrap_t, uint64_t flags) {
     rlr_tex_t* tex = NULL;
 
+    if(!color) {
+        rlr_log_error("texture's color data cannot be NULL");
+        goto err;
+    }
+
     if(width % 4 != 0 || height % 4 != 0) {
-        rlr_log_error("texture's size(%dx%d) has a side that is not divisible by 4", width, height);
+        rlr_log_error("texture's size(%" PRIu32 "x%" PRIu32 ") has a side that is not divisible by 4", width, height);
         goto err;
     }
 
