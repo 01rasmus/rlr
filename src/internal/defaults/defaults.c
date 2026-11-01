@@ -54,7 +54,7 @@ err:
 }
 
 rlr_font_t* rlr_defaults_load_font() {
-    return rlr_font_load_mem(rlr_default_font_csv, rlr_default_font_tex, rlr_default_font_tex_len, RLR_DEFAULT_FONT_PX_RANGE);
+    return rlr_font_load_mem(rlr_default_font_csv, rlr_default_font_tex, RLR_DEFAULT_FONT_TEX_LEN, RLR_DEFAULT_FONT_PX_RANGE);
 }
 
 /* public api functions */
