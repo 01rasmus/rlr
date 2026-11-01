@@ -56,7 +56,7 @@ static void _rlr_log_default_callback(rlr_log_level_t log_level, const char* log
         [RLR_LOG_LEVEL_ERROR] =     "[ERRO]",
         [RLR_LOG_LEVEL_DEBUG] =     "[DEBU]",
     };
-    printf("%s %s:%d: %s\n", log_level_strings[log_level], file, line, log);
+    printf("%s %s:%" PRIu64 ": %s\n", log_level_strings[log_level], file, line, log);
 }
 
 static void rlr_set_framebuffer_size() {

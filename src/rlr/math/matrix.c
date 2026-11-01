@@ -3,14 +3,14 @@
 #include <stdio.h>
 #include "matrix.h"
 
-rlr_mat4x4_t rlr_mat4x4_mul(const rlr_mat4x4_t* other, const rlr_mat4x4_t* matrix) {
+rlr_mat4x4_t rlr_mat4x4_mul(const rlr_mat4x4_t* mat, const rlr_mat4x4_t* other) {
     rlr_mat4x4_t multiplied;
     for(int32_t row = 0; row < 4; row++) {
         for(int32_t col = 0; col < 4; col++) {
-            float m1 = other->matrix[0][row] * matrix->matrix[col][0];
-            float m2 = other->matrix[1][row] * matrix->matrix[col][1];
-            float m3 = other->matrix[2][row] * matrix->matrix[col][2];
-            float m4 = other->matrix[3][row] * matrix->matrix[col][3];
+            float m1 = mat->matrix[0][row] * other->matrix[col][0];
+            float m2 = mat->matrix[1][row] * other->matrix[col][1];
+            float m3 = mat->matrix[2][row] * other->matrix[col][2];
+            float m4 = mat->matrix[3][row] * other->matrix[col][3];
             multiplied.matrix[col][row] = m1 + m2 + m3 + m4;
         }
     }
@@ -331,7 +331,7 @@ rlr_affine_rows_t rlr_mat4x4_to_affine_rows(const rlr_mat4x4_t* matrix) {
 }
 
 rlr_affine_mat4x3_t rlr_mat4x4_to_affine_mat4x3(const rlr_mat4x4_t* matrix) {
-    rlr_affine_mat4x3_t affine;
+    rlr_affine_mat4x3_t affine = {0};
     memcpy(affine.matrix[0], matrix->matrix[0], sizeof(float) * 3);
     memcpy(affine.matrix[1], matrix->matrix[1], sizeof(float) * 3);
     memcpy(affine.matrix[2], matrix->matrix[2], sizeof(float) * 3);
