@@ -9,6 +9,7 @@
 #include "../external/stb_ds.h"
 #include "backends/backend_selection.h"
 #include "backends/backend.h"
+#include "defaults/defaults.h"
 #include "core/res_types.h"
 #include "../rlr/resources/static_model.h"
 #include "../rlr/resources/cube_map.h"
@@ -19,7 +20,6 @@
 #include "../rlr/entities/sprite.h"
 #include "../rlr/math/matrix.h"
 #include "../rlr/rlr.h"
-#include "core/default_font.h"
 #include "impl.h"
 
 static rlr_t* ctx = NULL;
@@ -76,37 +76,6 @@ static void rlr_set_framebuffer_size() {
         rlr_backend()->set_viewport(0, 0, width, height);
         rlr_set_camera(ctx->camera_pos, ctx->camera_rot);
     }
-}
-
-static rlr_tex_t* _rlr_tex_def() {
-    size_t w = 4;
-    size_t h = 4;
-    size_t c = 4;
-    uint8_t data[w * h * c];
-    memset(data, 255, sizeof(data));
-    return rlr_tex_load_mem_raw(data, w, h, c, RLR_TEX_FILTER_NEAREST, 0);
-}
-
-static rlr_cub_map_t* _rlr_cub_map_def() {
-    rlr_cub_map_t* cm = NULL;
-
-    cm = malloc(sizeof(rlr_cub_map_t));
-    if(!cm) {
-        rlr_log_error("pointer to the cube map is null");
-        goto err;
-    }
-
-    const uint8_t white[3] = {255, 255, 255};
-    cm->texture = rlr_backend()->create_cube_map_texture(white, white, white, white, white, white, 1, 1, 3);
-    if(!cm->texture) {
-        rlr_log_error("backend texture handle is null");
-        goto err;
-    }
-
-    return cm;
-err:
-    rlr_cub_map_free(cm);
-    return NULL;
 }
 
 int32_t rlr_init(const char* title, const char* storage_identifier, rlr_init_flag_t flags) {
@@ -264,14 +233,19 @@ int32_t rlr_init_log(const char* title, const char* storage_identifier, rlr_log_
     ctx->last_time = glfwGetTime();
 
     //setup default resources
-    ctx->texture_white = _rlr_tex_def();
-    ctx->cube_map_white = _rlr_cub_map_def();
-    ctx->default_font = rlr_font_load_mem(rlr_default_font_csv, rlr_default_font_tex, rlr_default_font_tex_len, RLR_DEFAULT_FONT_PX_RANGE);
-    if(!ctx->texture_white) {
+    ctx->default_tex = rlr_defaults_load_tex_white();
+    ctx->default_cube_map = rlr_defaults_load_cub_map();
+    ctx->default_font = rlr_defaults_load_font();
+    ctx->default_sta_mdl_box = rlr_defaults_load_sta_mdl_box();
+    ctx->default_sta_mdl_cyl = rlr_defaults_load_sta_mdl_cylinder();
+    ctx->default_sta_mdl_plane = rlr_defaults_load_sta_mdl_plane();
+    ctx->default_sta_mdl_sphere = rlr_defaults_load_sta_mdl_sphere();
+
+    if(!ctx->default_tex) {
         rlr_log_error("could not create the default white texture");
         goto err;
     }
-    if(!ctx->cube_map_white) {
+    if(!ctx->default_cube_map) {
         rlr_log_error("could not create the default white cube map texture");
         goto err;
     }
@@ -279,7 +253,23 @@ int32_t rlr_init_log(const char* title, const char* storage_identifier, rlr_log_
         rlr_log_error("could not create the default font");
         goto err;
     }
-    rlr_cub_map_bind(ctx->cube_map_white, 4);
+    if(!ctx->default_sta_mdl_box) {
+        rlr_log_error("could not create the default box static model");
+        goto err;
+    }
+    if(!ctx->default_sta_mdl_cyl) {
+        rlr_log_error("could not create the default cylinder static model");
+        goto err;
+    }
+    if(!ctx->default_sta_mdl_plane) {
+        rlr_log_error("could not create the default plane static model");
+        goto err;
+    }
+    if(!ctx->default_sta_mdl_sphere) {
+        rlr_log_error("could not create the default sphere static model");
+        goto err;
+    }
+    rlr_cub_map_bind(ctx->default_cube_map, 4);
     rlr_log("initialized rlr");
     return 1;
 err:
@@ -449,18 +439,6 @@ rlr_statistics_t* rlr_get_statistics() {
     return &ctx->statistics_interval;
 }
 
-rlr_tex_t* rlr_default_texture() {
-    return ctx->texture_white;
-}
-
-rlr_cub_map_t* rlr_default_cube_map() {
-    return ctx->cube_map_white;
-}
-
-rlr_font_t* rlr_default_font() {
-    return ctx->default_font;
-}
-
 const char* rlr_get_gpu_name() {
     return rlr_backend()->get_gpu_name();
 }
@@ -555,9 +533,13 @@ void rlr_free() {
     rlr_pipeline_input_deinit();
 
     //free resources
-    rlr_tex_free(ctx->texture_white);
-    rlr_cub_map_free(ctx->cube_map_white);
+    rlr_tex_free(ctx->default_tex);
+    rlr_cub_map_free(ctx->default_cube_map);
     rlr_font_free(ctx->default_font);
+    rlr_sta_mdl_free(ctx->default_sta_mdl_box);
+    rlr_sta_mdl_free(ctx->default_sta_mdl_cyl);
+    rlr_sta_mdl_free(ctx->default_sta_mdl_plane);
+    rlr_sta_mdl_free(ctx->default_sta_mdl_sphere);
 
     //free ubos
     for(size_t i = 0; i < RLR_INTERNAL_UBO_COUNT; i++) {

@@ -613,7 +613,7 @@ static inline void rlr_pipeline_draw_cpu_prepared_animated_model(rlr_pipeline_an
         if(mesh->texture_base) {
             rlr_tex_bind(mesh->texture_base, 0);
         } else {
-            rlr_tex_bind(rlr()->texture_white, 0);
+            rlr_tex_bind(rlr()->default_tex, 0);
         }
 
         rlr_backend()->bind_vertex_array(cmd->mesh_vaos[j]);
@@ -678,7 +678,7 @@ void rlr_pipeline_model_draw_animated_models_gpu(rlr_pipeline_model_t* pm) {
             if(mesh->texture_base) {
                 rlr_tex_bind(mesh->texture_base, 0);
             } else {
-                rlr_tex_bind(rlr()->texture_white, 0);
+                rlr_tex_bind(rlr()->default_tex, 0);
             }
 
             rlr_backend()->bind_vertex_array(command->mesh_vaos[j]);
@@ -734,7 +734,7 @@ void rlr_pipeline_model_draw(double delta_time) {
             if(mesh->texture_base) {
                 rlr_tex_bind(mesh->texture_base, 0);
             } else {
-                rlr_tex_bind(rlr()->texture_white, 0);
+                rlr_tex_bind(rlr()->default_tex, 0);
             }
 
             rlr_backend()->bind_vertex_array(command->mesh_vaos[j]);

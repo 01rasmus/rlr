@@ -35,14 +35,14 @@ rlr_tex_t* rlr_tex_load_mem(const void* color, size_t color_len, rlr_tex_filter_
 }
 
 rlr_tex_t* rlr_tex_load_raw(const char* file, uint32_t width, uint32_t height, uint32_t channels, rlr_tex_filter_t filter, uint64_t flags) {
-    FILE* f = fopen(file, "rb");
     void* color = NULL;
+    FILE* f = fopen(file, "rb");
     if(!f) {
         rlr_log_error("could not open the file \"%s\"", file);
         goto err;
     }
 
-    size_t size = width * height * channels;
+    size_t size = (size_t)width * height * channels;
     color = malloc(size);
     if(!color) {
         goto err;
@@ -54,14 +54,16 @@ rlr_tex_t* rlr_tex_load_raw(const char* file, uint32_t width, uint32_t height, u
         goto err;
     }
 
-    if(f) {
-        fclose(f);
-    }
-    return rlr_tex_load_mem_raw_preset_filter_impl(color, width, height, channels, filter, flags);
+    rlr_tex_t* tex = rlr_tex_load_mem_raw_preset_filter_impl(color, width, height, channels, filter, flags);
+
+    fclose(f);
+    free(color);
+    return tex;
 err:
     if(f) {
         fclose(f);
     }
+    free(color);
     return NULL;
 }
 

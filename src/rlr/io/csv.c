@@ -41,6 +41,10 @@ bool csv_parse_row(csv_row_callback_t callback, uint32_t row_index, char* row, c
     char* save_ptr = NULL;
     char* column = strtok_r(row, delimiter, &save_ptr);
     const char** columns = malloc(column_count * sizeof(char*));
+    if(!columns) {
+        rlr_log_error("unable to allocate memory to parse csv rows");
+        goto err;
+    }
 
     int32_t count = 0;
     while(column != NULL) {

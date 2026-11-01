@@ -8,10 +8,10 @@
 #include "res_types.h"
 #include "../impl.h"
 
-cgltf_data* rlr_mdl_load_glb(const char* filename) {
+cgltf_data* rlr_mdl_load_glb(const uint8_t* glb_data, size_t glb_data_len) {
     cgltf_options options = {0};
     cgltf_data* data = NULL;
-    cgltf_result result = cgltf_parse_file(&options, filename, &data);
+    cgltf_result result = cgltf_parse(&options, glb_data, glb_data_len, &data);
     if(result != cgltf_result_success) {
         rlr_log_error("failed to parse glb file");
         goto err;
@@ -20,7 +20,7 @@ cgltf_data* rlr_mdl_load_glb(const char* filename) {
         rlr_log_error("the model file is not of the type \"glb\"");
         goto err;
     }
-    result = cgltf_load_buffers(&options, data, filename);
+    result = cgltf_load_buffers(&options, data, NULL);
     if(result != cgltf_result_success) {
         rlr_log_error("failed to load glb buffers");
         goto err;
@@ -75,9 +75,6 @@ err:
 }
 
 rlr_tex_t* rlr_mdll_load_cgltf_albedo_tex(cgltf_texture* tex) {
-    if(!tex) {
-        return NULL;
-    }
 
     if(!tex || !tex->image || !tex->image->buffer_view) {
         rlr_log_error("glb texture isn't loaded");

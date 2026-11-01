@@ -34,4 +34,4 @@ target_include_directories(${LIBRARY} PRIVATE ${LIB_DIR} ${LIB_DIR}/glfw/include
 
 # library linking
 target_link_libraries(${LIBRARY} PRIVATE glfw ${OPENGL_LIBS})
-target_compile_options(${LIBRARY} PRIVATE -O3)
+target_compile_options(${LIBRARY} PRIVATE -O3 -Wall -Wextra -Wvla)

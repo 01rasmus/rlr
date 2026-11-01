@@ -89,7 +89,7 @@ typedef struct rlr_material_t {
     float reflectiveness;
 } rlr_material_t;
 
-cgltf_data* rlr_mdl_load_glb(const char* filename);
+cgltf_data* rlr_mdl_load_glb(const uint8_t* glb_data, size_t glb_data_len);
 bool rlr_mdl_parse_cgltf_material(cgltf_material* material, rlr_ubo_t** out_material_ubo, rlr_tex_t** out_base_texture);
 rlr_tex_t* rlr_mdll_load_cgltf_albedo_tex(cgltf_texture* tex);
 

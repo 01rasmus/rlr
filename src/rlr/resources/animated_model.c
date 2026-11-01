@@ -11,6 +11,7 @@
 #include "../resources/uniform.h"
 #include "../math/quat.h"
 #include "../math/matrix.h"
+#include "../io/file.h"
 #include "animated_model.h"
 
 typedef struct animation_frame_joint_t {
@@ -40,6 +41,10 @@ static float animation_duration(cgltf_animation* animation) {
 }
 
 static void reset_frames(animation_frame_joint_t* poses, cgltf_node* nodes, uint32_t count) {
+    if(!poses) {
+        return;
+    }
+
     for(uint32_t i = 0; i < count; i++) {
         cgltf_node* node = &nodes[i];
 
@@ -313,6 +318,22 @@ static rlr_animations_t load_animations(cgltf_data* model, float fps) {
 }
 
 rlr_anm_mdl_t* rlr_anm_mdl_load(const char* file_glb) {
+    size_t length;
+    rlr_anm_mdl_t* mdl = NULL;
+    uint8_t* bytes = rlr_bytes_from_file(file_glb, &length);
+    if(!bytes) {
+        goto err;
+    }
+    mdl = rlr_anm_mdl_load_mem(bytes, length);
+
+    free(bytes);
+    return mdl;
+err:
+    free(bytes);
+    return NULL;
+}
+
+rlr_anm_mdl_t* rlr_anm_mdl_load_mem(const void* glb_data, size_t glb_data_len) {
     cgltf_data* data = NULL;
     rlr_anm_mdl_t* model = NULL;
     rlr_anm_vert_t* vertices = NULL;
@@ -332,7 +353,7 @@ rlr_anm_mdl_t* rlr_anm_mdl_load(const char* file_glb) {
         .metas = NULL
     };
     
-    data = rlr_mdl_load_glb(file_glb);
+    data = rlr_mdl_load_glb(glb_data, glb_data_len);
     if(!data) {
         goto err;
     }
@@ -340,7 +361,7 @@ rlr_anm_mdl_t* rlr_anm_mdl_load(const char* file_glb) {
     //load the animations first
     model->animations = load_animations(data, RLR_ANM_MDL_ANIMATION_FPS);
     if(model->animations.animation_texture == 0) {
-        rlr_log_error("could not load animation from \"%s\"", file_glb);
+        rlr_log_error("could not load animation");
         goto err;
     }
 
@@ -498,7 +519,7 @@ rlr_anm_mdl_t* rlr_anm_mdl_load(const char* file_glb) {
             size_t index_count = arrlenu(indices);
             optimized_mesh = rlmesh_create(vertices, sizeof(vertices[0]), arrlenu(vertices), indices, sizeof(uint32_t), index_count);
             if(!optimized_mesh) {
-                rlr_log_error("unable to optimize glb model \"%s\"", file_glb);
+                rlr_log_error("unable to optimize glb model \"%s\"", mesh->name);
                 goto err;
             }
 
@@ -545,7 +566,7 @@ rlr_anm_mdl_t* rlr_anm_mdl_load(const char* file_glb) {
     }
 
     cgltf_free(data);
-    rlr_log("loaded animated model %s", file_glb);
+    rlr_log("loaded animated model");
     return model;
 err:
     cgltf_free(data);

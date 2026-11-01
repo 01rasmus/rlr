@@ -335,7 +335,7 @@ bool rlr_tex_atl_atlas_step(rlr_tex_atl_t* atlas) {
     //set atlas tile
     size_t index = atlas->current_step++;
     rlr_tex_atl_tile_step_ctx_t* step = &atlas->steps[index];
-    rlr_tex_atl_tile_t** tile = step->dest + step->dest_offset;
+    rlr_tex_atl_tile_t** tile = (rlr_tex_atl_tile_t**)((uint8_t*)step->dest + step->dest_offset);
 
     //set atlas tile
     atlas->tiles[index] = (rlr_tex_atl_tile_t){

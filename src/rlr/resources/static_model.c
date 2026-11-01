@@ -9,10 +9,27 @@
 #include "../resources/texture.h"
 #include "../resources/uniform.h"
 #include "../math/vec.h"
+#include "../io/file.h"
 #include "../rlr.h"
 #include "static_model.h"
 
 rlr_sta_mdl_t* rlr_sta_mdl_load(const char* file_glb) {
+    size_t length;
+    rlr_sta_mdl_t* mdl = NULL;
+    uint8_t* bytes = rlr_bytes_from_file(file_glb, &length);
+    if(!bytes) {
+        goto err;
+    }
+    mdl = rlr_sta_mdl_load_mem(bytes, length);
+
+    free(bytes);
+    return mdl;
+err:
+    free(bytes);
+    return NULL;
+}
+
+rlr_sta_mdl_t* rlr_sta_mdl_load_mem(const void* glb_data, size_t glb_data_len) {
     cgltf_data* data = NULL;
     rlr_sta_mdl_t* model = NULL;
     rlr_sta_mdl_vert_t* vertices = NULL;
@@ -26,7 +43,7 @@ rlr_sta_mdl_t* rlr_sta_mdl_load(const char* file_glb) {
     }
 
     model->meshes = NULL;
-    data = rlr_mdl_load_glb(file_glb);
+    data = rlr_mdl_load_glb(glb_data, glb_data_len);
     if(!data) {
         goto err;
     }
@@ -123,7 +140,7 @@ rlr_sta_mdl_t* rlr_sta_mdl_load(const char* file_glb) {
             size_t index_count = arrlenu(indices);
             optimized_mesh = rlmesh_create(vertices, sizeof(vertices[0]), arrlenu(vertices), indices, sizeof(uint32_t), index_count);
             if(!optimized_mesh) {
-                rlr_log_error("unable to optimize glb model \"%s\"", file_glb);
+                rlr_log_error("unable to optimize glb model \"%s\"", mesh->name);
                 goto err;
             }
 
@@ -171,7 +188,7 @@ rlr_sta_mdl_t* rlr_sta_mdl_load(const char* file_glb) {
     cgltf_free(data);
     arrfree(vertices);
     arrfree(indices);
-    rlr_log("loaded static model %s", file_glb);
+    rlr_log("loaded static model");
     return model;
 err:
     cgltf_free(data);

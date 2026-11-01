@@ -273,7 +273,7 @@ rlr_instance_data_ui_t* rlr_pipeline_ui_get_and_dirty_sprite_instance(uint64_t c
     return rlpp_get_unchecked(cmd->instance_data, instance_id);
 }
 
-const rlr_instance_data_ui_t const* rlr_pipeline_ui_get_sprite_instance(uint64_t cmd_id, uint64_t instance_id) {
+const rlr_instance_data_ui_t* rlr_pipeline_ui_get_sprite_instance(uint64_t cmd_id, uint64_t instance_id) {
     rlr_pipeline_ui_t* pu = RLR_PIPELINE_UI;
     rlr_pipeline_ui_draw_command_t* cmd = rlpp_get_unchecked(pu->commands, cmd_id);
     if(!cmd) {

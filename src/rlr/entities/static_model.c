@@ -12,8 +12,15 @@ rlr_sta_obj_t* rlr_sta_obj_new(rlr_sta_mdl_t* model, rlr_vec3_t translation, rlr
         goto err;
     }
 
+    //if no model was given, assign the default box one
+    if(!model) {
+        model = rlr()->default_sta_mdl_box;
+        rlr_log_warning("the provided static model was NULL, setting it to the default box model");
+    }
+
     rlr_pipeline_static_model_draw_command_t* cmd = rlr_pipeline_model_find_static_model_draw_command(model, NULL);
     if(!cmd) {
+        rlr_log_error("could not find a draw command for the static model");
         goto err;
     }
 

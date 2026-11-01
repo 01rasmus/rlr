@@ -15,6 +15,17 @@
 rlr_anm_mdl_t* rlr_anm_mdl_load(const char* file_glb);
 
 /**
+ * @param glb_data The base pointer to load the glb model from
+ * @param glb_data_len The length of the data at the base pointer
+ * 
+ * @return The pointer to the animated model. Returns `NULL` on failure
+ * 
+ * @warning The animated model needs to be free with `rlr_anm_mdl_free`
+ * @warning Only binary glTF models are supported
+ */
+rlr_anm_mdl_t* rlr_anm_mdl_load_mem(const void* glb_data, size_t glb_data_len);
+
+/**
  * @param model The animated model to look up the animation index from
  * @param animation_name The name of the animation
  * 

@@ -51,4 +51,4 @@ uint64_t rlr_pipeline_ui_add_sprite_instance(rlr_pipeline_ui_draw_command_t* com
 void rlr_pipeline_ui_remove_sprite_instance(uint64_t command_id, uint64_t instance_id);
 void rlr_pipeline_ui_set_sprite_instance_visability(uint64_t command_id, uint64_t instance_id, bool visible);
 rlr_instance_data_ui_t* rlr_pipeline_ui_get_and_dirty_sprite_instance(uint64_t cmd_id, uint64_t instance_id);
-const rlr_instance_data_ui_t const* rlr_pipeline_ui_get_sprite_instance(uint64_t cmd_id, uint64_t instance_id);
+const rlr_instance_data_ui_t* rlr_pipeline_ui_get_sprite_instance(uint64_t cmd_id, uint64_t instance_id);

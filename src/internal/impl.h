@@ -87,9 +87,13 @@ typedef struct rlr_t {
     rlr_pipeline_ui_t pipeline_ui;
 
     //built in resources
-    rlr_tex_t* texture_white;
-    rlr_cub_map_t* cube_map_white;
+    rlr_tex_t* default_tex;
+    rlr_cub_map_t* default_cube_map;
     rlr_font_t* default_font;
+    rlr_sta_mdl_t* default_sta_mdl_box;
+    rlr_sta_mdl_t* default_sta_mdl_cyl;
+    rlr_sta_mdl_t* default_sta_mdl_plane;
+    rlr_sta_mdl_t* default_sta_mdl_sphere;
     rlr_ubo_t* ubos[RLR_INTERNAL_UBO_COUNT];
 
     //statistics
